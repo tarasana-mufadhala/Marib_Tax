@@ -1,0 +1,65 @@
+name: Bug report
+description: Report a defect in implemented behavior
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: input
+    id: task_id
+    attributes:
+      label: Task / reference ID
+      placeholder: e.g. MARIB-TAX-...
+    validations:
+      required: false
+  - type: dropdown
+    id: environment
+    attributes:
+      label: Environment
+      options:
+        - Development
+        - Staging
+        - Production
+        - Local
+        - Unknown
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Summary
+      description: Concise description of the defect
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Impact
+      description: Who is affected and severity
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Security relevance
+      description: Does this involve authz bypass, data exposure, or secret handling?
+      placeholder: None / describe
+    validations:
+      required: false
+  - type: checkboxes
+    attributes:
+      label: Hygiene
+      options:
+        - label: I have not included secrets, tokens, or production PII in this issue
+          required: true

@@ -1,0 +1,14 @@
+# Default owner for the Marib Tax System repository
+* @tarasana-mufadhala
+
+# Sensitive governance and security paths
+/.github/ @tarasana-mufadhala
+/SECURITY.md @tarasana-mufadhala
+/PROPRIETARY.md @tarasana-mufadhala
+/docs/governance/ @tarasana-mufadhala
+/docs/security/ @tarasana-mufadhala
+/docs/architecture/adr/ @tarasana-mufadhala
+/.env.example @tarasana-mufadhala
+/database/ @tarasana-mufadhala
+/infrastructure/ @tarasana-mufadhala
+/.cursor/rules/ @tarasana-mufadhala

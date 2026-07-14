@@ -1,0 +1,13 @@
+---
+description: Marib Tax security rules — secrets, authz, storage, least privilege
+alwaysApply: true
+---
+
+# Security
+
+- Never expose secrets, tokens, private keys, or credentials in source, logs, or client bundles.
+- Never place Supabase service-role keys (or equivalent privileged credentials) in Flutter or Next.js clients.
+- Do not log sensitive personal data, auth tokens, or secrets.
+- Authorization is enforced server-side in NestJS — UI hiding is not authorization.
+- Operational files are private; use authorized short-lived access only.
+- Apply least privilege to credentials, database roles, and production access.

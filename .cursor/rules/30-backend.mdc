@@ -1,0 +1,13 @@
+---
+description: Marib Tax NestJS backend rules — services, workflow, outbox, thin controllers
+globs: apps/api/**/*
+alwaysApply: false
+---
+
+# Backend (NestJS)
+
+- Business logic lives in NestJS services, not controllers.
+- State changes for workflows go only through the future WorkflowService (when implemented); do not scatter transitions.
+- External messaging (SMS, push) goes only through provider/outbox abstractions — not ad-hoc direct sends from controllers.
+- Controllers remain thin: validate input, call services, map responses.
+- NestJS is the only trusted business-logic layer for operational writes.

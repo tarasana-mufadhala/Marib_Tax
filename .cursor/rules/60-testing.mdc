@@ -1,0 +1,13 @@
+---
+description: Marib Tax testing rules — business rules, permissions, failure paths
+globs: "**/*.{spec,test}.{ts,tsx,js,jsx,dart}"
+alwaysApply: false
+---
+
+# Testing
+
+- Tests are required for business rules, permissions, negative access cases, state transitions, and failure paths.
+- No feature is complete with only happy-path tests.
+- Authorization tests must include denied access cases.
+- External provider failures and retry/outbox behavior need coverage when those features exist.
+- Do not weaken tests to greenwash incomplete behavior.

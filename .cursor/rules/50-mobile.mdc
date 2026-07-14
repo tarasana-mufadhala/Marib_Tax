@@ -1,0 +1,14 @@
+---
+description: Marib Tax Flutter mobile rules — feature-first, secure storage, RTL
+globs: apps/mobile/**/*
+alwaysApply: false
+---
+
+# Mobile (Flutter)
+
+- Use feature-first architecture.
+- Never embed service-role or privileged keys.
+- Store auth tokens using secure storage mechanisms.
+- Support resilient drafts and resilient uploads.
+- Arabic RTL first.
+- All operational writes go through the NestJS API.

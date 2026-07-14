@@ -1,0 +1,13 @@
+---
+description: Marib Tax Next.js web rules — RTL, public/admin split, no client secrets
+globs: apps/web/**/*
+alwaysApply: false
+---
+
+# Web (Next.js)
+
+- Arabic RTL first for user-facing UI.
+- Keep public and admin experiences clearly separated within the single Next.js app.
+- Never put server secrets in client bundles (`NEXT_PUBLIC_*` must be intentional and non-secret).
+- Authorization is not implemented only through hidden UI — enforce via API/server checks.
+- Do not perform operational database writes that bypass NestJS.

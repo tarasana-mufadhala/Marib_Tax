@@ -1,0 +1,13 @@
+---
+description: Marib Tax database rules — migrations, history, production safety
+globs: database/**/*
+alwaysApply: false
+---
+
+# Database
+
+- Every schema change goes through a versioned migration under `database/migrations/`.
+- Never edit an already-applied migration; create a new migration instead.
+- Do not automate production migrations.
+- No destructive cleanup (drop/truncate of operational or audit data) without explicit written approval.
+- Preserve history and audit data; historical request and version records must remain intact.
