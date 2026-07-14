@@ -43,6 +43,11 @@ require_dir_readme() {
   fi
 }
 
+contains_control_char() {
+  local LC_ALL=C
+  [[ "$1" =~ [[:cntrl:]] ]]
+}
+
 printf 'Marib Tax System — Foundation Validation\n'
 printf 'Repository root: %s\n' "$ROOT"
 
@@ -167,8 +172,11 @@ section "Tracked secret and credential hygiene"
 if ! command -v git >/dev/null 2>&1; then
   fail "git is required for tracked-file secret checks"
 else
-  # Collect tracked files (handles empty repo edge cases)
-  mapfile -t TRACKED < <(git ls-files -z | tr '\0' '\n' | sed '/^$/d')
+  # Collect tracked files null-safely (filenames may contain newlines)
+  TRACKED=()
+  while IFS= read -r -d '' path; do
+    TRACKED+=("$path")
+  done < <(git ls-files -z)
 
   ENV_VIOLATIONS=()
   SECRET_NAME_VIOLATIONS=()
@@ -249,7 +257,10 @@ section "Filename and text hygiene"
 if ! command -v git >/dev/null 2>&1; then
   fail "git is required for filename and text hygiene checks"
 else
-  mapfile -t TRACKED_HYGIENE < <(git ls-files -z | tr '\0' '\n' | sed '/^$/d')
+  TRACKED_HYGIENE=()
+  while IFS= read -r -d '' path; do
+    TRACKED_HYGIENE+=("$path")
+  done < <(git ls-files -z)
 
   CONTROL_NAME_VIOLATIONS=()
   MALFORMED_ROOT_VIOLATIONS=()
@@ -279,7 +290,7 @@ else
 
   for path in "${TRACKED_HYGIENE[@]}"; do
     # Control characters in filenames
-    if printf '%s' "$path" | LC_ALL=C grep -Eq '[[:cntrl:]]'; then
+    if contains_control_char "$path"; then
       CONTROL_NAME_VIOLATIONS+=("$path")
     fi
 
