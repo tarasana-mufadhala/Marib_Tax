@@ -164,3 +164,20 @@ Confirmed: **`main` was not modified.**
 ## Final decision
 
 **PASS_WITH_NOTES**
+
+## Post-merge lifecycle note
+
+After the original foundation task completed its local preflight (without commit/push in that session), the foundation was later committed and merged:
+
+- Foundation commit: `7e54a2467ef130ef05609778decab4d465de7888`
+- Pull request: PR #1 merged into `main`
+- Merge commit: `c78dd36815e707e3f7cecc7102f5abbdc4675b1a`
+
+A corrective PR was required for:
+
+- an accidental root file named `= @(`;
+- the `security@example.invalid` placeholder and mojibake in `SECURITY.md`;
+- UTF-8 BOM normalization on `.gitignore` (and related encoding hygiene);
+- CI hardening so whitespace checks use the PR diff / pushed commit range instead of an empty `git diff --check`.
+
+The original preflight observations above remain historical facts for MARIB-TAX-REPOSITORY-FOUNDATION-01 and are not rewritten as though commit/push occurred during that original task.

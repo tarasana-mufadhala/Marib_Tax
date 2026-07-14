@@ -1,11 +1,15 @@
-# Security Policy â€” Marib Tax System
+# Security Policy — Marib Tax System
 
 ## Vulnerability reporting
 
 Report suspected vulnerabilities privately. Do **not** open public issues for security findings.
 
-**Private reporting route:**
-`security@example.invalid` â€” replace with the official Marib Tax security contact before production use.
+Vulnerabilities must be reported through:
+
+1. **GitHub Private Vulnerability Reporting / Security Advisory** when enabled on this repository.
+2. **Private communication with the authorized SysTrac project owner.**
+
+Do not invent or publish an alternative public email contact in this file.
 
 Include: description, impact, reproduction steps, affected component, and whether exploitation is known.
 
@@ -42,6 +46,6 @@ Include: description, impact, reproduction steps, affected component, and whethe
 ## Incident reporting expectations
 
 1. Contain exposure (revoke keys, disable compromised access).
-2. Notify the project security owner through the private reporting route.
+2. Notify the authorized SysTrac project owner through private communication (and GitHub Private Vulnerability Reporting when applicable).
 3. Document timeline, impact, and remediation.
 4. Do not discuss active incidents in public channels or public tickets.

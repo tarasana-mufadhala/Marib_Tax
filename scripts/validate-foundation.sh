@@ -243,6 +243,111 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+section "Filename and text hygiene"
+# ---------------------------------------------------------------------------
+
+if ! command -v git >/dev/null 2>&1; then
+  fail "git is required for filename and text hygiene checks"
+else
+  mapfile -t TRACKED_HYGIENE < <(git ls-files -z | tr '\0' '\n' | sed '/^$/d')
+
+  CONTROL_NAME_VIOLATIONS=()
+  MALFORMED_ROOT_VIOLATIONS=()
+  ANSI_VIOLATIONS=()
+
+  is_probably_text() {
+    local file="$1"
+    local base ext
+    base="$(basename "$file")"
+    ext="${base##*.}"
+    case "$ext" in
+      md|mdc|txt|yml|yaml|json|ts|tsx|js|jsx|mjs|cjs|css|scss|html|xml|svg|sh|bash|zsh|env|example|editorconfig|gitignore|gitattributes|properties|toml|sql|dart|kt|kts|gradle|Dockerfile|makefile|Makefile|CODEOWNERS)
+        return 0
+        ;;
+    esac
+    case "$base" in
+      .gitignore|.gitattributes|.editorconfig|.env.example|Dockerfile|Makefile|CODEOWNERS|pnpm-workspace.yaml|package.json)
+        return 0
+        ;;
+    esac
+    # Treat extensionless tracked root docs as text when readable
+    if [[ "$file" != */* ]]; then
+      return 0
+    fi
+    return 1
+  }
+
+  for path in "${TRACKED_HYGIENE[@]}"; do
+    # Control characters in filenames
+    if printf '%s' "$path" | LC_ALL=C grep -Eq '[[:cntrl:]]'; then
+      CONTROL_NAME_VIOLATIONS+=("$path")
+    fi
+
+    # Malformed / accidental root filenames (PowerShell fragment leftovers, etc.)
+    base="$(basename "$path")"
+    if [[ "$path" != */* ]]; then
+      case "$base" in
+        '= @('|'=('|'@('|')'|']'|'}'|'=')
+          MALFORMED_ROOT_VIOLATIONS+=("$path")
+          ;;
+      esac
+      # Broad catch for root names starting with "= @"
+      if [[ "$base" == '= @'* ]]; then
+        MALFORMED_ROOT_VIOLATIONS+=("$path")
+      fi
+    fi
+
+    # ANSI escape sequences in tracked text files (ESC [ ... )
+    if [[ -f "$path" ]] && is_probably_text "$path"; then
+      if grep -Iq $'\x1B\[' -- "$path"; then
+        ANSI_VIOLATIONS+=("$path")
+      elif grep -Iq $'\x1B' -- "$path"; then
+        ANSI_VIOLATIONS+=("$path")
+      fi
+    fi
+  done
+
+  # Deduplicate malformed list
+  if [[ ${#MALFORMED_ROOT_VIOLATIONS[@]} -gt 0 ]]; then
+    mapfile -t MALFORMED_ROOT_VIOLATIONS < <(printf '%s\n' "${MALFORMED_ROOT_VIOLATIONS[@]}" | sort -u)
+  fi
+
+  if [[ ${#CONTROL_NAME_VIOLATIONS[@]} -eq 0 ]]; then
+    pass "no tracked filenames with control characters"
+  else
+    for v in "${CONTROL_NAME_VIOLATIONS[@]}"; do
+      fail "tracked filename contains control characters: $v"
+    done
+  fi
+
+  if [[ ${#MALFORMED_ROOT_VIOLATIONS[@]} -eq 0 ]]; then
+    pass "no unexpected malformed root filenames"
+  else
+    for v in "${MALFORMED_ROOT_VIOLATIONS[@]}"; do
+      fail "unexpected malformed root filename: $v"
+    done
+  fi
+
+  if [[ -f SECURITY.md ]]; then
+    if grep -Fq 'security@example.invalid' SECURITY.md; then
+      fail "SECURITY.md contains prohibited placeholder security@example.invalid"
+    else
+      pass "SECURITY.md does not contain security@example.invalid"
+    fi
+  else
+    fail "SECURITY.md missing for placeholder check"
+  fi
+
+  if [[ ${#ANSI_VIOLATIONS[@]} -eq 0 ]]; then
+    pass "no ANSI escape characters in tracked text files"
+  else
+    for v in "${ANSI_VIOLATIONS[@]}"; do
+      fail "tracked text file contains ANSI escape characters: $v"
+    done
+  fi
+fi
+
+# ---------------------------------------------------------------------------
 section "package.json foundation constraints"
 # ---------------------------------------------------------------------------
 
