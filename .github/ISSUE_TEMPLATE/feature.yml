@@ -1,0 +1,55 @@
+name: Feature request
+description: Propose a feature within approved scope or after Change Request approval
+title: "[Feature] "
+labels: ["feature"]
+body:
+  - type: input
+    id: task_id
+    attributes:
+      label: Task / reference ID
+      description: Official task or ticket identifier
+      placeholder: e.g. MARIB-TAX-...
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Summary
+      description: What should be built and why
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Acceptance criteria
+      description: Testable outcomes
+    validations:
+      required: true
+  - type: dropdown
+    id: baseline
+    attributes:
+      label: Baseline alignment
+      options:
+        - Within approved MVP / baseline
+        - Requires Change Request (not yet approved)
+        - Change Request already approved
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Out of scope
+      description: Explicit non-goals
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Security / data notes
+      description: Authz, PII, storage, or migration considerations
+    validations:
+      required: false
+  - type: checkboxes
+    attributes:
+      label: Confirmations
+      options:
+        - label: I will not bypass NestJS for operational writes
+          required: true
+        - label: I will not commit secrets or privileged client credentials
+          required: true

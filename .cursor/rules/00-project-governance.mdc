@@ -1,0 +1,14 @@
+---
+description: Marib Tax project governance — architecture, scope, and git discipline
+alwaysApply: true
+---
+
+# Project governance
+
+- Respect the approved architecture (Flutter mobile, Next.js web/admin, NestJS modular monolith API, worker, PostgreSQL/Supabase, OpenAPI, outbox notifications).
+- Analysis is closed; do not reinterpret the baseline to expand scope.
+- No unapproved scope changes — post-baseline work requires a Change Request.
+- Do not write to `main` directly.
+- Do not create commits or push unless the user explicitly requests it.
+- Do not initialize application frameworks or install dependencies unless the task explicitly requires it.
+- Prefer repository foundation and documentation changes over speculative feature code when scope is foundation-only.

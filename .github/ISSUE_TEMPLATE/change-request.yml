@@ -1,0 +1,60 @@
+name: Change Request
+description: Request a post-baseline scope, architecture, or policy change
+title: "[CR] "
+labels: ["change-request"]
+body:
+  - type: input
+    id: cr_id
+    attributes:
+      label: Proposed CR identifier
+      placeholder: e.g. CR-2026-...
+    validations:
+      required: false
+  - type: textarea
+    attributes:
+      label: Business justification
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Proposed change
+      description: What will change relative to the closed baseline
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Impact analysis
+      description: Components, security, data/migrations, API, RTL, tests, rollback, schedule
+    validations:
+      required: true
+  - type: dropdown
+    id: adr_impact
+    attributes:
+      label: ADR / architecture impact
+      options:
+        - None
+        - Requires ADR amendment
+        - Requires new ADR
+    validations:
+      required: true
+  - type: dropdown
+    id: approval_status
+    attributes:
+      label: Approval status
+      options:
+        - Proposed
+        - Pending product approval
+        - Pending architecture approval
+        - Pending security approval
+        - Approved
+        - Rejected
+    validations:
+      required: true
+  - type: checkboxes
+    attributes:
+      label: Confirmations
+      options:
+        - label: I understand informal scope changes are prohibited
+          required: true
+        - label: I will not implement this change until required approvals are recorded
+          required: true
