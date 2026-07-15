@@ -4,11 +4,16 @@
 | --- | --- |
 | Task ID | MARIB-TAX-DB-FOUNDATION-BATCH-01A |
 | Purpose | Create the fourteen application-owned PostgreSQL schemas only |
-| Migration file | `database/migrations/20260715175300_create_marib_tax_application_schemas.sql` |
+| Migration file | `supabase/migrations/20260715175300_create_marib_tax_application_schemas.sql` |
 | Verification script | `scripts/db/verify/verify_batch_01a_application_schemas.sql` |
-| Status | Documentation runbook — **do not apply during authoring/review of this task** |
+| Official runner | Supabase CLI `2.109.1` |
+| Target project ref | `sjmtiwzddztxfrncwkpx` |
+| Target environment | `production` |
+| Status | Documentation runbook — **does not authorize link or apply during enablement** |
 
-> This runbook describes **future** execution. It does not authorize apply as part of Batch 01A authoring or SQL review alone.
+> This runbook describes **future** controlled production execution.
+> It does **not** authorize `supabase login`, `supabase link`, remote dry-run, or production apply by itself.
+> Former path `database/migrations/` is superseded; do not apply from that path.
 
 ## 1. Purpose
 
@@ -46,46 +51,74 @@ Do **not** create, alter, or drop:
 
 | Requirement | Rule |
 | --- | --- |
+| `SUPABASE_ACCESS_TOKEN` | Supply only through approved secret store / CI secret / operator vault |
 | Migration / DB role | Server-side only; never in client apps or committed files |
-| Storage location | Approved secret store / CI secret / operator vault for the target environment |
-| Logging | Do **not** print connection strings, passwords, service-role keys, or project URLs containing secrets |
+| Logging | Do **not** print connection strings, passwords, service-role keys, access tokens, or project URLs containing secrets |
 | Repo | No credentials, tokens, or `.env` secrets in this branch |
+| Command lines | Do **not** place tokens or passwords on documented command lines |
 
-Exact credential names and retrieval steps remain environment-specific and are **not** recorded here.
+Exact credential retrieval steps remain environment-specific and are **not** recorded here.
 
 ## 5. Pre-apply checks (mandatory)
 
-1. Confirm the correct Supabase / PostgreSQL **project identity** for the intended environment.
-2. Confirm the **environment** (e.g. local/dev/staging — never ambiguous production apply without Change Control).
-3. Confirm **backup / recovery posture** for the target database is acceptable.
-4. Confirm **none** of the fourteen expected application schemas already exist.
-5. Confirm managed schemas **`auth`** and **`storage`** exist (platform-managed; do not recreate).
-6. Confirm migration history does **not** already contain `20260715175300_create_marib_tax_application_schemas.sql`.
-7. Confirm the working tree has **no unrelated dirty local changes** that would apply the wrong SQL.
-8. Confirm credentials will not be printed, logged in cleartext, or committed.
-9. Confirm the SQL file matches the **reviewed commit** byte-for-byte.
+1. Confirm Git commit and migration SHA-256 match the reviewed artifact.
+2. Confirm environment is explicitly **`production`**.
+3. Confirm project ref is **`sjmtiwzddztxfrncwkpx`** (at least two non-secret signals after link).
+4. Confirm **backup / recovery posture** for production is acceptable and recorded.
+5. Confirm **none** of the fourteen expected application schemas already exist.
+6. Confirm managed schemas **`auth`** and **`storage`** exist (platform-managed; do not recreate).
+7. Confirm remote migration history does **not** already contain version `20260715175300`.
+8. Confirm the working tree has **no unrelated dirty local changes**.
+9. Confirm credentials will not be printed, logged in cleartext, or committed.
+10. Confirm `supabase/config.toml` exists locally and is reviewed (local `project_id` is not proof of hosted identity).
 
-## 6. Apply command placeholder
+## 6. Future controlled production sequence (do not run in enablement)
 
-Use the approved Supabase / repository migration workflow for the target environment. Placeholder only (do not run during this authoring task):
+Use the reviewed CLI version in every command:
 
 ```text
-# PLACEHOLDER — replace with the approved environment workflow after review
-# Example patterns (choose the one approved for Marib Tax ops; do not invent secrets):
-#   supabase db push
-#   supabase migration up
-#   psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/migrations/20260715175300_create_marib_tax_application_schemas.sql
+npx --yes supabase@2.109.1 <subcommand>
 ```
+
+Ordered steps for a future authorized ops session:
+
+1. Verify exact Git commit and migration SHA-256 for
+   `supabase/migrations/20260715175300_create_marib_tax_application_schemas.sql`.
+2. Use the reviewed exact Supabase CLI version `2.109.1`.
+3. Supply `SUPABASE_ACCESS_TOKEN` through approved secure storage (never print it).
+4. Link explicitly to project ref `sjmtiwzddztxfrncwkpx` (separate controlled authorization).
+5. Confirm the linked project ref matches `sjmtiwzddztxfrncwkpx`.
+6. Confirm environment is `production`.
+7. Inspect migration history:
+   `npx --yes supabase@2.109.1 migration list --linked`
+8. Stop on any history mismatch or unexpected recorded version.
+9. Dry-run:
+   `npx --yes supabase@2.109.1 db push --linked --dry-run`
+10. Confirm exactly the reviewed Batch 01A migration would apply (one batch only).
+11. Obtain explicit controlled-apply authorization.
+12. Apply **once** using the separately approved command for that session.
+13. Run post-apply verification (`scripts/db/verify/verify_batch_01a_application_schemas.sql`).
+14. Stop on FAIL, WARN, uncertainty, or partial completion.
+
+### Prohibited
+
+- `supabase db reset --linked`
+- automatic `migration repair`
+- `--include-all` without separate review and justification
+- direct `psql` as the default apply path
+- blind retry
+- applying from the superseded `database/migrations/` path
+- placing tokens or passwords on the command line
 
 Apply **one batch only**. Do **not** start Batch 2 in the same session.
 
 ## 7. Post-apply verification
 
-Run the read-only script (after apply, in a future ops session):
+Run the read-only script after apply (future ops session), using an approved secure connection method that does not print secrets:
 
 ```text
-# PLACEHOLDER
-# psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/db/verify/verify_batch_01a_application_schemas.sql
+# PLACEHOLDER — use approved secure runner; do not embed credentials here
+# Execute: scripts/db/verify/verify_batch_01a_application_schemas.sql
 ```
 
 The script returns **five** result sets in this exact order. Operators must inspect **all** preceding sets; do not read only the final status word.
@@ -151,7 +184,9 @@ Status meanings:
 
 - Operator identity and timestamp (UTC)
 - Confirmed project / environment identity (non-secret identifiers only)
-- Migration filename and git commit SHA applied
+- Migration filename, SHA-256, and git commit SHA applied
+- CLI version `2.109.1`
+- Dry-run confirmation that only Batch 01A would apply
 - Apply command exit code and truncated safe logs (redact secrets)
 - Full verification script result set (or saved output file without secrets)
 - Confirmation that managed schemas were not modified
@@ -161,10 +196,12 @@ Status meanings:
 Stop immediately and escalate when:
 
 - any expected application schema already exists unexpectedly;
-- target project identity cannot be confirmed;
-- migration history is inconsistent or the migration is already recorded;
+- target project identity cannot be confirmed as `sjmtiwzddztxfrncwkpx`;
+- environment is not explicitly `production`;
+- migration history is inconsistent or version `20260715175300` is already recorded;
+- dry-run would apply unexpected migrations;
 - any managed schema would be modified;
-- SQL differs from the reviewed commit;
+- SQL differs from the reviewed commit / SHA-256;
 - apply reports failure or uncertain / partial completion;
 - verification does not return fourteen of fourteen schemas;
 - verification `final_status` is FAIL or WARN (WARN is a stop pending review);
@@ -175,10 +212,12 @@ Stop immediately and escalate when:
 
 | Situation | Response |
 | --- | --- |
-| Apply failed before `COMMIT` | Transaction should roll back; re-verify no schemas were created; do not retry blindly |
+| Apply failed before commit | Re-verify no schemas were created; do not retry blindly |
 | Uncertain / partial completion | Preserve logs; do not drop schemas as automatic repair; escalate |
 | Need reverse after successful empty apply | Prefer an explicit **corrective migration** reviewed under Change Control; drop empty schemas only if unused and approved; **never** drop `auth` / `storage` |
 | Blind retry | **Forbidden** |
+| Automatic `migration repair` | **Forbidden** |
+| `db reset --linked` | **Prohibited** |
 
 ## 11. Security confirmation
 
@@ -193,9 +232,9 @@ Stop immediately and escalate when:
 Batch 01A is complete only when:
 
 1. SQL review has passed;
-2. apply (future) succeeded with verification `PASS`;
+2. controlled production apply succeeded with verification `PASS`;
 3. evidence is retained.
 
-Do **not** start Batch 2 (identity tables) until Batch 01A is accepted for the target environment.
+Do **not** start Batch 2 (identity tables) until Batch 01A is accepted for production (`sjmtiwzddztxfrncwkpx`).
 
 **One batch only.**

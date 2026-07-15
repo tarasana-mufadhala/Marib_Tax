@@ -114,10 +114,16 @@ $RECYCLE.BIN/
 # ---------------------------------------------------------------------------
 # Supabase temporary / local artifacts
 # ---------------------------------------------------------------------------
+# Keep supabase/config.toml and supabase/migrations/ trackable.
 supabase/.temp/
 supabase/.branches/
+supabase/.env
+supabase/.env.*
+!**/.env.example
+!**/.env.*.example
 **/.supabase/
 **/supabase/.temp/
+**/supabase/.branches/
 
 # ---------------------------------------------------------------------------
 # Firebase credentials

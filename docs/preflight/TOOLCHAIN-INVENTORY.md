@@ -17,7 +17,7 @@
 | dart | Detected | 3.10.7 | Later phase (`apps/mobile`) | Bundled with Flutter; no action for foundation |
 | java | Detected | OpenJDK 21.0.10 LTS (Temurin) | Later phase (Android builds) | Required later for Android tooling with Flutter |
 | docker | Detected | 29.6.1 | Later phase (infra/local stacks) | Use when Docker-based local services are introduced |
-| supabase CLI | Not detected | — | Later phase | Install only when a later task initializes Supabase workflows |
+| supabase CLI | Available via `npx --yes supabase@2.109.1` (reviewed enablement version; global install not required) | 2.109.1 | Required for DB migrations | Use reviewed versioned `npx` form; see `docs/governance/MARIB-TAX-SUPABASE-CLI-MIGRATION-STANDARD-01.md` |
 | VS Code (`code`) | Detected | 1.117.0 | Optional | Optional editor tooling |
 | Cursor (`cursor`) | Detected | 3.10.11 | Optional (agent/editor) | Project rules under `.cursor/rules` apply in Cursor |
 | bash (Git Bash) | Detected | GNU bash 5.2.37(1)-release (x86_64-pc-msys) | Required now (foundation script / CI parity on Windows) | Use `C:\Program Files\Git\bin\bash.exe` to run `scripts/validate-foundation.sh` on Windows |
@@ -26,4 +26,4 @@
 
 - Foundation validation can run locally via Git Bash.
 - Node/pnpm/Flutter toolchains are present for **future** phases; this foundation task did not initialize applications or install project dependencies into workspaces.
-- Supabase CLI is the primary missing CLI for a later database/platform phase.
+- Supabase CLI enablement uses the reviewed versioned `npx` invocation (`supabase@2.109.1`); see MARIB-TAX-SUPABASE-CLI-ENABLEMENT-01 / migration standard.
