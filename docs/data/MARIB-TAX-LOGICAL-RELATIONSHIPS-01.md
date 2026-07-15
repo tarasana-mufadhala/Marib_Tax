@@ -1,0 +1,117 @@
+# MARIB-TAX-LOGICAL-RELATIONSHIPS-01
+
+**Status:** Logical relationship catalog. Each row is one countable logical relationship with a stable ID. Unresolved matters are **يحتاج اعتماد لاحق**.
+
+| ID | Source | Relationship | Target | Cardinality | Ownership | Req/Opt | Lifecycle dependency | Deletion impact | Historical behavior | Business rule | Open decision |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| REL-001 | Authentication Identity | authenticates | User Profile | 1:0..1 | Identity and Access | Opt profile | Profile follows identity activation | Identity end does not erase profile history | Retain link history | At most one profile per identity | — |
+| REL-002 | User Profile | represents | Staff Profile | 1:0..1 | Identity and Access | Opt | Staff profile follows eligibility | Staff end retains history | Retain effective periods | At most one staff profile per user profile | — |
+| REL-003 | User Profile | holds | Role Assignment | 1:N | Identity and Access | Opt | Assignment effective-dated | Revoke retains history | Append-only grant/revoke | Active assignment required for staff acts | — |
+| REL-004 | Role Assignment | grants | Role | N:1 | Identity and Access | Req | Assignment references role | Role retire preserves historic meaning | Retain assignment evidence | Effective authorization required | — |
+| REL-005 | Role | contains | Role Permission | 1:N | Identity and Access | Opt | Permission mapping effective-dated | Mapping change retains history | Append-sensitive change | Permission required for action | — |
+| REL-006 | Role Permission | maps | Permission | N:1 | Identity and Access | Req | Mapping references permission | Permission retire preserves history | Retain mapping evidence | No silent privilege expansion | — |
+| REL-007 | Sensitive Permission Change | records_change_of | Role Assignment | N:1 | Identity and Access | Req | Change follows assignment mutation | Never hard-delete | Append-only | Material role/permission change audited | — |
+| REL-008 | Access/Security Event | concerns | Authentication Identity | N:1 | Audit and Security | Req | Event follows identity context | Never hard-delete | Append-only | Security evidence not decision owner | — |
+| REL-009 | User Profile | has | Taxpayer Account Link | 1:N | Taxpayer Registry | Opt | Link grant/revoke lifecycle | Revoke retains history | Grant/revoke history required | Own-data basis; multiplicity **يحتاج اعتماد لاحق** | DM-21 |
+| REL-010 | Taxpayer Account Link | links | Taxpayer | N:1 | Taxpayer Registry | Req | Link verifies against taxpayer | End-date retains history | Effective history required | Phone/tax number match insufficient | DM-21 |
+| REL-011 | Taxpayer | has | Taxpayer Contact | 1:N | Taxpayer Registry | Opt | Contact reassignment governed | Reassign preserves history | Contact history retained | Contact belongs to one taxpayer | — |
+| REL-012 | Taxpayer | has | Taxpayer Legal-Entity Association | 1:N | Taxpayer Registry | Opt | Association effective-dated | End-date retains history | Association history retained | Legal Entities does not mutate association | — |
+| REL-013 | Taxpayer Legal-Entity Association | relates | Legal Entity | N:1 | Taxpayer Registry | Req | Association references master entity | Entity retire preserves meaning | Effective history retained | Classification master owned by Legal Entities | — |
+| REL-014 | Taxpayer | associated_with | Tax Number | 1:0..N | Legal Entities (Tax Number owner); Taxpayer Registry may display | Opt | Tax Number lifecycle with Legal Entities | Invalidate/replace retains lineage | Issuance/evidence lineage | Taxpayer may exist without tax number; uniqueness **يحتاج اعتماد لاحق** | DM-04, DM-23 |
+| REL-015 | Taxpayer | operates | Commercial Activity | 1:N | Activities and Branches | Opt | Activity lifecycle with owning module | Soft-archive preferred | Status history retained | Not a property-ownership relation | — |
+| REL-016 | Commercial Activity | has | Branch | 1:N | Activities and Branches | Opt | Branch belongs to one activity | Branch end retains history | Branch history retained | Branch cannot orphan to another activity silently | — |
+| REL-017 | Commercial Activity / Branch | uses | Activity Address | 1:0..N | Activities and Branches | Opt | Address linked only to authorized context | Address change preserves prior | Address history retained | Address applicability scoped | DMOD-05 |
+| REL-018 | Commercial Activity | has | Activity Status History | 1:N | Activities and Branches | Req on change | Status change creates history | Never overwrite prior | Append-only | Material status change immutable | — |
+| REL-019 | Property | has | Property Unit | 1:N | Activities and Branches | Opt | Unit belongs to one property | Unit end retains history | Unit history retained | FR-205 may cover multiple units | — |
+| REL-020 | Property | has | Property Ownership Record | 1:N | Activities and Branches | Req for ownership | Current ownership via record | Prior ownership via history | Ownership history preserved | Authoritative ownership path | DM-24 |
+| REL-021 | Property Ownership Record | preserves | Property Ownership History | 1:N | Activities and Branches | Req on change | Transfer revises via history | Never overwrite prior | Append-only | Physical property survives transfer | — |
+| REL-022 | Property Ownership Record | holds_party | Taxpayer | N:1 | Activities and Branches | Req | Seller/buyer/current via records | End-date retains history | Party role history retained | Direct Taxpayer↔Property is derived only | DM-24 |
+| REL-023 | Service Type | classifies | Service Request | 1:N | Service Requests | Req at classify | Type retirement preserves meaning | Historic type retained | Classification history | Active type at classification | — |
+| REL-024 | Taxpayer | submits | Service Request | 1:N | Service Requests | Req | Request belongs to submitting taxpayer | Submitted not taxpayer-deleted | Origin retained | Authorized workflow only | — |
+| REL-025 | Service Request | selects | Request Selected Activity | 1:N | Service Requests | Cond | Selection where form permits | Selection retained | Snapshot/selection history | Selection does not mutate Activity | — |
+| REL-026 | Request Selected Activity | references | Commercial Activity | N:1 | Service Requests (selection); Activities and Branches (Activity) | Req | Selection references authoritative activity | Activity retire preserves meaning | Selection snapshot retained | Case module owns selection only | — |
+| REL-027 | Service Request | selects | Request Selected Branch | 1:0..N | Service Requests | Cond | Branch selection where form permits | Selection retained | Selection history | Branch selection eligibility required | — |
+| REL-028 | Request Selected Branch | belongs_to | Request Selected Activity | N:1 | Service Requests | Req when branch selected | Branch selection tied to selected activity | Selection retained | Eligibility retained | Branch cannot attach to unrelated selected activity; 1 activity may have 0..N branches | — |
+| REL-029 | Request Selected Branch | references | Branch | N:1 | Service Requests (selection); Activities and Branches (Branch) | Req | Selection references authoritative branch | Branch retire preserves meaning | Selection snapshot retained | Case module does not own Branch | — |
+| REL-030 | Service Request | has | Request Form/Data Snapshot | 1:N | Service Requests | Req at material points | Snapshot on submit/complete/decide | Never overwrite prior | Append/version retained | Submitted data preserved | — |
+| REL-031 | Service Request | has | Request Status History | 1:N | Service Requests | Req on transition | Every valid transition | Never overwrite | Append-only | Immutable status history | — |
+| REL-032 | Service Request | has | Request Assignment History | 1:N | Service Requests | Opt/Req on assign | Assignment change creates history | Never overwrite | Append-only | Assigned staff and actor identified | — |
+| REL-033 | Request Assignment History | references | Staff Profile | N:1 | Service Requests | Req | Assignment names staff | Staff end preserves history | Actor/staff retained | Eligible staff only | — |
+| REL-034 | Service Request | has | Request Completion Request | 1:0..N | Service Requests | Cond | Completion cycle | Retained | Cycle history | Linked response required for closure of cycle | — |
+| REL-035 | Request Completion Request | answered_by | Request Completion Response | 1:0..1 | Service Requests | Cond | Response linked to request | Never erase earlier snapshots | Additive | Response does not erase prior | — |
+| REL-036 | Service Request | has | Request Decision Record | 1:0..1 | Service Requests | Cond at decision | Decision Record lifecycle | Never overwrite | Revisions additive | Manager/Director final; VO embedded | DMOD-14 |
+| REL-037 | Request Decision Record | revised_by | Request Decision Revision | 1:N | Service Requests | Cond | Revision references prior record | Prior retained | Append-only | Revision cannot bypass manager/director | DMOD-14 |
+| REL-038 | Service Request | has | Request Close/Archive Record | 1:0..N | Service Requests | Cond | Administrative close/archive | Retained | Reason retained | Closed vs archived **يحتاج اعتماد لاحق** | DMOD-01 |
+| REL-039 | Service Request | has | Request Reopen Record | 1:0..N | Service Requests | Cond | Reopen authority | Retained | Actor/reason retained | Reopen authority **يحتاج اعتماد لاحق** | DMOD-11 |
+| REL-040 | Taxpayer | submits | Business Notification / Balagh | 1:N | Business Notifications / Balaghat | Req | Balagh belongs to submitting taxpayer | Submitted retained | Origin retained | Authorized workflow only | — |
+| REL-041 | Business Notification / Balagh | selects | Balagh Selected Activity | 1:N | Business Notifications / Balaghat | Req (≥1) | Multi-activity allowed | Selection retained | Selection history | Multiple activities permitted | — |
+| REL-042 | Balagh Selected Activity | references | Commercial Activity | N:1 | Business Notifications / Balaghat (selection); Activities and Branches (Activity) | Req | Selection references activity | Activity retire preserves meaning | Snapshot retained | No direct Activity mutation | — |
+| REL-043 | Business Notification / Balagh | selects | Balagh Selected Branch | 1:0..N | Business Notifications / Balaghat | Cond | Branch where form permits | Selection retained | Selection history | Eligibility required | — |
+| REL-044 | Balagh Selected Branch | belongs_to | Balagh Selected Activity | N:1 | Business Notifications / Balaghat | Req when branch selected | Branch tied to selected activity | Selection retained | Eligibility retained | Unrelated activity forbidden; 1 activity 0..N branches | IR-56, IR-72 |
+| REL-045 | Balagh Selected Branch | references | Branch | N:1 | Business Notifications / Balaghat (selection); Activities and Branches (Branch) | Req | Selection references branch | Branch retire preserves meaning | Snapshot retained | Branch-scoped effects only (IR-72) | IR-72 |
+| REL-046 | Business Notification / Balagh | has | Balagh Form/Data Snapshot | 1:N | Business Notifications / Balaghat | Req at material points | Snapshot lifecycle | Never overwrite prior | Append/version | Submitted data preserved | — |
+| REL-047 | Business Notification / Balagh | has | Balagh Status History | 1:N | Business Notifications / Balaghat | Req on transition | Status transitions | Never overwrite | Append-only | Immutable status history | — |
+| REL-048 | Business Notification / Balagh | has | Balagh Assignment History | 1:N | Business Notifications / Balaghat | Opt/Req on assign | Assignment history | Never overwrite | Append-only | Assigned staff and actor identified | — |
+| REL-049 | Balagh Assignment History | references | Staff Profile | N:1 | Business Notifications / Balaghat | Req | Assignment names staff | Staff end preserves history | Actor/staff retained | Eligible staff only | — |
+| REL-050 | Business Notification / Balagh | has | Balagh Completion Request | 1:0..N | Business Notifications / Balaghat | Cond | Completion cycle | Retained | Cycle history | Linked response | — |
+| REL-051 | Balagh Completion Request | answered_by | Balagh Completion Response | 1:0..1 | Business Notifications / Balaghat | Cond | Response linked | Never erase earlier | Additive | Response does not erase prior | — |
+| REL-052 | Business Notification / Balagh | has | Balagh Decision Record | 1:0..1 | Business Notifications / Balaghat | Cond at decision | Decision Record lifecycle | Never overwrite | Revisions additive | Manager/Director final; VO embedded | DMOD-14 |
+| REL-053 | Balagh Decision Record | revised_by | Balagh Decision Revision | 1:N | Business Notifications / Balaghat | Cond | Revision references prior | Prior retained | Append-only | No bypass of manager/director | DMOD-14 |
+| REL-054 | Business Notification / Balagh | has | Balagh Close/Archive Record | 1:0..N | Business Notifications / Balaghat | Cond | Close/archive | Retained | Reason retained | Semantics **يحتاج اعتماد لاحق** | DMOD-01 |
+| REL-055 | Business Notification / Balagh | has | Balagh Reopen Record | 1:0..N | Business Notifications / Balaghat | Cond | Reopen | Retained | Actor/reason retained | Authority **يحتاج اعتماد لاحق** | DMOD-11 |
+| REL-056 | Service Request | may_trigger | Field Visit | 1:0..N | Field Visits | Cond | Visit linked to request | Visit retained | Visit history | Exactly one authorized case context | DMOD-08 |
+| REL-057 | Business Notification / Balagh | may_trigger | Field Visit | 1:0..N | Field Visits | Cond | Visit linked to balagh | Visit retained | Visit history | Exactly one authorized case context | DMOD-08 |
+| REL-058 | Field Visit | has | Visit Schedule | 1:0..N | Field Visits | Opt | Schedule create/change/cancel | Prior schedule retained | Schedule history | Preserve prior operational trace | — |
+| REL-059 | Field Visit | has | Visit Team Member | 1:N | Field Visits | Opt/Req | Team membership | Membership retained | Eligibility trace | Authorized staff only | — |
+| REL-060 | Visit Team Member | references | Staff Profile | N:1 | Field Visits | Req | Membership names staff | Staff end preserves history | Eligibility retained | Eligible for visit period | — |
+| REL-061 | Field Visit | has | Visit Result | 1:0..1 | Field Visits | Cond | Result on completion | Corrections additive | Result retained | No silent overwrite | DMOD-15 |
+| REL-062 | Visit Result | corrected_by | Visit Result Correction | 1:N | Field Visits | Cond | Additive correction | Prior retained | Append-only | Correction authority **يحتاج اعتماد لاحق** | DMOD-15 |
+| REL-063 | Field Visit | has | Visit Evidence | 1:0..N | Field Visits | Opt | Evidence linked to visit | Evidence retained | Access classified | Private by default | — |
+| REL-064 | Service Request | may_have | Payment Due | 1:0..N | Dues and Payment Evidence | Cond | Due assessment | Due retained | Basis/correction history | Basis evidence required | DM-09 |
+| REL-065 | Business Notification / Balagh | may_have | Payment Due | 1:0..N | Dues and Payment Evidence | Cond | Due assessment | Due retained | Basis/correction history | Basis evidence required | DM-09 |
+| REL-066 | Payment Due | has | Due Basis Document Reference | 1:N | Dues and Payment Evidence | Req (≥1) | Basis with due | Basis retained | Basis history | Due requires basis | — |
+| REL-067 | Payment Due | has | Due Correction | 1:0..N | Dues and Payment Evidence | Cond | Material correction | Prior retained | Reason/basis retained | Additive correction | — |
+| REL-068 | Payment Due | may_issue | Payment Notice | 1:0..N | Dues and Payment Evidence | Cond | Notice issuance | Notice retained | Notice history | Notice may trigger notification | — |
+| REL-069 | Payment Due | allocation_context | Payment Receipt | **يحتاج اعتماد لاحق** | Dues and Payment Evidence | Cond | Manual allocation undecided | Receipt lineage retained | Correction/replacement retained | No fixed 1:1, 1:N, or N:M asserted. Open: one due/one receipt; one due/multiple receipts; one receipt/multiple dues; partial payment; replacement vs additional evidence. Confirmation requires accepted receipt. No gateway/provider/settlement. | DM-22 |
+| REL-070 | Payment Receipt | has | Receipt Correction/Replacement | 1:0..N | Dues and Payment Evidence | Cond | Replacement preserves lineage | Original retained | Lineage retained | Replacement vs multi-evidence **يحتاج اعتماد لاحق** | DM-22 |
+| REL-071 | Payment Receipt | confirms_via | Payment Confirmation | 1:0..N | Dues and Payment Evidence | Cond | Confirmation after acceptance | Confirmation retained | Actor/time retained | Accepted receipt required; not final case approval | — |
+| REL-072 | Attachment | has | Attachment Link | 1:N | Attachments and Private Files | Opt | Link to business context | Link retained | Owning context retained | Link does not grant access alone | — |
+| REL-073 | Attachment | has | Attachment Access Classification | 1:1 | Attachments and Private Files | Req | Classification with attachment | Reclass audited | Classification history | Transaction attachments private | — |
+| REL-074 | Attachment | has | Attachment Version/Replacement History | 1:N | Attachments and Private Files | Cond | Version/replace | Prior retained | Version lineage | Storage metrics retained | DM-26 |
+| REL-075 | Service Request | may_send | Notification Message | 1:0..N | Notification Delivery | Cond | Delivery requested | Message retained | Delivery history | Delivery never decides outcome | — |
+| REL-076 | Business Notification / Balagh | may_send | Notification Message | 1:0..N | Notification Delivery | Cond | Delivery requested | Message retained | Delivery history | Delivery never decides outcome | — |
+| REL-077 | Payment Notice | may_trigger | Notification Message | 1:0..N | Notification Delivery (message); Dues owns notice | Opt | Optional payment context | Notice unchanged by delivery | Optional link retained | Not every notification is payment-related | — |
+| REL-078 | Notification Message | has | Delivery Attempt | 1:N | Notification Delivery | Req on send | Attempts append-only | Never overwrite | Attempt outcomes retained | Delivery ≠ read | — |
+| REL-079 | Delivery Attempt | may_retry_as | Delivery Retry | 1:0..N | Notification Delivery | Cond | Retry append-only | Prior attempt retained | Retry outcomes retained | Idempotent disposition where available | — |
+| REL-080 | Notification Message | uses | Notification Template/Type | N:1 | Notification Delivery | Opt | Template at send time | Template change does not rewrite history | Historical template context | Later template changes non-retroactive | — |
+| REL-081 | Notification Message | uses | Notification Channel Configuration | N:1 | Notification Delivery | Opt | Channel at send time | Channel change non-retroactive | Historical channel context | Channel behavior **يحتاج اعتماد لاحق** | DM-25 |
+| REL-082 | Notification Message | has | Notification Read State | 1:0..N | Notification Delivery | Cond | Recipient/profile-specific | Read state retained | First-read and ack timestamps | Delivered may remain unread; unknown ≠ read | DM-25 |
+| REL-083 | Import Batch | has | Import Preview | 1:0..1 | Imports and Data Quality | Cond | Preview before validate | Preview retained | Distinct from commit | Preview ≠ commit | — |
+| REL-084 | Import Batch | has | Import Validation Result | 1:0..N | Imports and Data Quality | Cond | Validation before commit | Result retained | Distinct lifecycle | Validation precedes commit | DMOD-13 |
+| REL-085 | Import Batch | has | Import Row Result | 1:N | Imports and Data Quality | Cond | Per-row outcome | Row retained | Traceable to batch | Row outcome retained | — |
+| REL-086 | Import Row Result | may_have | Import Error | 1:0..N | Imports and Data Quality | Cond | Error detail | Error retained | Traceable | Error taxonomy **يحتاج اعتماد لاحق** | DM-12 |
+| REL-087 | Import Batch | may_have | Import Approval | 1:0..N | Imports and Data Quality | Cond | Approval before commit | Approval retained | Actor/time | SoD exceptions **يحتاج اعتماد لاحق** | DMOD-13 |
+| REL-088 | Import Batch | may_have | Import Rejection | 1:0..N | Imports and Data Quality | Cond | Rejection prevents commit | Rejection retained | Actor/reason | Rejection blocks commit | — |
+| REL-089 | Import Batch | may_have | Import Failure | 1:0..N | Imports and Data Quality | Cond | Failure outcome | Failure retained | Distinct from rejection | Failure retained | — |
+| REL-090 | Import Batch | may_have | Import Commit | 1:0..1 | Imports and Data Quality | Cond | Commit after validation/approval | Commit retained | Idempotency disposition | No silent duplicate commit | — |
+| REL-091 | Content Item | has | Content Revision | 1:N | Content Management | Req | Revision lineage | Prior retained | Revision history | Publication via revision | DMOD-10 |
+| REL-092 | Content Item | has | Publication Record | 1:0..N | Content Management | Cond | Explicit publication | Publication retained | Auditable | Public attachment only in this context | — |
+| REL-093 | Content Item | has | Withdrawal Record | 1:0..N | Content Management | Cond | Withdrawal not erase | Withdrawal retained | Auditable | Withdrawal/reclass auditable | — |
+| REL-094 | Content Item | has | Announcement Validity Period | 1:0..N | Content Management | Opt | Validity window | Period retained | Validity history | Validity governed | — |
+| REL-095 | Audit Event | has | Sensitive Change Detail | 1:0..N | Audit and Security | Cond | Detail with event | Never hard-delete | Before/after where applicable | Append-only | DM-13 |
+| REL-096 | Audit Event | has | Actor Context | 1:1 | Audit and Security | Req | Actor known at event time | Never hard-delete | Actor context retained | Supporting evidence only | — |
+| REL-097 | Domain Event History Record | feeds | Reporting Projection Definition | N:1 | Reporting and Analytics | Opt | Projection rebuildable | Source history authoritative | Derived non-authoritative | Projections rebuildable | DM-15 |
+| REL-098 | Saved Report Filter | owned_by | User Profile | N:1 | Reporting and Analytics | Req | Filter personal/shared policy | Filter retained | Filter history | View ≠ export | DM-16 |
+| REL-099 | Report Export Record | exports | Reporting Projection Definition | N:1 | Reporting and Analytics | Req | Export attempt/outcome | Export retained | Export audited | Separate export authorization | DM-16 |
+| REL-100 | Report Export Record | requested_by | User Profile | N:1 | Reporting and Analytics | Req | Export requester | Requester retained | Authorization context retained | Export identifies requesting user | — |
+
+## Count
+
+**Logical relationship count: 100 (REL-001 through REL-100).**
+
+Notes:
+
+- REL-069 records Due–Receipt allocation context with cardinality **يحتاج اعتماد لاحق** and must not be drawn as a fixed Mermaid edge.
+- REL-028 and REL-044 enforce selected-branch eligibility (each selected branch belongs to exactly one selected activity; one selected activity may have zero or more selected branches).
+- Taxpayer-to-Property navigation is derived from active Property Ownership Records (REL-020–REL-022) and is not a separate authoritative relationship.
+- Branch-scoped effects apply only to the selected Branch; unrelated branches remain unchanged (IR-72).
