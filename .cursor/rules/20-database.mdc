@@ -1,13 +1,15 @@
 ---
 description: Marib Tax database rules — migrations, history, production safety
-globs: database/**/*
+globs: database/**/*,supabase/migrations/**/*
 alwaysApply: false
 ---
 
 # Database
 
-- Every schema change goes through a versioned migration under `database/migrations/`.
+- Every schema change goes through a versioned migration under `supabase/migrations/`.
 - Never edit an already-applied migration; create a new migration instead.
 - Do not automate production migrations.
 - No destructive cleanup (drop/truncate of operational or audit data) without explicit written approval.
 - Preserve history and audit data; historical request and version records must remain intact.
+- Official runner is Supabase CLI; see `docs/governance/MARIB-TAX-SUPABASE-CLI-MIGRATION-STANDARD-01.md`.
+- Former path `database/migrations/` is superseded and must not hold active migration copies.

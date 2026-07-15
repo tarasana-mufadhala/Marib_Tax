@@ -30,7 +30,9 @@ Use [Conventional Commits](https://www.conventionalcommits.org/):
 
 ## Database migration review
 
-- Every schema change requires a versioned migration under `database/migrations/`.
+- Every schema change requires a versioned migration under `supabase/migrations/`.
+- Supabase CLI is the official migration and history mechanism (see `docs/governance/MARIB-TAX-SUPABASE-CLI-MIGRATION-STANDARD-01.md`).
+- Former path `database/migrations/` is superseded and must not hold active migration copies.
 - Never edit an already-applied migration.
 - Migration PRs require explicit review of rollback/impact notes.
 - Production migrations are never automatic.

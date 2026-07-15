@@ -326,7 +326,7 @@
 | Writers | NestJS privileged DB role only for application schemas |
 | Clients | No direct business mutation; no service-role in clients |
 | PostgREST | Transactional application schemas not exposed for client CRUD by default |
-| Migrations | Owned per schema/module; path expected under `database/migrations/` when implementation starts (not in this documentation pack) |
+| Migrations | Owned per schema/module; canonical path `supabase/migrations/` via Supabase CLI (former `database/migrations/` path superseded before remote apply) |
 | Secrets | Never stored in schema docs or client config samples here |
 
 ## Related documents

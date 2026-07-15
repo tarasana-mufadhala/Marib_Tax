@@ -50,7 +50,7 @@
 - `packages/config/README.md`
 - `packages/testing/README.md`
 - `database/README.md`
-- `database/migrations/README.md`
+- `database/migrations/README.md` (historical foundation layout; active migrations later moved to `supabase/migrations/`)
 - `database/seeds/README.md`
 - `database/tests/README.md`
 - `infrastructure/README.md`
@@ -157,7 +157,7 @@ Confirmed: **`main` was not modified.**
 
 1. **Corepack side effect:** A read-only `pnpm --version` check caused Corepack to download `pnpm@11.13.0` automatically on this host. No project workspace dependencies were installed. The detected version was recorded in root `package.json` `packageManager`.
 2. **Working-copy line endings:** Git reported that `README.md` currently has CRLF in the working copy and will be normalized to LF per `.gitattributes` when Git next touches the file. `git diff --check` still passed.
-3. **Supabase CLI:** Not detected — expected for a later phase; not a foundation blocker.
+3. **Supabase CLI:** Not detected at foundation time — expected for a later phase; not a foundation blocker. *(Historical note: later enablement selected versioned `npx supabase@2.109.1`; see MARIB-TAX-SUPABASE-CLI-ENABLEMENT-01.)*
 4. **SECURITY.md reporting address:** Uses placeholder `security@example.invalid` until an official contact is designated.
 5. Changes remain **uncommitted** by design (task forbids commit/push).
 

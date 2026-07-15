@@ -18,6 +18,26 @@
 6. **Forward-only preference.** Prefer additive corrective migrations over destructive rollback of production data.
 7. **Open decisions gate.** Batches that encode unresolved PHY/DM choices must not invent silent defaults that contradict **يحتاج اعتماد لاحق** registers.
 
+### Global migration convention (Supabase CLI)
+
+| Rule | Value |
+| --- | --- |
+| Canonical directory | `supabase/migrations/` |
+| Official runner | Supabase CLI (reviewed version recorded in the migration standard) |
+| Target for project `sjmtiwzddztxfrncwkpx` | `production` |
+| Local config | `supabase/config.toml` must exist before any link stage |
+| History | Inspect remote migration history before apply; stop on mismatch |
+| Dry-run | `db push --dry-run` (linked) is mandatory before production apply |
+| Batch width | One controlled batch only per apply stage |
+| `--include-all` | Do not use unless separately reviewed and justified |
+| `migration repair` | Never automatic; requires separate explicit authorization |
+| `db reset --linked` | Prohibited |
+| Batch 2 gate | Do not proceed to Batch 2 until Batch 01A is applied and verification returns accepted `PASS` |
+
+Former path `database/migrations/` is **superseded before remote apply** and must not hold active migration copies.
+
+This sequence document does **not** authorize production link or apply by itself.
+
 ### Shared fields used in every batch
 
 | Field | Meaning |

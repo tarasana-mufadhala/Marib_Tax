@@ -2,6 +2,6 @@
 
 Database assets for the Marib Tax System.
 
-**Purpose:** Holds PostgreSQL/Supabase migrations, seeds, and database-level tests.
+**Purpose:** Holds seeds, database-level tests, and related assets. Canonical versioned migrations live under **`supabase/migrations/`** (Supabase CLI).
 
-**Status:** Reserved directory only. Implementation has not started. No migrations, schemas, or seeds have been created.
+**Status:** Seeds/tests remain reserved. Active migrations are not stored under `database/migrations/` (that path is a superseded placeholder; see its README).

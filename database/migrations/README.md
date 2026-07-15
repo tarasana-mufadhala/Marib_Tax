@@ -1,7 +1,12 @@
 # database/migrations
 
-Versioned database migrations for the Marib Tax System.
+**Status:** Historical / superseded placeholder directory.
 
-**Purpose:** All schema changes must be expressed as migrations. Applied migrations must never be edited.
+Canonical migrations now live under **`supabase/migrations/`**.
 
-**Status:** Reserved directory only. Implementation has not started. No migrations have been created or applied.
+Supabase CLI is the official migration and history mechanism
+(`docs/governance/MARIB-TAX-SUPABASE-CLI-MIGRATION-STANDARD-01.md`, ADR-005).
+
+This directory is retained so foundation layout checks continue to pass.
+It must contain **zero** active migration SQL files.
+Do not place new migrations here.

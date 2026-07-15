@@ -19,11 +19,11 @@
 - `docs/security/MARIB-TAX-RLS-DATABASE-ACCESS-REQUIREMENTS-01.md`
 - `docs/governance/MARIB-TAX-PHYSICAL-DESIGN-OPEN-DECISIONS-01.md`
 - `docs/preflight/MARIB-TAX-PHYSICAL-SCHEMA-DESIGN-01-REPORT.md`
-- `docs/architecture/adr/ADR-005-POSTGRES-SUPABASE.md` (migrations under `database/migrations/`)
+- `docs/architecture/adr/ADR-005-POSTGRES-SUPABASE.md` (historical authoring used `database/migrations/`; active path now `supabase/migrations/`)
 - `docs/architecture/adr/ADR-010-NO-DIRECT-CLIENT-DATABASE-WRITES.md`
 - `CONTRIBUTING.md`
 - `README.md`
-- `database/migrations/README.md`
+- `database/migrations/README.md` (historical placeholder; superseded)
 - `scripts/README.md`
 - `.cursor/rules/20-database.mdc`
 
@@ -33,15 +33,22 @@ Note: `AGENTS.md` was not present in the repository at authoring time.
 
 | Item | Choice |
 | --- | --- |
-| Directory | `database/migrations/` (ADR-005 / CONTRIBUTING / database README) |
-| Filename | `20260715175300_create_marib_tax_application_schemas.sql` |
-| Not used | `supabase/migrations/` (no existing Supabase CLI migration tree) |
+| Active directory (current) | `supabase/migrations/` (Supabase CLI; ADR-005 amendment) |
+| Historical authoring directory | `database/migrations/` — **superseded before remote apply** |
+| Filename | `20260715175300_create_marib_tax_application_schemas.sql` (unchanged) |
+| Timestamp / version | `20260715175300` (unchanged) |
+| SQL content | Unchanged |
+| SHA-256 | `A197D608D6F33D61488FA6DA3C32BE4E7B5F68458C2E1C6D2482F62F76DB8171` (unchanged) |
+
+## Path supersession note (MARIB-TAX-SUPABASE-CLI-ENABLEMENT-01)
+
+After SQL authoring and review under the former path, owner-approved enablement moved the identical migration file to `supabase/migrations/` before any remote apply. No Batch 01A migration was applied from `database/migrations/`. Supabase CLI is now the approved mechanism. Approved target environment for project ref `sjmtiwzddztxfrncwkpx` is **production**. This report remains historical for SQL authoring and review; the current active path is the Supabase CLI path.
 
 ## Files created
 
 | Path | Role |
 | --- | --- |
-| `database/migrations/20260715175300_create_marib_tax_application_schemas.sql` | Migration (unchanged in remediation-01) |
+| `supabase/migrations/20260715175300_create_marib_tax_application_schemas.sql` | Active migration (moved unchanged; former path superseded) |
 | `scripts/db/verify/verify_batch_01a_application_schemas.sql` | Read-only verification |
 | `docs/runbooks/MARIB-TAX-DB-FOUNDATION-BATCH-01A-RUNBOOK.md` | Future apply runbook |
 | `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-01A-REPORT.md` | This report |

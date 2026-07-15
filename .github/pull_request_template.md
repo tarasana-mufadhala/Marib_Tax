@@ -19,7 +19,7 @@
 ## Migrations
 
 - [ ] No migration
-- [ ] Migration added under `database/migrations/`
+- [ ] Migration added under `supabase/migrations/`
 - [ ] Rollback / forward notes included
 - [ ] Applied migrations were not edited
 
