@@ -93,7 +93,7 @@ Expected constraint-backed indexes: 5.
 - `ENABLE ROW LEVEL SECURITY` on both tables.
 - No `CREATE POLICY`.
 - No grants to `PUBLIC`, `anon`, `authenticated`, or `service_role`.
-- Explicit revocation is included to neutralize inherited/default table ACL posture.
+- Explicit revocation removes direct table privileges from those named roles; inherited-role analysis remains part of the later DB-role security design.
 - No schema grant, default privilege, database role, or search-path change.
 - NestJS remains the future authoritative mutation and authorization layer.
 - Detailed DB roles, grants, and RLS policies remain Batch 17.
