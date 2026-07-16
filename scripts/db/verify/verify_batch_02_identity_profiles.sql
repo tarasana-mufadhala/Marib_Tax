@@ -148,7 +148,7 @@ expected_constraints(
     ('staff_profiles_user_profile_id_fkey', 'staff_profiles', 'f', ARRAY['user_profile_id']::text[], 'identity.user_profiles', ARRAY['id']::text[], NULL),
     ('staff_profiles_created_by_profile_id_fkey', 'staff_profiles', 'f', ARRAY['created_by_profile_id']::text[], 'identity.user_profiles', ARRAY['id']::text[], NULL),
     ('staff_profiles_updated_by_profile_id_fkey', 'staff_profiles', 'f', ARRAY['updated_by_profile_id']::text[], 'identity.user_profiles', ARRAY['id']::text[], NULL),
-    ('staff_profiles_effective_period_check', 'staff_profiles', 'c', ARRAY['effective_from', 'effective_to']::text[], NULL, NULL, 'CHECK (effective_to IS NULL OR effective_to > effective_from)')
+    ('staff_profiles_effective_period_check', 'staff_profiles', 'c', NULL, NULL, NULL, 'effective_toISNULLOReffective_to>effective_from')
 ),
 actual_constraints AS (
   SELECT
@@ -182,7 +182,16 @@ actual_constraints AS (
     con.confdeltype,
     con.condeferrable,
     con.condeferred,
-    pg_catalog.pg_get_constraintdef(con.oid, true) AS definition
+    pg_catalog.pg_get_constraintdef(con.oid, true) AS definition,
+    CASE
+      WHEN con.contype = 'c' THEN pg_catalog.regexp_replace(
+        pg_catalog.pg_get_expr(con.conbin, con.conrelid),
+        '[[:space:]()]',
+        '',
+        'g'
+      )
+      ELSE NULL
+    END AS normalized_check
   FROM pg_catalog.pg_constraint con
   JOIN pg_catalog.pg_class c ON c.oid = con.conrelid
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
@@ -204,11 +213,13 @@ constraint_mismatches AS (
     e.target_columns AS expected_target_columns,
     a.target_columns AS actual_target_columns,
     a.definition,
+    a.normalized_check,
     CASE
       WHEN e.constraint_name IS NULL THEN 'UNEXPECTED_CONSTRAINT'
       WHEN a.constraint_name IS NULL THEN 'MISSING_CONSTRAINT'
       WHEN a.constraint_type <> e.constraint_type THEN 'TYPE_MISMATCH'
-      WHEN a.source_columns IS DISTINCT FROM e.source_columns THEN 'SOURCE_COLUMN_MISMATCH'
+      WHEN e.constraint_type <> 'c'
+       AND a.source_columns IS DISTINCT FROM e.source_columns THEN 'SOURCE_COLUMN_MISMATCH'
       WHEN a.target_table IS DISTINCT FROM e.target_table THEN 'TARGET_TABLE_MISMATCH'
       WHEN a.target_columns IS DISTINCT FROM e.target_columns THEN 'TARGET_COLUMN_MISMATCH'
       WHEN a.constraint_type = 'f'
@@ -219,7 +230,7 @@ constraint_mismatches AS (
          OR a.condeferred
        ) THEN 'FOREIGN_KEY_ACTION_MISMATCH'
       WHEN e.expected_check IS NOT NULL
-       AND a.definition <> e.expected_check THEN 'CHECK_DEFINITION_MISMATCH'
+       AND a.normalized_check <> e.expected_check THEN 'CHECK_DEFINITION_MISMATCH'
       WHEN a.condeferrable OR a.condeferred THEN 'UNEXPECTED_DEFERRABLE'
       ELSE 'OK'
     END AS status
