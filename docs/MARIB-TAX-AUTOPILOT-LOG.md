@@ -31,3 +31,11 @@
 - Found that API paths and HTTP verbs are explicitly unapproved while OpenAPI must be authoritative; reclassified contract implementation from `SOURCE_READY` to `REQUIRES_USER_APPROVAL`/`BLOCKED` rather than inventing routes.
 - Added decision `API-01` covering version prefix, resource/path naming, lifecycle verbs, error envelope, and compatibility policy.
 - Production impact: **none**. No application dependencies, endpoints, migration, SQL, deployment, secret, notification, or operational data were changed.
+
+## 2026-07-17 — Extended-cycle policy update
+
+- Updated the operating policy so every scheduled and Run now invocation continues across multiple task boundaries.
+- Required queue re-evaluation and immediate continuation after each completed task, including after commit, PR, CI, and merge.
+- Added explicit stop conditions and a time-limit checkpoint contract for direct resumption with focused verification.
+- Synchronized the active hourly automation prompt with the extended-cycle and checkpoint rules.
+- Production impact: **none**.
