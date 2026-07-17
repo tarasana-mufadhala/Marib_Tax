@@ -76,6 +76,12 @@
 - Added positive and negative authorization tests for ownership, missing/exact permission, inactive role/revoked assignment, reviewer/payment/report separation, report view/export separation, unknown keys, no admin wildcard, and import SoD.
 - Local gates: OpenAPI PASS; typecheck PASS; tests PASS (23); build PASS; lint PASS; formatting PASS; `git diff --check` PASS.
 - Production impact: **none**.
+- Merged API-02 authorization foundation through PR #27 (`8f4280351f2a67deab978484a753d1a5ea0e7115`) after expanded CI PASS.
+- Re-evaluated the Queue and inspected the first taxpayer-owned request draft slice across SRS, API baseline, logical model, and physical column catalog.
+- Found request form `schema_version`, payload schema versioning, and initial typed payload/response semantics explicitly unresolved.
+- Added API-03 instead of inventing DTO fields or an arbitrary JSON contract.
+- No safe business implementation remains outside API-03 and the independently closed PROD-DB-03 gate.
+- Production impact remains **none**.
 - Merged the policy through PR #21 as `8fe5f5187b1844ce87859f2c858b07fa98c45202` after Foundation CI PASS.
 - Re-evaluated the queue in the same run and inspected the recorded Node/pnpm/Flutter toolchain, environment strategy, pnpm boundaries, and placeholder application/package directories.
 - Determined that meaningful API/runtime contract initialization is blocked by `API-01`; declined to create placeholder-only scaffolding with no approved interface or verifiable runtime behavior.

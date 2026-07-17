@@ -52,7 +52,8 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 | 6 | OpenAPI, NestJS API, and shared-contract foundation | COMPLETE | PR #24 / `054cd3526e75a5a700419cdb19d3ea53f46fe401` | Expanded CI PASS; production remains closed. |
 | 7 | Stable error-code catalog and runtime error envelope | COMPLETE | PR #25 / `5707f58c88be860b34ff9ad01742c0e9ae6608be` | Expanded CI PASS. |
 | 8 | Stable endpoint permission identifiers | COMPLETE | API-02 / ADR-012 | Explicitly approved on 2026-07-18. |
-| 9 | Fail-closed NestJS authorization foundation | REVIEW | `chore/marib-tax-autopilot-orchestrator` | Central catalog, decorators, global guard, actor/policy/audit abstractions, and authorization matrix tests PASS locally. |
+| 9 | Fail-closed NestJS authorization foundation | COMPLETE | PR #27 / `8f4280351f2a67deab978484a753d1a5ea0e7115` | Expanded CI PASS; no admin bypass. |
+| 10 | First taxpayer request-draft business contract | REQUIRES_USER_APPROVAL | API-03 | DTO/payload schema-version semantics are explicitly unresolved. |
 
 ## Quality gates
 
@@ -75,13 +76,13 @@ Request explicit approval using `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-03
 
 ## Continuation checkpoint
 
-- **Last completed task:** API-02 explicitly approved and recorded in ADR-012 and the authorization baselines.
-- **Active task:** fail-closed authorization foundation; 23 tests PASS locally, pending PR/CI/security review.
+- **Last completed task:** API-02 authorization foundation merged in PR #27 (`8f4280351f2a67deab978484a753d1a5ea0e7115`), expanded CI PASS.
+- **Active task:** none; first request-draft contract inspected and blocked at API-03.
 - **Owner:** `chore/marib-tax-autopilot-orchestrator` in `C:\projects\Marib_Tax-autopilot`.
 - **Approval gates:** production Batch 03 (`PROD-DB-03`) remains closed. API-01 is approved.
-- **Queue result:** authorization infrastructure is in review. Database Batch 04 remains blocked by PROD-DB-03.
-- **Highest next task:** merge authorization foundation after expanded CI, then inspect the first taxpayer-owned request draft contract for complete approved DTO semantics.
-- **Next action:** commit/push/PR, resolve findings, merge on PASS, then re-evaluate the first business slice without production operations.
+- **Queue result:** API/runtime/authorization foundations are complete. First business DTO is blocked by API-03; database Batch 04 remains blocked by PROD-DB-03.
+- **Highest next task:** API-03 or PROD-DB-03, whichever receives explicit approval first.
+- **Next action:** focused Git/CI verification, apply the approved decision, and do not invent payload or production behavior.
 
 ## Realistic completion estimate
 
