@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import {
   ConflictException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -10,14 +11,18 @@ import type {
   CreateActivityAddressChangeDraft,
   EditActivityAddressChangeDraft,
 } from '@marib-tax/contracts';
-import type {
-  RequestDraftRepository,
-  StoredRequestDraft,
+import {
+  REQUEST_DRAFT_REPOSITORY,
+  type RequestDraftRepository,
+  type StoredRequestDraft,
 } from './request-draft.repository.js';
 
 @Injectable()
 export class RequestDraftService {
-  constructor(private readonly repository: RequestDraftRepository) {}
+  constructor(
+    @Inject(REQUEST_DRAFT_REPOSITORY)
+    private readonly repository: RequestDraftRepository,
+  ) {}
 
   async create(
     ownerActorId: string,

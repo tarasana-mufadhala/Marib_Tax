@@ -8,7 +8,7 @@
 
 ## Git and delivery state
 
-- `origin/main`: `1e80e3809bca4e3a72e302f3e75ecf5962f4cbfc` (PR #29 merged).
+- `origin/main`: `46c3609ef0a8fc604d1c77a62b8009d2fbc7d492` (PR #30 merged).
 - Local `main`: `8c3628f46e0d8644380f5bc120c868da92e65757`, one local documentation commit ahead of `origin/main`.
 - Autopilot worktree: `C:\projects\Marib_Tax-autopilot`, branch `chore/marib-tax-autopilot-orchestrator`, clean at inventory start.
 - Primary worktree: `C:\projects\Marib_Tax`, branch `main`; its ahead commit is preserved and not rewritten.
@@ -54,11 +54,12 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 | 8 | Stable endpoint permission identifiers | COMPLETE | API-02 / ADR-012 | Explicitly approved on 2026-07-18. |
 | 9 | Fail-closed NestJS authorization foundation | COMPLETE | PR #27 / `8f4280351f2a67deab978484a753d1a5ea0e7115` | Expanded CI PASS; no admin bypass. |
 | 10 | First taxpayer request-draft business contract | COMPLETE | PR #29 / `1e80e3809bca4e3a72e302f3e75ecf5962f4cbfc` | Foundation CI PASS; production integration intentionally absent. |
+| 11 | Supabase Auth and current-actor source boundary | ACTIVE | API-04 / ADR-014 | Explicitly resolved under source-decision delegation; local implementation/tests active. |
 
 ## Quality gates
 
 - Foundation validation: PASS on PR #17 and current `origin/main`.
-- NestJS/contracts: OpenAPI PASS, typecheck PASS, 39 tests PASS, build PASS, lint PASS, formatting PASS, `git diff --check` PASS for API-03 locally.
+- NestJS/contracts: OpenAPI PASS, typecheck PASS, 54 tests PASS, build PASS, lint PASS, formatting PASS, `git diff --check` PASS for API-04 locally.
 - Flutter/Next.js/worker: NOT_STARTED.
 - Migration execution: CLOSED pending explicit approval.
 - Production deployment: NOT_STARTED and CLOSED.
@@ -72,17 +73,17 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 
 ## Highest next safe task
 
-No safe `READY` task remains. Request-draft production persistence is dependency-blocked by the database sequence, and real actor/runtime integration needs an approved authentication boundary. Do not execute PROD-DB-03 without separate approval.
+Complete API-04 through full local gates and PR/CI/merge, then select the next dependency-correct source task under the delegated engineering authority. Do not execute PROD-DB-03 without separate approval.
 
 ## Continuation checkpoint
 
-- **Last completed task:** API-03 merged through PR #29 (`1e80e3809bca4e3a72e302f3e75ecf5962f4cbfc`) after Foundation CI PASS.
-- **Active task:** none; no independent safe `READY` task remains.
+- **Last completed task:** API-03 completion checkpoint merged through PR #30 (`46c3609ef0a8fc604d1c77a62b8009d2fbc7d492`) after Foundation CI PASS.
+- **Active task:** API-04 source authentication/current-actor boundary and isolated runtime tests.
 - **Owner:** `chore/marib-tax-autopilot-orchestrator` in `C:\projects\Marib_Tax-autopilot`.
-- **Approval gates:** production Batch 03 (`PROD-DB-03`) remains closed. API-01/API-02/API-03 are approved.
-- **Queue result:** API-03 is complete. Database Batch 04 remains blocked by PROD-DB-03 and unresolved data decisions; real request persistence/actor wiring is not independently ready.
-- **Highest next task:** API-04 authentication/current-actor boundary or PROD-DB-03, whichever receives explicit approval first.
-- **Next action:** perform a focused Git/CI freshness check, record any new approval, and resume directly from its approved boundary without repeating the full inventory.
+- **Approval gates:** production Batch 03 (`PROD-DB-03`) remains closed. API-01 through API-04 are approved; reversible source engineering decisions are delegated.
+- **Queue result:** API-04 is active; production persistence and database Batch 04 remain blocked.
+- **Highest next task:** finish API-04 delivery, then re-evaluate independent source modules without creating artificial API approval gates.
+- **Next action:** run complete gates and security review, commit/push/PR/CI/merge only on PASS, update state, then continue the next safe source task.
 
 ## Realistic completion estimate
 

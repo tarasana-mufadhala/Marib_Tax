@@ -12,9 +12,13 @@ Discover current source state before every cycle, preserve work with known or un
 
 The autopilot may inspect source and Git state; create isolated branches/worktrees; edit source, tests, and documentation; draft migrations; run local validation; commit; push normal branches; open pull requests; monitor and fix CI; and merge changes only after all gates pass.
 
+The project owner has delegated all reversible, Git-reviewable source and engineering decisions to the autopilot. This includes API/DTO/schema design, authentication and authorization boundaries, source-only security architecture, packages/tooling, modules, repository ports/adapters, OpenAPI, errors, tests, logging/audit interfaces, non-production runtime registration, source migrations, verification scripts, ADRs, and technical governance. Choose the simplest conservative standards-based option, document material choices in an ADR, test positive and negative behavior, and do not create a new human approval gate for a purely technical reversible source decision.
+
 ## Fail-closed actions
 
 Fresh explicit user approval is required before any production migration/SQL, database write, real operational import, taxpayer-data mutation, payment confirmation, official decision, real SMS/OTP, deployment/publish, secret change, RLS disablement, destructive database action, force push, or deletion of unmerged work.
+
+Human approval also remains required for legal/regulatory wording, unresolved business behavior that changes service meaning, and a HIGH/CRITICAL risk that cannot be isolated. The source-decision delegation never implies production approval.
 
 At a production gate, prepare the exact command, preflight, expected effects, stop conditions, and post-verification, then wait for approval while continuing independent source work.
 
