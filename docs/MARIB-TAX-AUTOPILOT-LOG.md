@@ -56,6 +56,15 @@
 - Added negative tests for stack/SQL/secret non-disclosure and rejection of unsafe caller-supplied correlation identifiers.
 - Local error-task results: OpenAPI PASS; typecheck PASS; tests PASS (8); build PASS; lint PASS; formatting PASS; `git diff --check` PASS.
 - Production impact remains **none**.
+
+## 2026-07-17 — Business-contract queue review
+
+- Merged safe error-envelope enforcement through PR #25 (`5707f58c88be860b34ff9ad01742c0e9ae6608be`) after expanded CI PASS.
+- Re-evaluated the Queue and inspected the API baseline, permissions baseline, and transition authorization matrix for the first business contract slice.
+- Confirmed the transition matrix explicitly marks endpoint permission identifiers as proposed and requiring API/security confirmation.
+- Added decision API-02 rather than publishing business endpoints with unstable authorization constants.
+- No safe `READY` implementation remains outside API-02 and the separately closed PROD-DB-03 gate.
+- Production impact: **none**.
 - Merged the policy through PR #21 as `8fe5f5187b1844ce87859f2c858b07fa98c45202` after Foundation CI PASS.
 - Re-evaluated the queue in the same run and inspected the recorded Node/pnpm/Flutter toolchain, environment strategy, pnpm boundaries, and placeholder application/package directories.
 - Determined that meaningful API/runtime contract initialization is blocked by `API-01`; declined to create placeholder-only scaffolding with no approved interface or verifiable runtime behavior.
