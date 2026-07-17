@@ -1,0 +1,134 @@
+openapi: 3.1.0
+info:
+  title: Marib Tax API
+  version: 1.0.0
+  description: Authoritative API-01 foundation. Business operations use the /api/v1 prefix.
+  license:
+    name: Proprietary
+    identifier: LicenseRef-Proprietary
+servers:
+  - url: http://localhost:{port}
+    description: Local development placeholder
+    variables:
+      port:
+        default: '3000'
+x-business-api-prefix: /api/v1
+tags:
+  - name: Platform health
+    description: Isolated non-data-bearing operational probes.
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: Liveness probe
+      tags: [Platform health]
+      security: []
+      responses:
+        '200':
+          description: Process is alive.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /ready:
+    get:
+      operationId: getReadiness
+      summary: Readiness probe
+      tags: [Platform health]
+      security: []
+      responses:
+        '200':
+          description: Process configuration is ready.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadinessResponse'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Server-validated bearer token. No token or secret is stored here.
+  schemas:
+    Uuid:
+      type: string
+      format: uuid
+    FieldError:
+      type: object
+      additionalProperties: false
+      required: [field, code, message]
+      properties:
+        field: { type: string, minLength: 1 }
+        code: { type: string, pattern: '^[A-Z][A-Z0-9_]*$' }
+        message: { type: string, minLength: 1 }
+    ErrorBody:
+      type: object
+      additionalProperties: false
+      required: [code, message, traceId]
+      properties:
+        code: { type: string, pattern: '^[A-Z][A-Z0-9_]*$' }
+        message: { type: string, minLength: 1 }
+        details:
+          type: array
+          items: { $ref: '#/components/schemas/FieldError' }
+        traceId: { type: string, minLength: 1 }
+    ErrorEnvelope:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error: { $ref: '#/components/schemas/ErrorBody' }
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required: [status, service, version]
+      properties:
+        status: { type: string, const: ok }
+        service: { type: string, const: marib-tax-api }
+        version: { type: string, const: v1 }
+    ReadinessResponse:
+      type: object
+      additionalProperties: false
+      required: [status, service, version]
+      properties:
+        status: { type: string, const: ready }
+        service: { type: string, const: marib-tax-api }
+        version: { type: string, const: v1 }
+    PageMetadata:
+      type: object
+      additionalProperties: false
+      required: [page, pageSize, totalItems, totalPages]
+      properties:
+        page: { type: integer, minimum: 1 }
+        pageSize: { type: integer, minimum: 1, maximum: 100 }
+        totalItems: { type: integer, minimum: 0 }
+        totalPages: { type: integer, minimum: 0 }
+  parameters:
+    Page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    PageSize:
+      name: pageSize
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+  responses:
+    TooManyRequests:
+      description: Request rate limit exceeded.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    ServiceUnavailable:
+      description: Service is not ready. The response contains no dependency internals.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+security:
+  - bearerAuth: []

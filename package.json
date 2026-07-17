@@ -4,7 +4,23 @@
   "description": "Marib Tax System monorepo — repository foundation only; no runtime application dependencies.",
   "packageManager": "pnpm@11.13.0",
   "scripts": {
-    "validate:foundation": "bash scripts/validate-foundation.sh"
+    "validate:foundation": "bash scripts/validate-foundation.sh",
+    "validate:openapi": "redocly lint --config redocly.yaml packages/contracts/openapi/marib-tax.v1.yaml",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "build": "pnpm -r --if-present build",
+    "test": "pnpm -r --if-present test",
+    "lint": "eslint apps/api/src apps/api/test packages/contracts/src packages/contracts/test --max-warnings=0",
+    "format:check": "prettier --check \"{apps,packages}/**/*.{ts,json,yaml}\""
+  },
+  "devDependencies": {
+    "@eslint/js": "9.39.5",
+    "@redocly/cli": "2.39.0",
+    "@types/node": "24.13.3",
+    "eslint": "9.39.5",
+    "prettier": "3.9.5",
+    "typescript": "5.9.3",
+    "typescript-eslint": "8.64.0",
+    "vitest": "4.1.10"
   },
   "engines": {
     "node": ">=20"
