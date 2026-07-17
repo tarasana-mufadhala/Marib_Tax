@@ -40,4 +40,12 @@ Only decisions that require an authorized human are listed here. Source work mus
 - **Deferred:** decision revision, rejected/archived reopen, field-visit result correction, and receipt correction remain non-runtime reserved keys.
 - **Unaffected gate:** `PROD-DB-03` remains separately closed.
 
+### API-03 — Request draft form contract and schema versioning
+
+- **State:** REQUIRES_USER_APPROVAL
+- **Source constraint:** the physical catalog defines request form snapshot headers and JSON payloads but explicitly leaves JSON schema versioning for later approval; service type version labels and payload structure are not final.
+- **Decision needed:** approve the first request-draft service type, its typed create/edit DTO fields, the schema-version identifier format and compatibility rule, the allowed payload representation, and whether the initial API returns a snapshot view or only typed fields.
+- **Until approved:** do not publish `/api/v1/requests` create/edit/submit DTOs or invent arbitrary JSON payload contracts. API-02 authorization infrastructure remains complete.
+- **Unaffected gate:** `PROD-DB-03` remains separately closed.
+
 The canonical open-decision registers remain under `docs/governance/`; this file is an execution-facing summary and does not replace them.
