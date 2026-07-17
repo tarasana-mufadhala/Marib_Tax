@@ -22,4 +22,13 @@ Only decisions that require an authorized human are listed here. Source work mus
 - **DM-11 / DM-25:** notification delivery/read semantics, OTP minimization, and retention.
 - **DM-16:** report fields, masking, aggregation, and export rules.
 
+## API contract decision
+
+### API-01 — Initial OpenAPI routing and compatibility boundary
+
+- **State:** REQUIRES_USER_APPROVAL
+- **Source constraint:** `docs/api/MARIB-TAX-API-CONTRACT-BASELINE-01.md` explicitly leaves paths and verbs for later approval; ADR-006 makes published OpenAPI authoritative.
+- **Decision needed:** approve the initial API version prefix, resource/path naming, HTTP verb conventions for lifecycle actions, error-envelope standard, and breaking-change/versioning boundary.
+- **Until approved:** do not publish an authoritative OpenAPI file, generate clients, or implement controllers against invented routes. Documentation and non-interface runtime tooling may proceed when independently specified.
+
 The canonical open-decision registers remain under `docs/governance/`; this file is an execution-facing summary and does not replace them.

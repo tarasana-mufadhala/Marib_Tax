@@ -48,7 +48,8 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 | 2 | Apply Batch 03 to production | REQUIRES_USER_APPROVAL | Production operator | Explicit fresh approval required; exact preflight/apply/post-verify sequence must be used. |
 | 3 | Post-apply verification for Batch 03 | BLOCKED | Future isolated worktree | Depends on successful authorized apply. |
 | 4 | Author Batch 04 source migration | BLOCKED | Future isolated worktree | Depends on accepted Batch 03 and approved DM-04/DM-21/DM-23 choices where encoded. |
-| 5 | Runtime scaffolding and contracts | SOURCE_READY | Future isolated worktree | May proceed independently once a bounded foundation task is selected; no runtime code currently exists. |
+| 5 | OpenAPI paths, verbs, and version boundary | REQUIRES_USER_APPROVAL | Product/API authority | API baseline explicitly marks paths and verbs as requiring later approval; ADR-006 prohibits inventing undocumented production interfaces. |
+| 6 | Runtime scaffolding and shared contracts | BLOCKED | Future isolated worktree | Depends on an approved OpenAPI authoring boundary and toolchain/version baseline; no runtime code currently exists. |
 
 ## Quality gates
 
@@ -61,6 +62,7 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 
 - Production Batch 03 application requires explicit user approval.
 - The physical model decision register contains 41 open decisions. Batch-specific decisions must be resolved before source code encodes them.
+- API paths, HTTP verbs, initial version prefix, and compatibility boundary require approval before an authoritative OpenAPI document or client/server contracts are authored.
 - Local `main` has a preserved ahead commit corresponding to Batch 03 preflight work; do not reset or discard it.
 
 ## Highest next safe task
