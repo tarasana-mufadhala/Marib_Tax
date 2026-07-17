@@ -1,9 +1,11 @@
 # Marib Tax System — API Contract Baseline 01
 
 **Document ID:** MARIB-TAX-API-CONTRACT-BASELINE-01
-**Status:** Approved high-level API contract baseline; OpenAPI foundation authorized by API-01
+**Status:** Approved baseline; API-01 routing, API-02 authorization, and API-03 first request-draft contract are authoritative
 
 > OpenAPI is authoritative when published (ADR-006). API-01 and ADR-011 approve `/api/v1`, English plural kebab-case paths, explicit lifecycle commands, the common error envelope, and v1 compatibility rules.
+
+> API-03 and ADR-013 approve the strict `activity_address_change` request-draft contract at schema `1.0.0`. This source contract does not authorize production persistence or deployment.
 
 ## API-01 approved conventions
 
