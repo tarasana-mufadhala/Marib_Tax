@@ -25,9 +25,99 @@ x-authorization-predicates:
   - SEPARATION_OF_DUTIES
   - REQUIRED_EVIDENCE
 tags:
+  - name: Requests
+    description: Taxpayer-owned service request contracts.
   - name: Platform health
     description: Isolated non-data-bearing operational probes.
 paths:
+  /api/v1/requests:
+    post:
+      operationId: createRequestDraft
+      summary: Create an activity address change draft
+      tags: [Requests]
+      x-permission: request.draft.create
+      x-authorization-predicates: [OWNERSHIP]
+      requestBody:
+        required: true
+        content:
+          {
+            application/json:
+              { schema: { $ref: '#/components/schemas/CreateRequestDraft' } },
+          }
+      responses:
+        '201':
+          {
+            description: Draft created,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: '#/components/schemas/RequestResponse' } },
+              },
+          }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /api/v1/requests/{id}:
+    parameters: [{ $ref: '#/components/parameters/RequestId' }]
+    get:
+      operationId: getOwnedRequest
+      summary: Read an owned request
+      tags: [Requests]
+      x-permission: request.read
+      x-authorization-predicates: [OWNERSHIP]
+      responses:
+        '200':
+          {
+            description: Owned request,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: '#/components/schemas/RequestResponse' } },
+              },
+          }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      operationId: editOwnedRequestDraft
+      summary: Replace targets on an owned draft
+      tags: [Requests]
+      x-permission: request.draft.edit
+      x-authorization-predicates: [OWNERSHIP, RESOURCE_STATE]
+      requestBody:
+        required: true
+        content:
+          {
+            application/json:
+              { schema: { $ref: '#/components/schemas/EditRequestDraft' } },
+          }
+      responses:
+        '200':
+          {
+            description: Draft updated,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: '#/components/schemas/RequestResponse' } },
+              },
+          }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /api/v1/requests/{id}/submit:
+    parameters: [{ $ref: '#/components/parameters/RequestId' }]
+    post:
+      operationId: submitOwnedRequestDraft
+      summary: Submit an owned request draft
+      tags: [Requests]
+      x-permission: request.submit
+      x-authorization-predicates: [OWNERSHIP, RESOURCE_STATE]
+      responses:
+        '200':
+          {
+            description: Draft submitted,
+            content:
+              {
+                application/json:
+                  { schema: { $ref: '#/components/schemas/RequestResponse' } },
+              },
+          }
+        '409': { $ref: '#/components/responses/Conflict' }
   /health:
     get:
       operationId: getHealth
@@ -71,6 +161,76 @@ components:
     Uuid:
       type: string
       format: uuid
+    RequestAddress:
+      type: object
+      additionalProperties: false
+      required: [district, street]
+      properties:
+        district: { type: string, minLength: 1 }
+        street: { type: string, minLength: 1 }
+        neighborhood: { type: [string, 'null'], minLength: 1 }
+        buildingNumber: { type: [string, 'null'], minLength: 1 }
+        nearbyLandmark: { type: [string, 'null'], minLength: 1 }
+    RequestTarget:
+      type: object
+      additionalProperties: false
+      required: [activityId, newAddress]
+      properties:
+        activityId: { $ref: '#/components/schemas/Uuid' }
+        branchId:
+          oneOf:
+            - { $ref: '#/components/schemas/Uuid' }
+            - { type: 'null' }
+        newAddress: { $ref: '#/components/schemas/RequestAddress' }
+    CreateRequestDraft:
+      type: object
+      additionalProperties: false
+      required: [serviceType, schemaVersion, targets]
+      properties:
+        serviceType: { type: string, const: activity_address_change }
+        schemaVersion: { type: string, const: 1.0.0 }
+        targets:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/RequestTarget' }
+          description: Activity and branch pairs must be unique.
+    EditRequestDraft:
+      type: object
+      additionalProperties: false
+      required: [targets]
+      properties:
+        targets:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/RequestTarget' }
+          description: Fully replaces the draft targets after validation.
+    RequestForm:
+      type: object
+      additionalProperties: false
+      required: [serviceType, schemaVersion, data]
+      properties:
+        serviceType: { type: string, const: activity_address_change }
+        schemaVersion: { type: string, const: 1.0.0 }
+        data:
+          type: object
+          additionalProperties: false
+          required: [targets]
+          properties:
+            targets:
+              type: array
+              minItems: 1
+              items: { $ref: '#/components/schemas/RequestTarget' }
+    RequestResponse:
+      type: object
+      additionalProperties: false
+      required: [id, status, form, createdAt, updatedAt]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        status: { type: string, enum: [draft, submitted] }
+        form: { $ref: '#/components/schemas/RequestForm' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        submittedAt: { type: string, format: date-time }
     FieldError:
       type: object
       additionalProperties: false
@@ -122,6 +282,11 @@ components:
         totalItems: { type: integer, minimum: 0 }
         totalPages: { type: integer, minimum: 0 }
   parameters:
+    RequestId:
+      name: id
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
     Page:
       name: page
       in: query
@@ -131,6 +296,16 @@ components:
       in: query
       schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
   responses:
+    Conflict:
+      description: The request is not in the required resource state.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
+    ValidationFailed:
+      description: The request body does not satisfy the published contract.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorEnvelope' }
     NotFound:
       description: The requested route or resource is unavailable.
       content:

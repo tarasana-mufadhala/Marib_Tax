@@ -42,10 +42,10 @@ Only decisions that require an authorized human are listed here. Source work mus
 
 ### API-03 — Request draft form contract and schema versioning
 
-- **State:** REQUIRES_USER_APPROVAL
+- **State:** APPROVED on 2026-07-18
 - **Source constraint:** the physical catalog defines request form snapshot headers and JSON payloads but explicitly leaves JSON schema versioning for later approval; service type version labels and payload structure are not final.
-- **Decision needed:** approve the first request-draft service type, its typed create/edit DTO fields, the schema-version identifier format and compatibility rule, the allowed payload representation, and whether the initial API returns a snapshot view or only typed fields.
-- **Until approved:** do not publish `/api/v1/requests` create/edit/submit DTOs or invent arbitrary JSON payload contracts. API-02 authorization infrastructure remains complete.
+- **Approved boundary:** `activity_address_change` at immutable schema version `1.0.0`; strict typed create/edit targets; typed safe response; owned draft-only replacement; explicit submit command and immutable server-authored snapshot; exact API-02 permission/predicate declarations.
+- **Canonical record:** ADR-013. OpenAPI, contracts, repository port, isolated application/domain logic, unconnected controllers, and in-memory tests are authorized.
 - **Unaffected gate:** `PROD-DB-03` remains separately closed.
 
 The canonical open-decision registers remain under `docs/governance/`; this file is an execution-facing summary and does not replace them.

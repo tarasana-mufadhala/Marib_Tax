@@ -100,3 +100,5 @@ export type AuthorizationPredicate = (typeof authorizationPredicates)[number];
 export function isPermissionCode(value: string): value is PermissionCode {
   return permissionCodes.includes(value as PermissionCode);
 }
+
+export * from './request-draft.js';

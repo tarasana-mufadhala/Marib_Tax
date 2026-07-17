@@ -93,3 +93,12 @@
 - Added ADR-011 and aligned ADR-006 and the API contract baseline with `/api/v1`, route/verb conventions, error envelope, authorization declarations, and compatibility policy.
 - Reclassified OpenAPI, NestJS API, shared contracts, validation tooling, and safe health/readiness foundation work as `READY`/`ACTIVE`.
 - Production impact: **none**.
+
+## 2026-07-18 — API-03 explicit approval and request-draft source slice
+
+- Recorded the user's explicit API-03 approval and added ADR-013 while preserving the independent PROD-DB-03 gate.
+- Published strict OpenAPI and Zod contracts for `activity_address_change` schema `1.0.0`, including unique targets, normalized optional address fields, typed safe responses, and explicit create/read/edit/submit authorization metadata.
+- Added a repository port, isolated application service, immutable server-authored submission snapshot, and an in-memory test repository. The controller is intentionally not registered in the runtime module and no production adapter exists.
+- Added validation, ownership/state, snapshot, and controller-policy tests. Existing fail-closed guard/error tests continue to cover exact permission denial, no administrator bypass, trace IDs, and non-disclosure.
+- Local gates: OpenAPI PASS; typecheck PASS; tests PASS (39); build PASS; lint PASS; formatting PASS; `git diff --check` PASS.
+- Production impact: **none**. No migration, SQL, deployment, secret, external send, or operational-data write was performed.
