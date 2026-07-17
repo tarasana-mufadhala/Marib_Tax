@@ -23,3 +23,11 @@
 - Recomputed Batch 03 migration SHA-256 as `BF15774686744A86D641D7B0B212F7B25E53D2AE6A8E4445662CA84475A00A86`.
 - Prepared the exact Batch 03 production approval packet, including preflight, closed apply command, post-verification, effects, and stop conditions.
 - Production impact: **none**. Batch 03 remains `REQUIRES_USER_APPROVAL`.
+
+## 2026-07-17 — Hourly continuation 02
+
+- Confirmed no open PRs and a green Foundation CI state after PR #19.
+- Inspected the API contract baseline, ADR-006, and the reserved shared-contracts package before starting runtime contract work.
+- Found that API paths and HTTP verbs are explicitly unapproved while OpenAPI must be authoritative; reclassified contract implementation from `SOURCE_READY` to `REQUIRES_USER_APPROVAL`/`BLOCKED` rather than inventing routes.
+- Added decision `API-01` covering version prefix, resource/path naming, lifecycle verbs, error envelope, and compatibility policy.
+- Production impact: **none**. No application dependencies, endpoints, migration, SQL, deployment, secret, notification, or operational data were changed.
