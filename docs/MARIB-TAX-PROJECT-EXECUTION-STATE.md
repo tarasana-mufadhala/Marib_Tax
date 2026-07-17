@@ -49,7 +49,8 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 | 3 | Post-apply verification for Batch 03 | BLOCKED | Future isolated worktree | Depends on successful authorized apply. |
 | 4 | Author Batch 04 source migration | BLOCKED | Future isolated worktree | Depends on accepted Batch 03 and approved DM-04/DM-21/DM-23 choices where encoded. |
 | 5 | OpenAPI paths, verbs, and version boundary | COMPLETE | API-01 / ADR-011 | Explicitly approved on 2026-07-17. |
-| 6 | OpenAPI, NestJS API, and shared-contract foundation | REVIEW | `chore/marib-tax-autopilot-orchestrator` | Local gates PASS; pending PR/CI/review. Production remains closed. |
+| 6 | OpenAPI, NestJS API, and shared-contract foundation | COMPLETE | PR #24 / `054cd3526e75a5a700419cdb19d3ea53f46fe401` | Expanded CI PASS; production remains closed. |
+| 7 | Stable error-code catalog and runtime error envelope | REVIEW | `chore/marib-tax-autopilot-orchestrator` | Implementation and negative disclosure/correlation tests PASS locally; pending PR/CI. |
 
 ## Quality gates
 
@@ -72,13 +73,13 @@ Request explicit approval using `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-03
 
 ## Continuation checkpoint
 
-- **Last completed task:** API-01 approved and merged in PR #23 (`f2cedb4372bc9a600ba62384e69f39ca4e1bab08`), Foundation CI PASS.
-- **Active task:** OpenAPI/NestJS/shared-contract runtime foundation; local gates PASS, pending PR/CI/review.
+- **Last completed task:** OpenAPI/NestJS/shared-contract foundation merged in PR #24 (`054cd3526e75a5a700419cdb19d3ea53f46fe401`), expanded CI PASS.
+- **Active task:** stable error catalog and global safe error-envelope filter; local gates PASS, pending PR/CI.
 - **Owner:** `chore/marib-tax-autopilot-orchestrator` in `C:\projects\Marib_Tax-autopilot`.
 - **Approval gates:** production Batch 03 (`PROD-DB-03`) remains closed. API-01 is approved.
-- **Queue result:** runtime foundation is in review. Database Batch 04 remains blocked by the Batch 03 production gate.
-- **Highest next task:** pass CI and contract/security review, merge the runtime foundation, then re-evaluate the Queue.
-- **Next action:** commit/push/PR, resolve findings, merge on PASS, then choose the first authorized business contract slice.
+- **Queue result:** runtime foundation is complete; error-envelope enforcement is in review. Database Batch 04 remains blocked by the Batch 03 production gate.
+- **Highest next task:** pass CI and merge error-envelope enforcement, then select the first permission-backed business contract slice that does not require production data.
+- **Next action:** commit/push/PR for error handling, resolve findings, merge on PASS, then re-evaluate Queue.
 
 ## Realistic completion estimate
 
