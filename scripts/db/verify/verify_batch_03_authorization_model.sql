@@ -241,7 +241,12 @@ actual_constraints AS (
     pg_catalog.pg_get_constraintdef(con.oid, true) AS definition,
     CASE
       WHEN con.contype = 'c' THEN pg_catalog.regexp_replace(
-        pg_catalog.pg_get_expr(con.conbin, con.conrelid),
+        pg_catalog.regexp_replace(
+          pg_catalog.pg_get_expr(con.conbin, con.conrelid),
+          '::text',
+          '',
+          'g'
+        ),
         '[[:space:]()]',
         '',
         'g'
