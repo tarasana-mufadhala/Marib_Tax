@@ -1,7 +1,9 @@
 # Marib Tax Project Execution State
 
-**Inventory time:** 2026-07-17 (Asia/Riyadh)  
-**Official repository:** `tarasana-mufadhala/Marib_Tax`  
+**Inventory time:** 2026-07-17 (Asia/Riyadh)
+
+**Official repository:** `tarasana-mufadhala/Marib_Tax`
+
 **Supabase project:** `sjmtiwzddztxfrncwkpx`
 
 ## Git and delivery state
