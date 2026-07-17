@@ -6,9 +6,9 @@ Official repository for the Marib Tax System — an electronic tax office platfo
 
 ## Status
 
-**Implementation Readiness / Repository Foundation**
+**API Runtime Foundation / Database Foundation**
 
-No feature implementation has started. This repository currently provides structure, governance, architecture decisions, and foundation validation only.
+API-01 source implementation has started: the repository now includes an authoritative OpenAPI v1 foundation, common TypeScript contracts, and a buildable/tested NestJS API with isolated health and readiness probes. Business modules and user interfaces are not yet implemented.
 
 ## Approved architecture summary
 
@@ -72,4 +72,4 @@ See:
 
 ## Warning
 
-**No business features, database schemas, user interfaces, or external-service integrations have been implemented.** Do not treat reserved directories as working applications.
+**No business controllers, user interfaces, external-service integrations, or production deployment have been implemented.** The API runtime foundation is executable but intentionally has no production database or operational-data connection.

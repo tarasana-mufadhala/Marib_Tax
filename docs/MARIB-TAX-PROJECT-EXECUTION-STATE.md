@@ -23,10 +23,10 @@
 | Monorepo/governance/ADRs/CI | COMPLETE | Repository structure, ADRs, validation workflow, and baseline documents exist. |
 | Flutter taxpayer app | NOT_STARTED | `apps/mobile` contains a README only. |
 | Next.js web/admin | NOT_STARTED | `apps/web` contains a README only. |
-| NestJS API | NOT_STARTED | `apps/api` contains a README only. |
+| NestJS API | RUNTIME_READY | Buildable/tested foundation with safe `/health` and `/ready`; no business or production integration. |
 | NestJS worker | NOT_STARTED | `apps/worker` contains a README only. |
-| Shared packages | NOT_STARTED | Package directories contain READMEs only. |
-| OpenAPI/runtime DTOs | NOT_STARTED | API baseline documentation exists; no runtime contracts are implemented. |
+| Shared packages | ACTIVE | `@marib-tax/contracts` builds and tests common API-01 types; other packages remain reserved. |
+| OpenAPI/runtime DTOs | RUNTIME_READY | OpenAPI 3.1 foundation validates cleanly with safe common contracts. |
 
 ## Database and runtime
 
@@ -49,12 +49,13 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 | 3 | Post-apply verification for Batch 03 | BLOCKED | Future isolated worktree | Depends on successful authorized apply. |
 | 4 | Author Batch 04 source migration | BLOCKED | Future isolated worktree | Depends on accepted Batch 03 and approved DM-04/DM-21/DM-23 choices where encoded. |
 | 5 | OpenAPI paths, verbs, and version boundary | COMPLETE | API-01 / ADR-011 | Explicitly approved on 2026-07-17. |
-| 6 | OpenAPI, NestJS API, and shared-contract foundation | ACTIVE | `chore/marib-tax-autopilot-orchestrator` | Authorized source work; production operations remain closed. |
+| 6 | OpenAPI, NestJS API, and shared-contract foundation | REVIEW | `chore/marib-tax-autopilot-orchestrator` | Local gates PASS; pending PR/CI/review. Production remains closed. |
 
 ## Quality gates
 
 - Foundation validation: PASS on PR #17 and current `origin/main`.
-- Typecheck/build/lint for Flutter, Next.js, NestJS: NOT_APPLICABLE / NOT_STARTED because the runtime applications are placeholders.
+- NestJS/contracts: OpenAPI PASS, typecheck PASS, 7 tests PASS, build PASS, lint PASS, formatting PASS, `git diff --check` PASS.
+- Flutter/Next.js/worker: NOT_STARTED.
 - Migration execution: CLOSED pending explicit approval.
 - Production deployment: NOT_STARTED and CLOSED.
 
@@ -71,13 +72,13 @@ Request explicit approval using `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-03
 
 ## Continuation checkpoint
 
-- **Last completed task:** extended-cycle policy and automation prompt synchronized and merged in PR #21 (`8fe5f5187b1844ce87859f2c858b07fa98c45202`), Foundation CI PASS.
-- **Active task:** none; focused runtime/tooling candidate review completed.
+- **Last completed task:** API-01 approved and merged in PR #23 (`f2cedb4372bc9a600ba62384e69f39ca4e1bab08`), Foundation CI PASS.
+- **Active task:** OpenAPI/NestJS/shared-contract runtime foundation; local gates PASS, pending PR/CI/review.
 - **Owner:** `chore/marib-tax-autopilot-orchestrator` in `C:\projects\Marib_Tax-autopilot`.
 - **Approval gates:** production Batch 03 (`PROD-DB-03`) remains closed. API-01 is approved.
-- **Queue result:** OpenAPI, NestJS API, shared contracts, validation tooling, tests, and safe health/readiness endpoints are `READY`/`ACTIVE`.
-- **Highest next task:** build and validate the API/runtime foundation, then re-evaluate the Queue in the same run.
-- **Next action:** author the reviewed OpenAPI foundation and executable NestJS/shared-contract workspaces; no production operation.
+- **Queue result:** runtime foundation is in review. Database Batch 04 remains blocked by the Batch 03 production gate.
+- **Highest next task:** pass CI and contract/security review, merge the runtime foundation, then re-evaluate the Queue.
+- **Next action:** commit/push/PR, resolve findings, merge on PASS, then choose the first authorized business contract slice.
 
 ## Realistic completion estimate
 

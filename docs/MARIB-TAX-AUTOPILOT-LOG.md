@@ -39,6 +39,17 @@
 - Added explicit stop conditions and a time-limit checkpoint contract for direct resumption with focused verification.
 - Synchronized the active hourly automation prompt with the extended-cycle and checkpoint rules.
 - Production impact: **none**.
+
+## 2026-07-17 — API runtime foundation
+
+- Merged API-01 governance through PR #23 (`f2cedb4372bc9a600ba62384e69f39ca4e1bab08`) after Foundation CI PASS.
+- Created an OpenAPI 3.1 foundation with safe placeholders, bearer metadata without secrets, common UUID/error/pagination schemas, and isolated health/readiness operations.
+- Initialized buildable NestJS and shared-contract workspaces with strict configuration validation and no database or external-service connection.
+- Added positive health/readiness tests, configuration rejection tests, common contract tests, and a negative test proving the prohibited generic lifecycle action route is absent.
+- Added locked installation and OpenAPI/typecheck/test/build/lint/format gates to CI.
+- Local results: OpenAPI PASS; typecheck PASS; tests PASS (7); build PASS; lint PASS; formatting PASS; `git diff --check` PASS.
+- Git Bash foundation validation remained locally hung without output; Linux Foundation CI remains the authoritative gate.
+- Production impact: **none**.
 - Merged the policy through PR #21 as `8fe5f5187b1844ce87859f2c858b07fa98c45202` after Foundation CI PASS.
 - Re-evaluated the queue in the same run and inspected the recorded Node/pnpm/Flutter toolchain, environment strategy, pnpm boundaries, and placeholder application/package directories.
 - Determined that meaningful API/runtime contract initialization is blocked by `API-01`; declined to create placeholder-only scaffolding with no approved interface or verifiable runtime behavior.
