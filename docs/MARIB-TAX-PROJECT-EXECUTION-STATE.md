@@ -71,12 +71,13 @@ Request explicit approval using `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-03
 
 ## Continuation checkpoint
 
-- **Last completed task:** API approval boundary recorded and merged in PR #20 (`ef1ef192bda98cecdbd15fb7413b550e8b8cba7f`), Foundation CI PASS.
-- **Active task:** extended-cycle policy update and automation prompt synchronization.
+- **Last completed task:** extended-cycle policy and automation prompt synchronized and merged in PR #21 (`8fe5f5187b1844ce87859f2c858b07fa98c45202`), Foundation CI PASS.
+- **Active task:** none; focused runtime/tooling candidate review completed.
 - **Owner:** `chore/marib-tax-autopilot-orchestrator` in `C:\projects\Marib_Tax-autopilot`.
 - **Approval gates:** production Batch 03 (`PROD-DB-03`) and authoritative OpenAPI boundary (`API-01`).
-- **Highest next safe task after this policy change:** re-evaluate non-interface runtime/tooling foundation work that does not encode unapproved API routes or advance the blocked migration sequence.
-- **Next-run first action:** focused fetch/PR/CI verification, read this checkpoint, then inspect the bounded runtime/tooling candidate; do not repeat the initial repository inventory.
+- **Queue result:** no safe `READY` implementation remains. Database Batch 04 is dependency-blocked by the Batch 03 production gate. Authoritative OpenAPI, controllers, generated clients, and meaningful shared contracts are blocked by `API-01`. Creating placeholder-only scaffolding would add unverifiable structure without advancing an approved contract.
+- **Highest next task:** `PROD-DB-03` or `API-01`, whichever receives explicit approval first.
+- **Next-run first action:** focused fetch/PR/CI verification, read this checkpoint, and check for a recorded approval or newly independent task; do not repeat the initial repository inventory.
 
 ## Realistic completion estimate
 
