@@ -1,7 +1,7 @@
 # Marib Tax System — Permissions Baseline 01
 
 **Document ID:** MARIB-TAX-PERMISSIONS-BASELINE-01
-**Status:** Initial RBAC baseline (remediated)
+**Status:** Approved RBAC and API-02 permission baseline
 
 ### Terminology
 
@@ -19,8 +19,12 @@
 | Mutations | NestJS server-side only |
 | Least privilege | Do not grant capabilities merely because a role name sounds administrative |
 | Final decision | Tax Office manager/director **only** |
+| Permission keys | Stable capability codes from API-02; no wildcards or role-name inference |
+| Authorization predicates | Ownership, assignment, scope, resource state, SoD, and evidence are enforced server-side and fail closed |
 
 A user may hold `report.view` **without** `report.export`.
+
+API-02 approved permission families are centralized in `@marib-tax/contracts`: taxpayer self-service; request/balagh read, draft, submit, completion, review and decisions; administrative close/archive; field visits; dues/payments; content; import; reports; and sensitive audit view. Reopen, decision revision, visit-result correction, and receipt correction remain **DEFERRED** and cannot be granted or used by runtime decorators.
 
 ---
 

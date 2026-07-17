@@ -1,7 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
 import type { HealthResponse, ReadinessResponse } from '@marib-tax/contracts';
+import { PublicEndpoint } from '../authz/authorization.decorators.js';
 
 @Controller()
+@PublicEndpoint()
 export class HealthController {
   @Get('health')
   getHealth(): HealthResponse {

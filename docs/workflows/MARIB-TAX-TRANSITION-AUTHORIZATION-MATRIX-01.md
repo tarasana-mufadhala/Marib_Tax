@@ -5,11 +5,11 @@
 
 Legend: **Y** = allowed · **N** = prohibited · **C** = conditional on explicit extra grant/ownership · **SoD** = separation of duties applies
 
-### Conceptual permission identifiers
+### Stable permission identifiers
 
-Identifiers below are **PROPOSED — needs confirmation during API/security design**. They are conceptual families, not final implementation constants. No broad wildcard permissions.
+API-02 approves the non-deferred identifiers below as stable implementation constants. Wildcards and administrator bypass permissions are prohibited. Keys explicitly marked **DEFERRED** are documentation-only and cannot be used in runtime decorators or grants.
 
-| Command family | Conceptual permission (PROPOSED) |
+| Command family | Stable permission |
 | --- | --- |
 | createDraft | `request.draft.create` / `balagh.create` (by case type) |
 | editDraft | `request.draft.edit` / `balagh.draft.edit` |

@@ -13,6 +13,17 @@ servers:
       port:
         default: '3000'
 x-business-api-prefix: /api/v1
+x-permission-codes:
+  catalog: '@marib-tax/contracts#permissionCodes'
+  rule: Every business operation must declare one approved x-permission value.
+x-authorization-predicates:
+  - OWNERSHIP
+  - ACTIVE_ASSIGNMENT
+  - OFFICE_SCOPE
+  - UNIT_SCOPE
+  - RESOURCE_STATE
+  - SEPARATION_OF_DUTIES
+  - REQUIRED_EVIDENCE
 tags:
   - name: Platform health
     description: Isolated non-data-bearing operational probes.

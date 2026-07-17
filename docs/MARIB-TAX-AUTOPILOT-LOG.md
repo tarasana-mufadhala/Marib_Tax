@@ -65,6 +65,17 @@
 - Added decision API-02 rather than publishing business endpoints with unstable authorization constants.
 - No safe `READY` implementation remains outside API-02 and the separately closed PROD-DB-03 gate.
 - Production impact: **none**.
+
+## 2026-07-18 — API-02 explicit approval and authorization foundation
+
+- Recorded explicit API-02 approval while preserving the independent PROD-DB-03 gate.
+- Added ADR-012 and updated the permissions baseline and transition authorization matrix to distinguish approved stable keys from deferred non-runtime keys.
+- Added the centralized typed PermissionCode and authorization-predicate catalogs to shared contracts.
+- Added typed permission/predicate/public decorators, actor context, policy evaluator, audit hook, and a globally registered fail-closed NestJS guard.
+- Default runtime providers deny missing context and unresolved policies; only explicitly marked health/readiness endpoints are public.
+- Added positive and negative authorization tests for ownership, missing/exact permission, inactive role/revoked assignment, reviewer/payment/report separation, report view/export separation, unknown keys, no admin wildcard, and import SoD.
+- Local gates: OpenAPI PASS; typecheck PASS; tests PASS (23); build PASS; lint PASS; formatting PASS; `git diff --check` PASS.
+- Production impact: **none**.
 - Merged the policy through PR #21 as `8fe5f5187b1844ce87859f2c858b07fa98c45202` after Foundation CI PASS.
 - Re-evaluated the queue in the same run and inspected the recorded Node/pnpm/Flutter toolchain, environment strategy, pnpm boundaries, and placeholder application/package directories.
 - Determined that meaningful API/runtime contract initialization is blocked by `API-01`; declined to create placeholder-only scaffolding with no approved interface or verifiable runtime behavior.
