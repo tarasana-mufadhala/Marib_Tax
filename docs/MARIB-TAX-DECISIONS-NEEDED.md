@@ -48,4 +48,12 @@ Only decisions that require an authorized human are listed here. Source work mus
 - **Canonical record:** ADR-013. OpenAPI, contracts, repository port, isolated application/domain logic, unconnected controllers, and in-memory tests are authorized.
 - **Unaffected gate:** `PROD-DB-03` remains separately closed.
 
+### API-04 — Authentication and current-actor runtime boundary
+
+- **State:** REQUIRES_USER_APPROVAL
+- **Source constraint:** API-03 intentionally leaves its controller unregistered and uses no real actor adapter; API-02 requires server-validated actor context and fail-closed authorization.
+- **Decision needed:** approve the authentication credential/token authority, validated actor claims and identifier mapping, session/revocation semantics, NestJS current-actor adapter boundary, and whether an isolated non-production runtime slice may register the request controller.
+- **Until approved:** do not invent JWT claims, trust caller-supplied actor identifiers, register a permissive actor provider, connect request persistence, or deploy the controller.
+- **Unaffected gate:** `PROD-DB-03` remains separately closed.
+
 The canonical open-decision registers remain under `docs/governance/`; this file is an execution-facing summary and does not replace them.

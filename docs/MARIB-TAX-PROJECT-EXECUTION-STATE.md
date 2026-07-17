@@ -8,7 +8,7 @@
 
 ## Git and delivery state
 
-- `origin/main`: `9a522aae2fffa4095362a270185b6feeddefd956` (PR #28 merged).
+- `origin/main`: `1e80e3809bca4e3a72e302f3e75ecf5962f4cbfc` (PR #29 merged).
 - Local `main`: `8c3628f46e0d8644380f5bc120c868da92e65757`, one local documentation commit ahead of `origin/main`.
 - Autopilot worktree: `C:\projects\Marib_Tax-autopilot`, branch `chore/marib-tax-autopilot-orchestrator`, clean at inventory start.
 - Primary worktree: `C:\projects\Marib_Tax`, branch `main`; its ahead commit is preserved and not rewritten.
@@ -53,7 +53,7 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 | 7 | Stable error-code catalog and runtime error envelope | COMPLETE | PR #25 / `5707f58c88be860b34ff9ad01742c0e9ae6608be` | Expanded CI PASS. |
 | 8 | Stable endpoint permission identifiers | COMPLETE | API-02 / ADR-012 | Explicitly approved on 2026-07-18. |
 | 9 | Fail-closed NestJS authorization foundation | COMPLETE | PR #27 / `8f4280351f2a67deab978484a753d1a5ea0e7115` | Expanded CI PASS; no admin bypass. |
-| 10 | First taxpayer request-draft business contract | ACTIVE | API-03 / ADR-013 | Explicitly approved on 2026-07-18; local implementation gates PASS, pending PR/CI. |
+| 10 | First taxpayer request-draft business contract | COMPLETE | PR #29 / `1e80e3809bca4e3a72e302f3e75ecf5962f4cbfc` | Foundation CI PASS; production integration intentionally absent. |
 
 ## Quality gates
 
@@ -72,17 +72,17 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 
 ## Highest next safe task
 
-Complete API-03 PR/CI/merge. Then re-evaluate independent source work; request-draft production persistence and real actor integration remain closed behind database/runtime dependencies. Do not execute PROD-DB-03 without separate approval.
+No safe `READY` task remains. Request-draft production persistence is dependency-blocked by the database sequence, and real actor/runtime integration needs an approved authentication boundary. Do not execute PROD-DB-03 without separate approval.
 
 ## Continuation checkpoint
 
-- **Last completed task:** API-03 governance, contracts, OpenAPI, isolated application service, repository port, unconnected controller, and in-memory tests implemented locally; all local gates PASS.
-- **Active task:** API-03 delivery; commit/push/PR/CI/merge remains.
+- **Last completed task:** API-03 merged through PR #29 (`1e80e3809bca4e3a72e302f3e75ecf5962f4cbfc`) after Foundation CI PASS.
+- **Active task:** none; no independent safe `READY` task remains.
 - **Owner:** `chore/marib-tax-autopilot-orchestrator` in `C:\projects\Marib_Tax-autopilot`.
 - **Approval gates:** production Batch 03 (`PROD-DB-03`) remains closed. API-01/API-02/API-03 are approved.
-- **Queue result:** API-03 is the active safe source task. Database Batch 04 remains blocked by PROD-DB-03 and unresolved data decisions.
-- **Highest next task:** deliver API-03 through green PR/CI, then inspect the next independent API decision boundary.
-- **Next action:** stage reviewed API-03 changes, commit, push, open PR, monitor CI, fix findings, and merge only on PASS.
+- **Queue result:** API-03 is complete. Database Batch 04 remains blocked by PROD-DB-03 and unresolved data decisions; real request persistence/actor wiring is not independently ready.
+- **Highest next task:** API-04 authentication/current-actor boundary or PROD-DB-03, whichever receives explicit approval first.
+- **Next action:** perform a focused Git/CI freshness check, record any new approval, and resume directly from its approved boundary without repeating the full inventory.
 
 ## Realistic completion estimate
 

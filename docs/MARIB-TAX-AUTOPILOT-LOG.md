@@ -102,3 +102,5 @@
 - Added validation, ownership/state, snapshot, and controller-policy tests. Existing fail-closed guard/error tests continue to cover exact permission denial, no administrator bypass, trace IDs, and non-disclosure.
 - Local gates: OpenAPI PASS; typecheck PASS; tests PASS (39); build PASS; lint PASS; formatting PASS; `git diff --check` PASS.
 - Production impact: **none**. No migration, SQL, deployment, secret, external send, or operational-data write was performed.
+- Delivered API-03 through PR #29; Foundation CI passed and the PR merged as `1e80e3809bca4e3a72e302f3e75ecf5962f4cbfc`.
+- Re-evaluated the queue after merge. No independent safe `READY` task remains: production persistence is blocked by the database sequence and real current-actor integration requires a separately approved authentication boundary.
