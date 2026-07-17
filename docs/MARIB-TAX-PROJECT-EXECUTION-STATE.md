@@ -69,6 +69,15 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 
 Request explicit approval using `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-03-PRODUCTION-APPROVAL-PACKET.md`; do not execute it without approval. Continue only independent source work that does not violate the one-batch migration sequence.
 
+## Continuation checkpoint
+
+- **Last completed task:** API approval boundary recorded and merged in PR #20 (`ef1ef192bda98cecdbd15fb7413b550e8b8cba7f`), Foundation CI PASS.
+- **Active task:** extended-cycle policy update and automation prompt synchronization.
+- **Owner:** `chore/marib-tax-autopilot-orchestrator` in `C:\projects\Marib_Tax-autopilot`.
+- **Approval gates:** production Batch 03 (`PROD-DB-03`) and authoritative OpenAPI boundary (`API-01`).
+- **Highest next safe task after this policy change:** re-evaluate non-interface runtime/tooling foundation work that does not encode unapproved API routes or advance the blocked migration sequence.
+- **Next-run first action:** focused fetch/PR/CI verification, read this checkpoint, then inspect the bounded runtime/tooling candidate; do not repeat the initial repository inventory.
+
 ## Realistic completion estimate
 
 Repository/governance and database foundation through Batch 03 source are established, but all four runtime applications and most business database batches remain unimplemented. Overall implementation completion is estimated at **12%**; this is a planning estimate, not a delivery claim.
