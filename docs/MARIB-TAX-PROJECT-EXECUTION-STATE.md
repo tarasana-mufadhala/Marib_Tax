@@ -8,12 +8,13 @@
 
 ## Git and delivery state
 
-- `origin/main`: `c9cf9c057a4cca4b42d86ce220320bb8a7e82dcb` (PR #17 merged).
+- `origin/main`: `c11794aabc3c5556280f1078d39c6df3444b8ee3` (PR #18 merged).
 - Local `main`: `8c3628f46e0d8644380f5bc120c868da92e65757`, one local documentation commit ahead of `origin/main`.
 - Autopilot worktree: `C:\projects\Marib_Tax-autopilot`, branch `chore/marib-tax-autopilot-orchestrator`, clean at inventory start.
 - Primary worktree: `C:\projects\Marib_Tax`, branch `main`; its ahead commit is preserved and not rewritten.
 - PR #17, `docs(db): record Batch 03 production preflight`, is MERGED with Foundation CI PASS.
-- Latest `origin/main` Foundation CI is PASS.
+- PR #18, `docs: initialize Marib Tax autopilot state`, is MERGED with Foundation CI PASS.
+- Latest `origin/main` Foundation CI is PASS at `c11794a`.
 
 ## Applications and packages
 
@@ -33,7 +34,7 @@
 | --- | --- | --- | --- |
 | 01A application schemas | COMPLETE | APPLIED | Migration `20260715175300_create_marib_tax_application_schemas.sql`; post-apply report merged in PR #12. |
 | 02 identity profiles | COMPLETE | APPLIED | Migration `20260716190000_create_identity_profiles.sql`; post-apply verification merged in PR #15. |
-| 03 authorization model | COMPLETE | REQUIRES_USER_APPROVAL | Migration `20260717120000_create_identity_authorization_model.sql` merged in PR #16. Production preflight PR #17 is open and green. No apply was performed by autopilot. |
+| 03 authorization model | COMPLETE | REQUIRES_USER_APPROVAL | Migration `20260717120000_create_identity_authorization_model.sql` merged in PR #16. Production preflight PR #17 is merged and green. No apply was performed by autopilot. |
 | 04 taxpayer registry/legal entities | BLOCKED | NOT_STARTED | Sequence requires Batch 03 application and accepted verification first; open tax-number/account-link decisions must not be guessed. |
 | 05-18 | BLOCKED | NOT_STARTED | Dependency-ordered behind earlier database batches and unresolved decisions. |
 
@@ -64,7 +65,7 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 
 ## Highest next safe task
 
-Keep production apply fail-closed and prepare (but do not execute) the exact Batch 03 approval packet. Continue only independent source work that does not violate the one-batch migration sequence.
+Request explicit approval using `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-03-PRODUCTION-APPROVAL-PACKET.md`; do not execute it without approval. Continue only independent source work that does not violate the one-batch migration sequence.
 
 ## Realistic completion estimate
 

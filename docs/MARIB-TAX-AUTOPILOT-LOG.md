@@ -14,3 +14,12 @@
 - Created the required execution state, policy, decisions, and log files.
 - Created the active hourly thread heartbeat `Marib Tax Autopilot Hourly Continuation` with failed-runs-only notifications; this initial cycle serves as the immediate first run.
 - Production impact: **none**. No migration, SQL, deployment, external notification, secret change, or operational-data write was executed.
+
+## 2026-07-17 — Hourly continuation 01
+
+- Fetched `origin`; confirmed no open PRs and Foundation CI PASS on `origin/main` at `c11794aabc3c5556280f1078d39c6df3444b8ee3`.
+- Rebased the clean autopilot branch onto `origin/main`.
+- Preserved the primary `main` worktree, which remains diverged with its known local preflight commit; no reset or deletion was performed.
+- Recomputed Batch 03 migration SHA-256 as `BF15774686744A86D641D7B0B212F7B25E53D2AE6A8E4445662CA84475A00A86`.
+- Prepared the exact Batch 03 production approval packet, including preflight, closed apply command, post-verification, effects, and stop conditions.
+- Production impact: **none**. Batch 03 remains `REQUIRES_USER_APPROVAL`.
