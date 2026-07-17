@@ -50,10 +50,10 @@ Only decisions that require an authorized human are listed here. Source work mus
 
 ### API-04 — Authentication and current-actor runtime boundary
 
-- **State:** REQUIRES_USER_APPROVAL
+- **State:** APPROVED on 2026-07-18
 - **Source constraint:** API-03 intentionally leaves its controller unregistered and uses no real actor adapter; API-02 requires server-validated actor context and fail-closed authorization.
-- **Decision needed:** approve the authentication credential/token authority, validated actor claims and identifier mapping, session/revocation semantics, NestJS current-actor adapter boundary, and whether an isolated non-production runtime slice may register the request controller.
-- **Until approved:** do not invent JWT claims, trust caller-supplied actor identifiers, register a permissive actor provider, connect request persistence, or deploy the controller.
+- **Approved boundary:** Supabase Auth bearer tokens; asymmetric JWKS verification of signature/issuer/audience/expiration/sub; server-side `sub` mapping to active application profiles and effective permissions/assignments; immutable request actor; no metadata grants, identity headers, service-role path, admin bypass, or error leakage.
+- **Canonical record:** ADR-014. Authentication/profile ports, JWKS verifier boundary, current-actor resolver, and isolated non-production controller tests are authorized.
 - **Unaffected gate:** `PROD-DB-03` remains separately closed.
 
 The canonical open-decision registers remain under `docs/governance/`; this file is an execution-facing summary and does not replace them.

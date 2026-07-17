@@ -104,3 +104,12 @@
 - Production impact: **none**. No migration, SQL, deployment, secret, external send, or operational-data write was performed.
 - Delivered API-03 through PR #29; Foundation CI passed and the PR merged as `1e80e3809bca4e3a72e302f3e75ecf5962f4cbfc`.
 - Re-evaluated the queue after merge. No independent safe `READY` task remains: production persistence is blocked by the database sequence and real current-actor integration requires a separately approved authentication boundary.
+
+## 2026-07-18 — Autonomous source delegation and API-04
+
+- Recorded the owner's continuing delegation of reversible, Git-reviewable source engineering decisions while preserving all production, data, secret, communication, legal/business, destructive, and unisolatable high-risk gates.
+- Resolved API-04 conservatively under ADR-014 using Supabase Auth bearer identity, asymmetric JWKS verification, exact issuer/audience/expiration/sub validation, server-side profile mapping, and immutable current-actor context.
+- Added authentication/profile ports and isolated test adapters; client identity headers and JWT metadata cannot grant identity or permissions. The production AppModule and persistence remain unconnected.
+- Verified the design against current official Supabase JWT/JWKS and claims-validation documentation.
+- Local gates: OpenAPI PASS; typecheck PASS; tests PASS (54 total); build PASS; lint PASS; formatting PASS; `git diff --check` PASS. PR/CI remains active.
+- Production impact: **none**.

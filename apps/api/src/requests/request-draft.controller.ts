@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  Inject,
   Param,
   ParseUUIDPipe,
   Patch,
@@ -18,6 +19,7 @@ import {
   RequirePermission,
   RequirePredicates,
 } from '../authz/authorization.decorators.js';
+import { CURRENT_ACTOR } from '../authn/authentication.contracts.js';
 import { RequestDraftService } from './request-draft.service.js';
 
 export interface CurrentActorPort {
@@ -28,6 +30,7 @@ export interface CurrentActorPort {
 export class RequestDraftController {
   constructor(
     private readonly service: RequestDraftService,
+    @Inject(CURRENT_ACTOR)
     private readonly actors: CurrentActorPort,
   ) {}
 
