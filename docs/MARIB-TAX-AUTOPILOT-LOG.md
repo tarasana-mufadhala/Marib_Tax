@@ -43,3 +43,10 @@
 - Re-evaluated the queue in the same run and inspected the recorded Node/pnpm/Flutter toolchain, environment strategy, pnpm boundaries, and placeholder application/package directories.
 - Determined that meaningful API/runtime contract initialization is blocked by `API-01`; declined to create placeholder-only scaffolding with no approved interface or verifiable runtime behavior.
 - Ended at a precise checkpoint because no safe `READY` implementation remains; the next actionable gates are `PROD-DB-03` and `API-01`.
+
+## 2026-07-17 — API-01 explicit approval
+
+- Recorded the user's explicit approval of API-01 while preserving the independent `PROD-DB-03` production gate.
+- Added ADR-011 and aligned ADR-006 and the API contract baseline with `/api/v1`, route/verb conventions, error envelope, authorization declarations, and compatibility policy.
+- Reclassified OpenAPI, NestJS API, shared contracts, validation tooling, and safe health/readiness foundation work as `READY`/`ACTIVE`.
+- Production impact: **none**.

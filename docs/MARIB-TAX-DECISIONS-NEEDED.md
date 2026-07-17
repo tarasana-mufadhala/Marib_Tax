@@ -26,9 +26,10 @@ Only decisions that require an authorized human are listed here. Source work mus
 
 ### API-01 — Initial OpenAPI routing and compatibility boundary
 
-- **State:** REQUIRES_USER_APPROVAL
+- **State:** APPROVED on 2026-07-17
 - **Source constraint:** `docs/api/MARIB-TAX-API-CONTRACT-BASELINE-01.md` explicitly leaves paths and verbs for later approval; ADR-006 makes published OpenAPI authoritative.
-- **Decision needed:** approve the initial API version prefix, resource/path naming, HTTP verb conventions for lifecycle actions, error-envelope standard, and breaking-change/versioning boundary.
-- **Until approved:** do not publish an authoritative OpenAPI file, generate clients, or implement controllers against invented routes. Documentation and non-interface runtime tooling may proceed when independently specified.
+- **Approved boundary:** `/api/v1`; English plural kebab-case resources; UUID internal identifiers; explicit lifecycle `POST` commands; `GET`/`POST`/`PATCH` defaults; operational `DELETE` prohibited by default; stable safe error envelope; endpoint permission declarations; additive v1 compatibility and new major versions for breaking changes.
+- **Canonical record:** ADR-011. OpenAPI, NestJS, shared-contract, validation, and isolated health/readiness foundation work is now `READY`.
+- **Still excluded:** production migration/SQL/deployment, secrets, external sends, and operational-data changes.
 
 The canonical open-decision registers remain under `docs/governance/`; this file is an execution-facing summary and does not replace them.

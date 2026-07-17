@@ -1,9 +1,21 @@
 # Marib Tax System — API Contract Baseline 01
 
 **Document ID:** MARIB-TAX-API-CONTRACT-BASELINE-01
-**Status:** High-level API contract baseline (not OpenAPI yet)
+**Status:** Approved high-level API contract baseline; OpenAPI foundation authorized by API-01
 
-> OpenAPI will be authoritative when published (ADR-006). Paths/verbs: **يحتاج اعتماد لاحق**.
+> OpenAPI is authoritative when published (ADR-006). API-01 and ADR-011 approve `/api/v1`, English plural kebab-case paths, explicit lifecycle commands, the common error envelope, and v1 compatibility rules.
+
+## API-01 approved conventions
+
+- Business route prefix: `/api/v1`.
+- Internal health/readiness routes may sit outside the prefix only when isolated and non-data-bearing.
+- `GET` reads, `POST` creates or invokes an explicit lifecycle command, and `PATCH` partially updates.
+- `PUT` requires a documented replacement use case. `DELETE` is prohibited by default for operational, financial, and audited data.
+- Internal path identifiers are UUIDs; paths use English plural resource names and kebab-case compounds.
+- Lifecycle operations use named endpoints, never a generic `/{id}/action` route.
+- Errors use `{ error: { code, message, details?, traceId } }`; no stack, SQL, secret, or internal-structure disclosure.
+- Every endpoint declares a permission and NestJS enforces it. There is no general administrator bypass.
+- Compatible additive changes may remain in v1. Breaking changes require a documented new major version, transition plan, and compatibility tests.
 
 ### Terminology
 
