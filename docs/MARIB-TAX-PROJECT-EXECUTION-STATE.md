@@ -50,7 +50,8 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 | 4 | Author Batch 04 source migration | BLOCKED | Future isolated worktree | Depends on accepted Batch 03 and approved DM-04/DM-21/DM-23 choices where encoded. |
 | 5 | OpenAPI paths, verbs, and version boundary | COMPLETE | API-01 / ADR-011 | Explicitly approved on 2026-07-17. |
 | 6 | OpenAPI, NestJS API, and shared-contract foundation | COMPLETE | PR #24 / `054cd3526e75a5a700419cdb19d3ea53f46fe401` | Expanded CI PASS; production remains closed. |
-| 7 | Stable error-code catalog and runtime error envelope | REVIEW | `chore/marib-tax-autopilot-orchestrator` | Implementation and negative disclosure/correlation tests PASS locally; pending PR/CI. |
+| 7 | Stable error-code catalog and runtime error envelope | COMPLETE | PR #25 / `5707f58c88be860b34ff9ad01742c0e9ae6608be` | Expanded CI PASS. |
+| 8 | Stable endpoint permission identifiers | REQUIRES_USER_APPROVAL | API-02 | Transition matrix marks current identifiers PROPOSED; business endpoints cannot declare unapproved permissions. |
 
 ## Quality gates
 
@@ -73,13 +74,13 @@ Request explicit approval using `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-03
 
 ## Continuation checkpoint
 
-- **Last completed task:** OpenAPI/NestJS/shared-contract foundation merged in PR #24 (`054cd3526e75a5a700419cdb19d3ea53f46fe401`), expanded CI PASS.
-- **Active task:** stable error catalog and global safe error-envelope filter; local gates PASS, pending PR/CI.
+- **Last completed task:** safe error-envelope enforcement merged in PR #25 (`5707f58c88be860b34ff9ad01742c0e9ae6608be`), expanded CI PASS.
+- **Active task:** none; first business-contract slice inspected and blocked at API-02.
 - **Owner:** `chore/marib-tax-autopilot-orchestrator` in `C:\projects\Marib_Tax-autopilot`.
 - **Approval gates:** production Batch 03 (`PROD-DB-03`) remains closed. API-01 is approved.
-- **Queue result:** runtime foundation is complete; error-envelope enforcement is in review. Database Batch 04 remains blocked by the Batch 03 production gate.
-- **Highest next task:** pass CI and merge error-envelope enforcement, then select the first permission-backed business contract slice that does not require production data.
-- **Next action:** commit/push/PR for error handling, resolve findings, merge on PASS, then re-evaluate Queue.
+- **Queue result:** platform runtime, contracts, CI, and safe errors are complete. Business endpoints are blocked by unapproved permission identifiers (API-02). Database Batch 04 remains blocked by PROD-DB-03.
+- **Highest next task:** API-02 or PROD-DB-03, whichever receives explicit approval first.
+- **Next action:** after focused Git/CI verification, apply the approved decision; do not invent permission constants or execute production operations.
 
 ## Realistic completion estimate
 

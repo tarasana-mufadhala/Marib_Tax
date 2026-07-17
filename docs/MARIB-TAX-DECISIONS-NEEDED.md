@@ -32,4 +32,12 @@ Only decisions that require an authorized human are listed here. Source work mus
 - **Canonical record:** ADR-011. OpenAPI, NestJS, shared-contract, validation, and isolated health/readiness foundation work is now `READY`.
 - **Still excluded:** production migration/SQL/deployment, secrets, external sends, and operational-data changes.
 
+### API-02 — Stable endpoint permission identifiers
+
+- **State:** REQUIRES_USER_APPROVAL
+- **Source constraint:** `docs/workflows/MARIB-TAX-TRANSITION-AUTHORIZATION-MATRIX-01.md` explicitly marks identifiers such as `request.submit`, `request.review`, and `request.decision.final` as proposed and requiring confirmation during API/security design.
+- **Decision needed:** approve the stable permission-code catalog used by endpoint declarations and NestJS authorization guards, including taxpayer own-data operations, request lifecycle commands, staff review, final decisions, administrative close/archive, and the rule for endpoints that require ownership plus a permission.
+- **Until approved:** do not publish business endpoints or authorization decorators using proposed identifiers. Platform health/readiness and common error infrastructure remain complete and safe.
+- **Unaffected gate:** `PROD-DB-03` remains separately closed.
+
 The canonical open-decision registers remain under `docs/governance/`; this file is an execution-facing summary and does not replace them.
