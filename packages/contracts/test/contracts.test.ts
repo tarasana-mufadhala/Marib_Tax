@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ApiErrorEnvelope, HealthResponse } from '../src/index.js';
+import {
+  isPermissionCode,
+  permissionCodes,
+  type ApiErrorEnvelope,
+  type HealthResponse,
+} from '../src/index.js';
 
 describe('common API contracts', () => {
   it('requires safe error fields without internal details', () => {
@@ -26,5 +31,15 @@ describe('common API contracts', () => {
       service: 'marib-tax-api',
       version: 'v1',
     });
+  });
+
+  it('publishes only stable explicit permission keys', () => {
+    expect(permissionCodes).toContain('request.submit');
+    expect(permissionCodes).toContain('report.view');
+    expect(permissionCodes).toContain('report.export');
+    expect(permissionCodes).not.toContain('request.*');
+    expect(permissionCodes).not.toContain('request.decision.revise');
+    expect(isPermissionCode('request.submit')).toBe(true);
+    expect(isPermissionCode('admin.*')).toBe(false);
   });
 });

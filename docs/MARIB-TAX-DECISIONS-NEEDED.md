@@ -34,10 +34,10 @@ Only decisions that require an authorized human are listed here. Source work mus
 
 ### API-02 — Stable endpoint permission identifiers
 
-- **State:** REQUIRES_USER_APPROVAL
+- **State:** APPROVED on 2026-07-18
 - **Source constraint:** `docs/workflows/MARIB-TAX-TRANSITION-AUTHORIZATION-MATRIX-01.md` explicitly marks identifiers such as `request.submit`, `request.review`, and `request.decision.final` as proposed and requiring confirmation during API/security design.
-- **Decision needed:** approve the stable permission-code catalog used by endpoint declarations and NestJS authorization guards, including taxpayer own-data operations, request lifecycle commands, staff review, final decisions, administrative close/archive, and the rule for endpoints that require ownership plus a permission.
-- **Until approved:** do not publish business endpoints or authorization decorators using proposed identifiers. Platform health/readiness and common error infrastructure remain complete and safe.
+- **Approved boundary:** stable lowercase dot-separated capability keys, no wildcards, no role-name inference, no administrator bypass, explicit OpenAPI/decorator declarations, and server-side fail-closed predicates.
+- **Deferred:** decision revision, rejected/archived reopen, field-visit result correction, and receipt correction remain non-runtime reserved keys.
 - **Unaffected gate:** `PROD-DB-03` remains separately closed.
 
 The canonical open-decision registers remain under `docs/governance/`; this file is an execution-facing summary and does not replace them.

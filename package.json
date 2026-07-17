@@ -8,7 +8,7 @@
     "validate:openapi": "redocly lint --config redocly.yaml packages/contracts/openapi/marib-tax.v1.yaml",
     "typecheck": "pnpm -r --if-present typecheck",
     "build": "pnpm -r --if-present build",
-    "test": "pnpm -r --if-present test",
+    "test": "pnpm --filter @marib-tax/contracts build && pnpm -r --if-present test",
     "lint": "eslint apps/api/src apps/api/test packages/contracts/src packages/contracts/test --max-warnings=0",
     "format:check": "prettier --check \"{apps,packages}/**/*.{ts,json,yaml}\""
   },

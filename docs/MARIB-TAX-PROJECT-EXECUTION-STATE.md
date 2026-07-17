@@ -51,7 +51,8 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 | 5 | OpenAPI paths, verbs, and version boundary | COMPLETE | API-01 / ADR-011 | Explicitly approved on 2026-07-17. |
 | 6 | OpenAPI, NestJS API, and shared-contract foundation | COMPLETE | PR #24 / `054cd3526e75a5a700419cdb19d3ea53f46fe401` | Expanded CI PASS; production remains closed. |
 | 7 | Stable error-code catalog and runtime error envelope | COMPLETE | PR #25 / `5707f58c88be860b34ff9ad01742c0e9ae6608be` | Expanded CI PASS. |
-| 8 | Stable endpoint permission identifiers | REQUIRES_USER_APPROVAL | API-02 | Transition matrix marks current identifiers PROPOSED; business endpoints cannot declare unapproved permissions. |
+| 8 | Stable endpoint permission identifiers | COMPLETE | API-02 / ADR-012 | Explicitly approved on 2026-07-18. |
+| 9 | Fail-closed NestJS authorization foundation | REVIEW | `chore/marib-tax-autopilot-orchestrator` | Central catalog, decorators, global guard, actor/policy/audit abstractions, and authorization matrix tests PASS locally. |
 
 ## Quality gates
 
@@ -74,13 +75,13 @@ Request explicit approval using `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-03
 
 ## Continuation checkpoint
 
-- **Last completed task:** safe error-envelope enforcement merged in PR #25 (`5707f58c88be860b34ff9ad01742c0e9ae6608be`), expanded CI PASS.
-- **Active task:** none; first business-contract slice inspected and blocked at API-02.
+- **Last completed task:** API-02 explicitly approved and recorded in ADR-012 and the authorization baselines.
+- **Active task:** fail-closed authorization foundation; 23 tests PASS locally, pending PR/CI/security review.
 - **Owner:** `chore/marib-tax-autopilot-orchestrator` in `C:\projects\Marib_Tax-autopilot`.
 - **Approval gates:** production Batch 03 (`PROD-DB-03`) remains closed. API-01 is approved.
-- **Queue result:** platform runtime, contracts, CI, and safe errors are complete. Business endpoints are blocked by unapproved permission identifiers (API-02). Database Batch 04 remains blocked by PROD-DB-03.
-- **Highest next task:** API-02 or PROD-DB-03, whichever receives explicit approval first.
-- **Next action:** after focused Git/CI verification, apply the approved decision; do not invent permission constants or execute production operations.
+- **Queue result:** authorization infrastructure is in review. Database Batch 04 remains blocked by PROD-DB-03.
+- **Highest next task:** merge authorization foundation after expanded CI, then inspect the first taxpayer-owned request draft contract for complete approved DTO semantics.
+- **Next action:** commit/push/PR, resolve findings, merge on PASS, then re-evaluate the first business slice without production operations.
 
 ## Realistic completion estimate
 
