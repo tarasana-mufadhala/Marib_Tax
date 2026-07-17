@@ -22,3 +22,5 @@ Adopt **REST API first**, with **OpenAPI as the authoritative interface contract
 - Contract changes that break clients require versioning and change control.
 - Controllers and DTOs must stay consistent with the published OpenAPI document.
 - Documentation under `docs/api/` tracks contract evolution.
+- ADR-011 defines the approved `/api/v1` routing, HTTP verb, error-envelope, authorization declaration, and compatibility boundaries.
+- Generated clients may only be produced from a reviewed OpenAPI artifact that passes CI.

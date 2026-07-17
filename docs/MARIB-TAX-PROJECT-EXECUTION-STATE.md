@@ -48,8 +48,8 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 | 2 | Apply Batch 03 to production | REQUIRES_USER_APPROVAL | Production operator | Explicit fresh approval required; exact preflight/apply/post-verify sequence must be used. |
 | 3 | Post-apply verification for Batch 03 | BLOCKED | Future isolated worktree | Depends on successful authorized apply. |
 | 4 | Author Batch 04 source migration | BLOCKED | Future isolated worktree | Depends on accepted Batch 03 and approved DM-04/DM-21/DM-23 choices where encoded. |
-| 5 | OpenAPI paths, verbs, and version boundary | REQUIRES_USER_APPROVAL | Product/API authority | API baseline explicitly marks paths and verbs as requiring later approval; ADR-006 prohibits inventing undocumented production interfaces. |
-| 6 | Runtime scaffolding and shared contracts | BLOCKED | Future isolated worktree | Depends on an approved OpenAPI authoring boundary and toolchain/version baseline; no runtime code currently exists. |
+| 5 | OpenAPI paths, verbs, and version boundary | COMPLETE | API-01 / ADR-011 | Explicitly approved on 2026-07-17. |
+| 6 | OpenAPI, NestJS API, and shared-contract foundation | ACTIVE | `chore/marib-tax-autopilot-orchestrator` | Authorized source work; production operations remain closed. |
 
 ## Quality gates
 
@@ -62,7 +62,7 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 
 - Production Batch 03 application requires explicit user approval.
 - The physical model decision register contains 41 open decisions. Batch-specific decisions must be resolved before source code encodes them.
-- API paths, HTTP verbs, initial version prefix, and compatibility boundary require approval before an authoritative OpenAPI document or client/server contracts are authored.
+- API-01 is approved; contract/runtime source foundation may proceed under ADR-011.
 - Local `main` has a preserved ahead commit corresponding to Batch 03 preflight work; do not reset or discard it.
 
 ## Highest next safe task
@@ -74,10 +74,10 @@ Request explicit approval using `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-03
 - **Last completed task:** extended-cycle policy and automation prompt synchronized and merged in PR #21 (`8fe5f5187b1844ce87859f2c858b07fa98c45202`), Foundation CI PASS.
 - **Active task:** none; focused runtime/tooling candidate review completed.
 - **Owner:** `chore/marib-tax-autopilot-orchestrator` in `C:\projects\Marib_Tax-autopilot`.
-- **Approval gates:** production Batch 03 (`PROD-DB-03`) and authoritative OpenAPI boundary (`API-01`).
-- **Queue result:** no safe `READY` implementation remains. Database Batch 04 is dependency-blocked by the Batch 03 production gate. Authoritative OpenAPI, controllers, generated clients, and meaningful shared contracts are blocked by `API-01`. Creating placeholder-only scaffolding would add unverifiable structure without advancing an approved contract.
-- **Highest next task:** `PROD-DB-03` or `API-01`, whichever receives explicit approval first.
-- **Next-run first action:** focused fetch/PR/CI verification, read this checkpoint, and check for a recorded approval or newly independent task; do not repeat the initial repository inventory.
+- **Approval gates:** production Batch 03 (`PROD-DB-03`) remains closed. API-01 is approved.
+- **Queue result:** OpenAPI, NestJS API, shared contracts, validation tooling, tests, and safe health/readiness endpoints are `READY`/`ACTIVE`.
+- **Highest next task:** build and validate the API/runtime foundation, then re-evaluate the Queue in the same run.
+- **Next action:** author the reviewed OpenAPI foundation and executable NestJS/shared-contract workspaces; no production operation.
 
 ## Realistic completion estimate
 
