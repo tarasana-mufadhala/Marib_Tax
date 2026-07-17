@@ -1,5 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import type { ApiErrorEnvelope } from '@marib-tax/contracts';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { AppModule } from '../src/app.module.js';
@@ -41,8 +42,29 @@ describe('platform health endpoints', () => {
   });
 
   it('does not expose a generic lifecycle action endpoint', async () => {
-    await request(getServer())
+    const response = await request(getServer())
       .post('/api/v1/requests/00000000-0000-4000-8000-000000000000/action')
+      .set('x-request-id', 'contract-negative-test')
       .expect(404);
+
+    expect(response.body).toEqual({
+      error: {
+        code: 'RESOURCE_NOT_FOUND',
+        message: 'The requested resource was not found.',
+        traceId: 'contract-negative-test',
+      },
+    });
+    expect(JSON.stringify(response.body)).not.toMatch(/stack|sql|secret/i);
+  });
+
+  it('rejects unsafe correlation identifiers without reflecting them', async () => {
+    const response = await request(getServer())
+      .get('/missing')
+      .set('x-request-id', '<script>unsafe</script>')
+      .expect(404);
+    const body = response.body as ApiErrorEnvelope;
+
+    expect(body.error.traceId).toMatch(/^[0-9a-f-]{36}$/);
+    expect(body.error.traceId).not.toContain('unsafe');
   });
 });

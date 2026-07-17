@@ -50,6 +50,12 @@
 - Local results: OpenAPI PASS; typecheck PASS; tests PASS (7); build PASS; lint PASS; formatting PASS; `git diff --check` PASS.
 - Git Bash foundation validation remained locally hung without output; Linux Foundation CI remains the authoritative gate.
 - Production impact: **none**.
+- Merged the runtime foundation through PR #24 (`054cd3526e75a5a700419cdb19d3ea53f46fe401`) after expanded CI PASS.
+- Re-evaluated the Queue and started the required initial error-code map before broad controller work.
+- Added a stable error catalog and global NestJS exception filter with safe fixed messages, required trace IDs, and no raw exception reflection.
+- Added negative tests for stack/SQL/secret non-disclosure and rejection of unsafe caller-supplied correlation identifiers.
+- Local error-task results: OpenAPI PASS; typecheck PASS; tests PASS (8); build PASS; lint PASS; formatting PASS; `git diff --check` PASS.
+- Production impact remains **none**.
 - Merged the policy through PR #21 as `8fe5f5187b1844ce87859f2c858b07fa98c45202` after Foundation CI PASS.
 - Re-evaluated the queue in the same run and inspected the recorded Node/pnpm/Flutter toolchain, environment strategy, pnpm boundaries, and placeholder application/package directories.
 - Determined that meaningful API/runtime contract initialization is blocked by `API-01`; declined to create placeholder-only scaffolding with no approved interface or verifiable runtime behavior.
