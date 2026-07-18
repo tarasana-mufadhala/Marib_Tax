@@ -21,7 +21,7 @@
 | Area | Status | Evidence |
 | --- | --- | --- |
 | Monorepo/governance/ADRs/CI | COMPLETE | Repository structure, ADRs, validation workflow, and baseline documents exist. |
-| Flutter taxpayer app | NOT_STARTED | `apps/mobile` contains a README only. |
+| Flutter taxpayer app | ACTIVE | Android/iOS-ready Flutter foundation; Arabic RTL and API-03 draft model/UI tests PASS locally. |
 | Next.js web/admin | NOT_STARTED | `apps/web` contains a README only. |
 | NestJS API | RUNTIME_READY | Buildable/tested foundation with safe `/health` and `/ready`; no business or production integration. |
 | NestJS worker | NOT_STARTED | `apps/worker` contains a README only. |
@@ -54,7 +54,8 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 | 8 | Stable endpoint permission identifiers | COMPLETE | API-02 / ADR-012 | Explicitly approved on 2026-07-18. |
 | 9 | Fail-closed NestJS authorization foundation | COMPLETE | PR #27 / `8f4280351f2a67deab978484a753d1a5ea0e7115` | Expanded CI PASS; no admin bypass. |
 | 10 | First taxpayer request-draft business contract | COMPLETE | PR #29 / `1e80e3809bca4e3a72e302f3e75ecf5962f4cbfc` | Foundation CI PASS; production integration intentionally absent. |
-| 11 | Supabase Auth and current-actor source boundary | ACTIVE | API-04 / ADR-014 | Explicitly resolved under source-decision delegation; local implementation/tests active. |
+| 11 | Supabase Auth and current-actor source boundary | COMPLETE | PR #31 / `ba717a43c909e10e17312a299a408c45871d856f` | Foundation CI PASS; production adapters remain unconnected. |
+| 12 | Flutter taxpayer application foundation | ACTIVE | `apps/mobile` | Analyze/tests/debug APK build PASS after cleaning a locked generated cache; CI gate added, pending PR. |
 
 ## Quality gates
 
@@ -73,17 +74,17 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 
 ## Highest next safe task
 
-Complete API-04 through full local gates and PR/CI/merge, then select the next dependency-correct source task under the delegated engineering authority. Do not execute PROD-DB-03 without separate approval.
+Deliver the isolated Flutter taxpayer foundation through review/CI, then continue the next dependency-correct client or source module. Do not execute PROD-DB-03 without separate approval.
 
 ## Continuation checkpoint
 
-- **Last completed task:** API-03 completion checkpoint merged through PR #30 (`46c3609ef0a8fc604d1c77a62b8009d2fbc7d492`) after Foundation CI PASS.
-- **Active task:** API-04 source authentication/current-actor boundary and isolated runtime tests.
+- **Last completed task:** API-04 merged through PR #31 (`ba717a43c909e10e17312a299a408c45871d856f`) after Foundation CI PASS.
+- **Active task:** Flutter taxpayer application foundation with Arabic RTL and API-03 draft model/UI; source is uncommitted pending the Android build gate.
 - **Owner:** `chore/marib-tax-autopilot-orchestrator` in `C:\projects\Marib_Tax-autopilot`.
 - **Approval gates:** production Batch 03 (`PROD-DB-03`) remains closed. API-01 through API-04 are approved; reversible source engineering decisions are delegated.
-- **Queue result:** API-04 is active; production persistence and database Batch 04 remain blocked.
-- **Highest next task:** finish API-04 delivery, then re-evaluate independent source modules without creating artificial API approval gates.
-- **Next action:** run complete gates and security review, commit/push/PR/CI/merge only on PASS, update state, then continue the next safe source task.
+- **Queue result:** API-04 is complete. Flutter foundation is the highest safe independent source task; production persistence and database Batch 04 remain blocked.
+- **Highest next task:** deliver the Flutter foundation, then re-evaluate the Next.js public/admin or additional offline-safe mobile slice.
+- **Next action:** run final Flutter/root checks, commit/push/open PR, monitor both foundation and Flutter CI jobs, fix findings, and merge only on PASS.
 
 ## Realistic completion estimate
 
