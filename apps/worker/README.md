@@ -1,7 +1,5 @@
-# apps/worker
+# Marib Tax Worker
 
-Background worker for the Marib Tax System.
+Source-only background worker foundation governed by ADR-007.
 
-**Purpose:** Processes notification outbox entries, retries, and other background jobs.
-
-**Status:** Reserved directory only. Implementation has not started. No worker application has been initialized.
+The worker is disabled by default and has no database, SMS, OTP, push, provider, credential, or production connection. Setting `WORKER_ENABLED=true` still fails closed until a reviewed queue repository and delivery adapter are explicitly registered.
