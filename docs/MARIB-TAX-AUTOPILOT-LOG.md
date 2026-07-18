@@ -40,6 +40,18 @@
 - Synchronized the active hourly automation prompt with the extended-cycle and checkpoint rules.
 - Production impact: **none**.
 
+## 2026-07-18 — API-04 delivery and Flutter foundation
+
+- Merged API-04 through PR #31 as `ba717a43c909e10e17312a299a408c45871d856f` after Foundation CI PASS.
+- Re-evaluated the queue and selected the taxpayer Flutter application as the next independent source task under ADR-002 and the approved FR-204/API-03 slice.
+- Initialized Android-first/iOS-ready Flutter source with Arabic RTL localization and feature-first `activity_address_change` domain/presentation structure.
+- Added a local-only, disabled-save screen and strict API-03 serialization/normalization/duplicate-target tests. No endpoint, credential, database SDK, or external send is connected.
+- Flutter analyze PASS; Flutter tests PASS (3). `flutter build apk --debug` produced no output and exceeded the 300-second gate, so no commit, push, PR, or merge was attempted for this slice.
+- Checkpoint: uncommitted `apps/mobile` source remains isolated on `chore/marib-tax-autopilot-orchestrator`; next run starts with bounded verbose Gradle/Java diagnostics, not a fresh inventory. Production impact: **none**.
+- Resumed from the checkpoint and traced the build failure to a locked generated `mergeDebugJavaResource` cache. `flutter clean` removed only generated output; a clean Android debug APK build then passed.
+- Added a dedicated CI job pinned to Flutter 3.38.7 for analyze, tests, and Android debug build. No artifact is published or deployed.
+- Final local Flutter gates: analyze PASS; tests PASS (3); Android debug APK build PASS; `git diff --check` PASS.
+
 ## 2026-07-17 — API runtime foundation
 
 - Merged API-01 governance through PR #23 (`f2cedb4372bc9a600ba62384e69f39ca4e1bab08`) after Foundation CI PASS.

@@ -53,3 +53,32 @@ jobs:
       - name: Check whitespace on push to main
         if: github.event_name == 'push'
         run: git show --check --oneline --format= HEAD
+
+  flutter-validation:
+    name: Flutter analyze, test, and debug build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.7'
+          channel: stable
+          cache: true
+
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test
+
+      - name: Build Android debug APK
+        run: flutter build apk --debug --no-pub
