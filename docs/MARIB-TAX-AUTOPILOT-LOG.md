@@ -62,6 +62,15 @@
 - Replaced generated marketing/deployment content with an Arabic RTL public shell that collects no data and connects to no service.
 - Added `/admin` as a fail-closed 404 placeholder and tests proving absent or caller-provided admin roles/wildcards cannot open it.
 - Web typecheck PASS; tests PASS (3); lint PASS; production build PASS. Full monorepo OpenAPI/typecheck/tests (57 total)/build/lint/format/diff gates PASS. Production impact: **none**.
+- PR #34 CI passed (Flutter gate correctly skipped in 7s; Foundation CI passed in 1m5s) and merged as `5c64a39858842826d65a0efbe24c539c95e5403e`.
+
+## 2026-07-18 — Disabled notification worker foundation
+
+- Re-evaluated the queue and selected the source-only worker shell governed by ADR-007.
+- Added outbox repository and notification delivery ports only; no database or provider adapter exists.
+- Worker startup is disabled by default and throws when `WORKER_ENABLED=true` without reviewed adapters, preventing accidental delivery.
+- Added negative tests proving provider-looking environment values cannot enable delivery. Worker typecheck/tests (3)/lint/build PASS; disabled startup smoke test PASS. Full monorepo gates PASS with 60 tests.
+- Production impact: **none**. No SMS, OTP, push, database, credential, deployment, or publish action occurred.
 
 ## 2026-07-17 — API runtime foundation
 
