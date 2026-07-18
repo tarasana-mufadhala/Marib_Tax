@@ -51,6 +51,8 @@
 - Resumed from the checkpoint and traced the build failure to a locked generated `mergeDebugJavaResource` cache. `flutter clean` removed only generated output; a clean Android debug APK build then passed.
 - Added a dedicated CI job pinned to Flutter 3.38.7 for analyze, tests, and Android debug build. No artifact is published or deployed.
 - Final local Flutter gates: analyze PASS; tests PASS (3); Android debug APK build PASS; `git diff --check` PASS.
+- PR #32 passed both Foundation CI (47s) and the new Flutter analyze/test/debug-build job (7m42s), then merged as `7619dfa2c502cec564d193fdfe9c92b57f0607dc`.
+- Re-evaluated the queue: the single Next.js public/admin foundation required by ADR-003 is the next independent safe source task. Production and database gates remain unchanged.
 
 ## 2026-07-17 — API runtime foundation
 
