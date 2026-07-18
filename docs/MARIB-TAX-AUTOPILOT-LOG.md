@@ -71,6 +71,8 @@
 - Worker startup is disabled by default and throws when `WORKER_ENABLED=true` without reviewed adapters, preventing accidental delivery.
 - Added negative tests proving provider-looking environment values cannot enable delivery. Worker typecheck/tests (3)/lint/build PASS; disabled startup smoke test PASS. Full monorepo gates PASS with 60 tests.
 - Production impact: **none**. No SMS, OTP, push, database, credential, deployment, or publish action occurred.
+- PR #35 passed Foundation CI (1m22s; 60 tests) while the unchanged Flutter job skipped in 5s, then merged as `cb6127276982f3729356549c8188203bd44f22a7`.
+- Re-evaluated the queue and selected request ownership/resource-state policy hardening as the next safe source task. Checkpoint starts with the repository port and NestJS route parameters; no production adapter is authorized or required.
 
 ## 2026-07-17 — API runtime foundation
 
