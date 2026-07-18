@@ -57,3 +57,7 @@ Only decisions that require an authorized human are listed here. Source work mus
 - **Unaffected gate:** `PROD-DB-03` remains separately closed.
 
 The canonical open-decision registers remain under `docs/governance/`; this file is an execution-facing summary and does not replace them.
+
+## 2026-07-18 queue review
+
+Repository-backed evaluation of the already-approved `OWNERSHIP` and `RESOURCE_STATE` predicates, and explicit safe 401/403 responses for already-protected operations, require no new product decision. Both are reversible source hardening under API-01 through API-04 and the owner's source delegation. `PROD-DB-03` remains independently closed.

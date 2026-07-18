@@ -40,6 +40,15 @@
 - Synchronized the active hourly automation prompt with the extended-cycle and checkpoint rules.
 - Production impact: **none**.
 
+## 2026-07-18 — Request policy evaluator
+
+- Resumed from PR #36 merge `2e7136cfe4e06432ff82e13499a3146be80adf53`; verified no open PRs and Foundation CI PASS.
+- Replaced the isolated authenticated runtime's allow-all predicate mock with a repository-backed evaluator for `OWNERSHIP` and `RESOURCE_STATE`.
+- The evaluator fails closed for malformed or missing identifiers, missing resources, unknown predicates, cross-actor access, and non-draft mutation. Collection ownership is granted only for the exact authenticated `POST /api/v1/requests` creation route.
+- Added negative end-to-end coverage for cross-owner reads and edits after submission.
+- Local gates: OpenAPI PASS; typecheck PASS; 62 tests PASS; build PASS; lint PASS; formatting PASS; `git diff --check` PASS.
+- Re-evaluated the queue: explicit reusable 401/403 OpenAPI responses and drift tests for protected business operations are the next independent safe task. Production impact: **none**.
+
 ## 2026-07-18 — API-04 delivery and Flutter foundation
 
 - Merged API-04 through PR #31 as `ba717a43c909e10e17312a299a408c45871d856f` after Foundation CI PASS.
