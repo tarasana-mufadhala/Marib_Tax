@@ -8,7 +8,7 @@
 
 ## Git and delivery state
 
-- `origin/main`: `2e7136cfe4e06432ff82e13499a3146be80adf53` (PR #36 merged; Foundation CI PASS).
+- `origin/main`: `d61a009` (PR #38 merged; Foundation and Flutter CI PASS).
 - Local `main`: `8c3628f46e0d8644380f5bc120c868da92e65757`, one local documentation commit ahead of `origin/main`.
 - Autopilot worktree: `C:\projects\Marib_Tax-autopilot`, branch `chore/marib-tax-autopilot-orchestrator`, clean at inventory start.
 - Primary worktree: `C:\projects\Marib_Tax`, branch `main`; its ahead commit is preserved and not rewritten.
@@ -42,24 +42,24 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 
 ## Execution queue
 
-| Priority | Task                                                 | State                  | Owner/worktree                                      | Gate/result                                                                                    |
-| -------- | ---------------------------------------------------- | ---------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| 1        | Merge PR #17 after final review                      | COMPLETE               | `docs/db-foundation-batch-03-production-preflight`  | Merged as `c9cf9c0`; CI PASS; documentation-only change.                                       |
-| 2        | Apply Batch 03 to production                         | REQUIRES_USER_APPROVAL | Production operator                                 | Explicit fresh approval required; exact preflight/apply/post-verify sequence must be used.     |
-| 3        | Post-apply verification for Batch 03                 | BLOCKED                | Future isolated worktree                            | Depends on successful authorized apply.                                                        |
-| 4        | Author Batch 04 source migration                     | BLOCKED                | Future isolated worktree                            | Depends on accepted Batch 03 and approved DM-04/DM-21/DM-23 choices where encoded.             |
-| 5        | OpenAPI paths, verbs, and version boundary           | COMPLETE               | API-01 / ADR-011                                    | Explicitly approved on 2026-07-17.                                                             |
-| 6        | OpenAPI, NestJS API, and shared-contract foundation  | COMPLETE               | PR #24 / `054cd3526e75a5a700419cdb19d3ea53f46fe401` | Expanded CI PASS; production remains closed.                                                   |
-| 7        | Stable error-code catalog and runtime error envelope | COMPLETE               | PR #25 / `5707f58c88be860b34ff9ad01742c0e9ae6608be` | Expanded CI PASS.                                                                              |
-| 8        | Stable endpoint permission identifiers               | COMPLETE               | API-02 / ADR-012                                    | Explicitly approved on 2026-07-18.                                                             |
-| 9        | Fail-closed NestJS authorization foundation          | COMPLETE               | PR #27 / `8f4280351f2a67deab978484a753d1a5ea0e7115` | Expanded CI PASS; no admin bypass.                                                             |
-| 10       | First taxpayer request-draft business contract       | COMPLETE               | PR #29 / `1e80e3809bca4e3a72e302f3e75ecf5962f4cbfc` | Foundation CI PASS; production integration intentionally absent.                               |
-| 11       | Supabase Auth and current-actor source boundary      | COMPLETE               | PR #31 / `ba717a43c909e10e17312a299a408c45871d856f` | Foundation CI PASS; production adapters remain unconnected.                                    |
-| 12       | Flutter taxpayer application foundation              | COMPLETE               | PR #32 / `7619dfa2c502cec564d193fdfe9c92b57f0607dc` | Foundation and Flutter CI PASS; no production connection.                                      |
-| 13       | Next.js public/admin application foundation          | COMPLETE               | PR #34 / `5c64a39858842826d65a0efbe24c539c95e5403e` | Foundation CI PASS; no credentials or backend connection.                                      |
-| 14       | Notification worker source foundation                | COMPLETE               | PR #35 / `cb6127276982f3729356549c8188203bd44f22a7` | CI PASS; no provider, database, credential, or delivery adapter.                               |
-| 15       | Request ownership/resource-state policy evaluator    | COMPLETE               | PR #37 / `7110703`                                  | Foundation and Flutter CI PASS; no production wiring.                                          |
-| 16       | Protected-operation authentication response contract | REVIEW                 | `packages/contracts`                                | Reusable 401/403 responses and semantic drift tests pass all local gates; PR delivery pending. |
+| Priority | Task                                                 | State                  | Owner/worktree                                      | Gate/result                                                                                |
+| -------- | ---------------------------------------------------- | ---------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| 1        | Merge PR #17 after final review                      | COMPLETE               | `docs/db-foundation-batch-03-production-preflight`  | Merged as `c9cf9c0`; CI PASS; documentation-only change.                                   |
+| 2        | Apply Batch 03 to production                         | REQUIRES_USER_APPROVAL | Production operator                                 | Explicit fresh approval required; exact preflight/apply/post-verify sequence must be used. |
+| 3        | Post-apply verification for Batch 03                 | BLOCKED                | Future isolated worktree                            | Depends on successful authorized apply.                                                    |
+| 4        | Author Batch 04 source migration                     | BLOCKED                | Future isolated worktree                            | Depends on accepted Batch 03 and approved DM-04/DM-21/DM-23 choices where encoded.         |
+| 5        | OpenAPI paths, verbs, and version boundary           | COMPLETE               | API-01 / ADR-011                                    | Explicitly approved on 2026-07-17.                                                         |
+| 6        | OpenAPI, NestJS API, and shared-contract foundation  | COMPLETE               | PR #24 / `054cd3526e75a5a700419cdb19d3ea53f46fe401` | Expanded CI PASS; production remains closed.                                               |
+| 7        | Stable error-code catalog and runtime error envelope | COMPLETE               | PR #25 / `5707f58c88be860b34ff9ad01742c0e9ae6608be` | Expanded CI PASS.                                                                          |
+| 8        | Stable endpoint permission identifiers               | COMPLETE               | API-02 / ADR-012                                    | Explicitly approved on 2026-07-18.                                                         |
+| 9        | Fail-closed NestJS authorization foundation          | COMPLETE               | PR #27 / `8f4280351f2a67deab978484a753d1a5ea0e7115` | Expanded CI PASS; no admin bypass.                                                         |
+| 10       | First taxpayer request-draft business contract       | COMPLETE               | PR #29 / `1e80e3809bca4e3a72e302f3e75ecf5962f4cbfc` | Foundation CI PASS; production integration intentionally absent.                           |
+| 11       | Supabase Auth and current-actor source boundary      | COMPLETE               | PR #31 / `ba717a43c909e10e17312a299a408c45871d856f` | Foundation CI PASS; production adapters remain unconnected.                                |
+| 12       | Flutter taxpayer application foundation              | COMPLETE               | PR #32 / `7619dfa2c502cec564d193fdfe9c92b57f0607dc` | Foundation and Flutter CI PASS; no production connection.                                  |
+| 13       | Next.js public/admin application foundation          | COMPLETE               | PR #34 / `5c64a39858842826d65a0efbe24c539c95e5403e` | Foundation CI PASS; no credentials or backend connection.                                  |
+| 14       | Notification worker source foundation                | COMPLETE               | PR #35 / `cb6127276982f3729356549c8188203bd44f22a7` | CI PASS; no provider, database, credential, or delivery adapter.                           |
+| 15       | Request ownership/resource-state policy evaluator    | COMPLETE               | PR #37 / `7110703`                                  | Foundation and Flutter CI PASS; no production wiring.                                      |
+| 16       | Protected-operation authentication response contract | COMPLETE               | PR #38 / `d61a009`                                  | Reusable 401/403 responses and semantic drift tests; Foundation and Flutter CI PASS.       |
 
 ## Quality gates
 
@@ -78,17 +78,17 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 
 ## Highest next safe task
 
-Deliver the protected-operation 401/403 contract through PR/CI, then re-evaluate the source queue. Do not connect persistence or execute PROD-DB-03 without separate approval.
+No additional dependency-correct source task is presently recorded as `READY`. The highest remaining executable item is PROD-DB-03, which remains closed pending separate explicit approval.
 
 ## Continuation checkpoint
 
-- **Last completed task:** request ownership/resource-state evaluator merged through PR #37 as `7110703` after Foundation and Flutter CI PASS.
-- **Active task:** protected-operation 401/403 contract hardening passes all local gates and is pending commit/PR/CI.
+- **Last completed task:** protected-operation 401/403 contract hardening merged through PR #38 as `d61a009` after Foundation and Flutter CI PASS.
+- **Active task:** none.
 - **Owner:** `chore/marib-tax-autopilot-orchestrator` in `C:\projects\Marib_Tax-autopilot`.
 - **Approval gates:** production Batch 03 (`PROD-DB-03`) remains closed. API-01 through API-04 are approved; reversible source engineering decisions are delegated.
-- **Queue result:** API, Flutter, Next.js, and worker source foundations are established. Provider/database integration remains blocked or absent. Authentication response-contract hardening is the only active source review.
-- **Highest next task:** deliver the reusable 401/403 contract and semantic drift test through PR/CI, then perform a focused queue review.
-- **Next action:** commit/push/open PR for the passing contract slice and monitor CI; if the execution window ends first, resume at that PR without repeating local gates.
+- **Queue result:** no safe task remains in `READY`; production persistence is gated by PROD-DB-03 and later database work depends on its accepted application.
+- **Highest next task:** PROD-DB-03 only after a new separate explicit production approval, or a newly recorded independent source task.
+- **Next action:** on the next heartbeat, perform only a focused freshness check for newly READY source work or changed approval state; do not repeat completed gates.
 
 ## Realistic completion estimate
 
