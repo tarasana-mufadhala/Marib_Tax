@@ -8,7 +8,7 @@
 
 ## Git and delivery state
 
-- `origin/main`: `5c64a39858842826d65a0efbe24c539c95e5403e` (PR #34 merged).
+- `origin/main`: `cb6127276982f3729356549c8188203bd44f22a7` (PR #35 merged).
 - Local `main`: `8c3628f46e0d8644380f5bc120c868da92e65757`, one local documentation commit ahead of `origin/main`.
 - Autopilot worktree: `C:\projects\Marib_Tax-autopilot`, branch `chore/marib-tax-autopilot-orchestrator`, clean at inventory start.
 - Primary worktree: `C:\projects\Marib_Tax`, branch `main`; its ahead commit is preserved and not rewritten.
@@ -24,7 +24,7 @@
 | Flutter taxpayer app | RUNTIME_READY | PR #32 merged; Android/iOS-ready Arabic RTL foundation and API-03 local draft model/UI with CI PASS. |
 | Next.js web/admin | RUNTIME_READY | PR #34 merged; Next.js 16 Arabic RTL public shell and fail-closed `/admin`, CI PASS. |
 | NestJS API | RUNTIME_READY | Buildable/tested foundation with safe `/health` and `/ready`; no business or production integration. |
-| NestJS worker | ACTIVE | Source-only TypeScript outbox worker contracts; disabled/fail-closed startup gates PASS locally. |
+| NestJS worker | RUNTIME_READY | PR #35 merged; disabled/fail-closed TypeScript outbox contracts with CI PASS. |
 | Shared packages | ACTIVE | `@marib-tax/contracts` builds and tests common API-01 types; other packages remain reserved. |
 | OpenAPI/runtime DTOs | RUNTIME_READY | OpenAPI 3.1 foundation validates cleanly with safe common contracts. |
 
@@ -57,7 +57,8 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 | 11 | Supabase Auth and current-actor source boundary | COMPLETE | PR #31 / `ba717a43c909e10e17312a299a408c45871d856f` | Foundation CI PASS; production adapters remain unconnected. |
 | 12 | Flutter taxpayer application foundation | COMPLETE | PR #32 / `7619dfa2c502cec564d193fdfe9c92b57f0607dc` | Foundation and Flutter CI PASS; no production connection. |
 | 13 | Next.js public/admin application foundation | COMPLETE | PR #34 / `5c64a39858842826d65a0efbe24c539c95e5403e` | Foundation CI PASS; no credentials or backend connection. |
-| 14 | Notification worker source foundation | ACTIVE | `apps/worker` | Disabled by default; typecheck/tests/lint/build PASS locally, pending full gates/PR. |
+| 14 | Notification worker source foundation | COMPLETE | PR #35 / `cb6127276982f3729356549c8188203bd44f22a7` | CI PASS; no provider, database, credential, or delivery adapter. |
+| 15 | Request ownership/resource-state policy evaluator | READY | `apps/api` | Replace isolated allow-all predicate mock with repository-backed fail-closed source policy and negative tests. |
 
 ## Quality gates
 
@@ -76,17 +77,17 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 
 ## Highest next safe task
 
-Deliver the disabled notification worker foundation through review/CI, then re-evaluate remaining source-only quality and contract slices. Do not execute PROD-DB-03 without separate approval.
+Implement the request ownership/resource-state policy evaluator against the repository port with in-memory tests only. Do not connect persistence or execute PROD-DB-03 without separate approval.
 
 ## Continuation checkpoint
 
-- **Last completed task:** Next.js foundation merged through PR #34 (`5c64a39858842826d65a0efbe24c539c95e5403e`) after CI PASS.
-- **Active task:** disabled notification worker foundation; local worker gates PASS, full gates and PR/CI remain.
+- **Last completed task:** disabled worker foundation merged through PR #35 (`cb6127276982f3729356549c8188203bd44f22a7`) after CI PASS.
+- **Active task:** none; request ownership/resource-state policy hardening is READY.
 - **Owner:** `chore/marib-tax-autopilot-orchestrator` in `C:\projects\Marib_Tax-autopilot`.
 - **Approval gates:** production Batch 03 (`PROD-DB-03`) remains closed. API-01 through API-04 are approved; reversible source engineering decisions are delegated.
-- **Queue result:** Next.js is complete. Worker foundation is the highest safe independent source task; all provider/database/delivery integration remains blocked or deliberately absent.
-- **Highest next task:** deliver `apps/worker` through green PR/CI, then reassess cross-application contract and quality gaps.
-- **Next action:** run complete monorepo gates and security review, commit/push/PR/CI/merge only on PASS, update state, and continue the next safe source task.
+- **Queue result:** API, Flutter, Next.js, and worker source foundations are established. Provider/database integration remains blocked or absent. Request predicate hardening is independently READY.
+- **Highest next task:** implement repository-backed `OWNERSHIP` and `RESOURCE_STATE` evaluation for request routes without production wiring.
+- **Next action:** inspect NestJS `ExecutionContext` route parameters and the request repository port, implement fail-closed evaluator plus in-memory negative tests, replace the isolated E2E allow-all mock, then run full gates.
 
 ## Realistic completion estimate
 
