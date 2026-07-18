@@ -8,7 +8,7 @@
 
 ## Git and delivery state
 
-- `origin/main`: `7619dfa2c502cec564d193fdfe9c92b57f0607dc` (PR #32 merged).
+- `origin/main`: `7bcfa7bf9e2a3195aea9e4abd282c263591df11d` (PR #33 merged).
 - Local `main`: `8c3628f46e0d8644380f5bc120c868da92e65757`, one local documentation commit ahead of `origin/main`.
 - Autopilot worktree: `C:\projects\Marib_Tax-autopilot`, branch `chore/marib-tax-autopilot-orchestrator`, clean at inventory start.
 - Primary worktree: `C:\projects\Marib_Tax`, branch `main`; its ahead commit is preserved and not rewritten.
@@ -22,7 +22,7 @@
 | --- | --- | --- |
 | Monorepo/governance/ADRs/CI | COMPLETE | Repository structure, ADRs, validation workflow, and baseline documents exist. |
 | Flutter taxpayer app | RUNTIME_READY | PR #32 merged; Android/iOS-ready Arabic RTL foundation and API-03 local draft model/UI with CI PASS. |
-| Next.js web/admin | NOT_STARTED | `apps/web` contains a README only. |
+| Next.js web/admin | ACTIVE | Next.js 16 App Router Arabic RTL public shell and fail-closed `/admin`; local gates PASS, pending PR. |
 | NestJS API | RUNTIME_READY | Buildable/tested foundation with safe `/health` and `/ready`; no business or production integration. |
 | NestJS worker | NOT_STARTED | `apps/worker` contains a README only. |
 | Shared packages | ACTIVE | `@marib-tax/contracts` builds and tests common API-01 types; other packages remain reserved. |
@@ -56,12 +56,12 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 | 10 | First taxpayer request-draft business contract | COMPLETE | PR #29 / `1e80e3809bca4e3a72e302f3e75ecf5962f4cbfc` | Foundation CI PASS; production integration intentionally absent. |
 | 11 | Supabase Auth and current-actor source boundary | COMPLETE | PR #31 / `ba717a43c909e10e17312a299a408c45871d856f` | Foundation CI PASS; production adapters remain unconnected. |
 | 12 | Flutter taxpayer application foundation | COMPLETE | PR #32 / `7619dfa2c502cec564d193fdfe9c92b57f0607dc` | Foundation and Flutter CI PASS; no production connection. |
-| 13 | Next.js public/admin application foundation | READY | `apps/web` | Independent source-only scaffold; no admin behavior, credentials, or backend connection. |
+| 13 | Next.js public/admin application foundation | ACTIVE | `apps/web` | Typecheck/tests/lint/build PASS locally; no credentials or backend connection, pending PR. |
 
 ## Quality gates
 
 - Foundation validation: PASS on PR #17 and current `origin/main`.
-- NestJS/contracts: OpenAPI PASS, typecheck PASS, 54 tests PASS, build PASS, lint PASS, formatting PASS, `git diff --check` PASS for API-04 locally.
+- API/web/contracts: OpenAPI PASS, typecheck PASS, 57 tests PASS, build PASS, lint PASS, formatting PASS, `git diff --check` PASS for the Next.js foundation locally.
 - Flutter/Next.js/worker: NOT_STARTED.
 - Migration execution: CLOSED pending explicit approval.
 - Production deployment: NOT_STARTED and CLOSED.
@@ -75,17 +75,17 @@ RLS and database authorization source exist through Batch 03. Production RLS was
 
 ## Highest next safe task
 
-Initialize the Next.js public/admin source foundation under ADR-003 with safe public shell, protected-route placeholders that fail closed, and CI gates. Do not execute PROD-DB-03 without separate approval.
+Deliver the Next.js public/admin foundation through review/CI, then re-evaluate the worker foundation and remaining offline-safe client slices. Do not execute PROD-DB-03 without separate approval.
 
 ## Continuation checkpoint
 
-- **Last completed task:** Flutter foundation merged through PR #32 (`7619dfa2c502cec564d193fdfe9c92b57f0607dc`) after Foundation and Flutter CI PASS.
-- **Active task:** none; Next.js public/admin foundation is the next safe source task.
+- **Last completed task:** Flutter checkpoint/CI optimization merged through PR #33 (`7bcfa7bf9e2a3195aea9e4abd282c263591df11d`) after both CI jobs PASS.
+- **Active task:** Next.js public/admin foundation; local web gates PASS, repository gates and PR/CI remain.
 - **Owner:** `chore/marib-tax-autopilot-orchestrator` in `C:\projects\Marib_Tax-autopilot`.
 - **Approval gates:** production Batch 03 (`PROD-DB-03`) remains closed. API-01 through API-04 are approved; reversible source engineering decisions are delegated.
-- **Queue result:** Flutter foundation is complete. Next.js foundation is the highest safe independent source task; production persistence and database Batch 04 remain blocked.
-- **Highest next task:** initialize `apps/web` as the single public/admin Next.js TypeScript application required by ADR-003.
-- **Next action:** verify current Next.js stable requirements, scaffold without secrets or backend endpoints, add Arabic/public shell plus fail-closed admin placeholder tests, and integrate CI gates.
+- **Queue result:** Next.js foundation is active. Production persistence and database Batch 04 remain blocked; worker foundation remains independently available afterward.
+- **Highest next task:** deliver `apps/web` through green PR/CI, then initialize the source-only worker shell if dependency review confirms no notification delivery is enabled.
+- **Next action:** run complete monorepo gates and security review, commit/push/PR/CI/merge only on PASS, update state, and continue the next safe source task.
 
 ## Realistic completion estimate
 

@@ -1,5 +1,9 @@
 packages:
-  - "apps/web"
-  - "apps/api"
-  - "apps/worker"
-  - "packages/*"
+  - 'apps/web'
+  - 'apps/api'
+  - 'apps/worker'
+  - 'packages/*'
+
+allowBuilds:
+  sharp: true
+  unrs-resolver: true

@@ -1,7 +1,5 @@
-# apps/web
+# Marib Tax Web
 
-Public website and admin dashboard for the Marib Tax System.
+Single Next.js App Router application for the public website and future protected admin dashboard, as required by ADR-003.
 
-**Purpose:** Next.js (TypeScript) application containing public pages and protected admin routes.
-
-**Status:** Reserved directory only. Implementation has not started. No Next.js project has been initialized.
+The current foundation is Arabic RTL and intentionally contains no API endpoint, credential, database client, production integration, or enabled admin route. `/admin` fails closed until a server-verified authentication adapter is implemented.

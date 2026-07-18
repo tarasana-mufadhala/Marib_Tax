@@ -1,0 +1,67 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: light;
+  --ink: #10251f;
+  --muted: #53635e;
+  --paper: #f6f3e9;
+  --accent: #176b52;
+  --line: #d6d9ce;
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  background: var(--paper);
+}
+body {
+  margin: 0;
+  color: var(--ink);
+  background:
+    radial-gradient(circle at top right, #dce9df, transparent 38rem),
+    var(--paper);
+  font-family: Tahoma, Arial, sans-serif;
+}
+.shell {
+  min-height: 100vh;
+  width: min(72rem, 100%);
+  margin: 0 auto;
+  padding: clamp(2rem, 7vw, 7rem) clamp(1.25rem, 5vw, 4rem);
+}
+.hero {
+  max-width: 48rem;
+}
+.eyebrow {
+  color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+h1 {
+  margin: 1rem 0;
+  font-size: clamp(2.4rem, 7vw, 5rem);
+  line-height: 1.08;
+}
+.lead {
+  max-width: 42rem;
+  color: var(--muted);
+  font-size: clamp(1.1rem, 2.4vw, 1.45rem);
+  line-height: 1.9;
+}
+.notice {
+  margin-top: clamp(3rem, 8vw, 7rem);
+  max-width: 42rem;
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  border-right: 0.35rem solid var(--accent);
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 62%);
+}
+.notice h2 {
+  margin-top: 0;
+}
+.notice p {
+  margin-bottom: 0;
+  color: var(--muted);
+  line-height: 1.8;
+}
