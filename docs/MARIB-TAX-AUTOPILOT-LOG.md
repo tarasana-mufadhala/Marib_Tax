@@ -54,6 +54,15 @@
 - PR #32 passed both Foundation CI (47s) and the new Flutter analyze/test/debug-build job (7m42s), then merged as `7619dfa2c502cec564d193fdfe9c92b57f0607dc`.
 - Re-evaluated the queue: the single Next.js public/admin foundation required by ADR-003 is the next independent safe source task. Production and database gates remain unchanged.
 
+## 2026-07-18 — Next.js public/admin foundation
+
+- Synchronized to PR #33 merge `7bcfa7bf9e2a3195aea9e4abd282c263591df11d` and verified no open PRs or changed production gates.
+- Confirmed current official Next.js guidance uses the TypeScript App Router and initialized Next.js 16.2.10 / React 19.2.4 in the existing pnpm workspace.
+- Explicitly approved only the required `sharp` and `unrs-resolver` install scripts in root pnpm supply-chain configuration; no broad build-script allowance was introduced.
+- Replaced generated marketing/deployment content with an Arabic RTL public shell that collects no data and connects to no service.
+- Added `/admin` as a fail-closed 404 placeholder and tests proving absent or caller-provided admin roles/wildcards cannot open it.
+- Web typecheck PASS; tests PASS (3); lint PASS; production build PASS. Full monorepo OpenAPI/typecheck/tests (57 total)/build/lint/format/diff gates PASS. Production impact: **none**.
+
 ## 2026-07-17 — API runtime foundation
 
 - Merged API-01 governance through PR #23 (`f2cedb4372bc9a600ba62384e69f39ca4e1bab08`) after Foundation CI PASS.
