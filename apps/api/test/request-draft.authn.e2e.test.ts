@@ -23,6 +23,7 @@ import {
 } from '../src/authz/authorization.contracts.js';
 import { ApiExceptionFilter } from '../src/http/api-exception.filter.js';
 import { RequestDraftController } from '../src/requests/request-draft.controller.js';
+import { RequestDraftPolicyEvaluator } from '../src/requests/request-draft.policy-evaluator.js';
 import {
   REQUEST_DRAFT_REPOSITORY,
   type RequestDraftRepository,
@@ -48,6 +49,7 @@ class MemoryRepository implements RequestDraftRepository {
 describe('isolated authenticated request-draft runtime', () => {
   let app: INestApplication;
   let permissions: PermissionCode[];
+  let actorId: string;
 
   function getServer(): Parameters<typeof request>[0] {
     return app.getHttpServer() as Parameters<typeof request>[0];
@@ -55,6 +57,7 @@ describe('isolated authenticated request-draft runtime', () => {
 
   beforeEach(async () => {
     permissions = ['request.draft.create'];
+    actorId = 'profile-1';
     const tokens: AccessTokenVerifier = {
       verify: (token) =>
         token === 'valid'
@@ -64,7 +67,7 @@ describe('isolated authenticated request-draft runtime', () => {
     const profiles: ActorProfileRepository = {
       findActiveByAuthUserId: () =>
         Promise.resolve({
-          actorId: 'profile-1',
+          actorId,
           permissions,
           roleActive: true,
           assignmentActive: true,
@@ -80,7 +83,7 @@ describe('isolated authenticated request-draft runtime', () => {
         { provide: ACTOR_CONTEXT_RESOLVER, useValue: actors },
         {
           provide: AUTHORIZATION_POLICY_EVALUATOR,
-          useValue: { evaluate: (): Promise<boolean> => Promise.resolve(true) },
+          useClass: RequestDraftPolicyEvaluator,
         },
         {
           provide: AUTHORIZATION_AUDIT_HOOK,
@@ -133,4 +136,49 @@ describe('isolated authenticated request-draft runtime', () => {
       .send({})
       .expect(403);
   });
+
+  it('denies reading a draft owned by another actor', async () => {
+    const created = await createDraft();
+    actorId = 'profile-2';
+    permissions = ['request.read'];
+
+    await request(getServer())
+      .get(`/api/v1/requests/${created.id}`)
+      .set('Authorization', 'Bearer valid')
+      .expect(403);
+  });
+
+  it('denies editing a submitted request through the resource-state policy', async () => {
+    const created = await createDraft();
+    permissions = ['request.submit'];
+    await request(getServer())
+      .post(`/api/v1/requests/${created.id}/submit`)
+      .set('Authorization', 'Bearer valid')
+      .expect(200);
+
+    permissions = ['request.draft.edit'];
+    await request(getServer())
+      .patch(`/api/v1/requests/${created.id}`)
+      .set('Authorization', 'Bearer valid')
+      .send({ targets: [] })
+      .expect(403);
+  });
+
+  async function createDraft(): Promise<ActivityAddressChangeRequestResponse> {
+    const response = await request(getServer())
+      .post('/api/v1/requests')
+      .set('Authorization', 'Bearer valid')
+      .send({
+        serviceType: 'activity_address_change',
+        schemaVersion: '1.0.0',
+        targets: [
+          {
+            activityId: '00000000-0000-4000-8000-000000000001',
+            newAddress: { district: 'Marib', street: '40' },
+          },
+        ],
+      })
+      .expect(201);
+    return response.body as ActivityAddressChangeRequestResponse;
+  }
 });

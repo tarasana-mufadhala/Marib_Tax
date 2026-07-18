@@ -66,3 +66,5 @@ Before an approaching execution limit, persist a precise checkpoint in the execu
 - the first command or action for the next run.
 
 The next scheduled or Run now cycle resumes from that checkpoint after a focused verification. It must not redo the full inventory or repeat completed work unless the verification reveals drift.
+
+The 2026-07-18 request-policy checkpoint confirms this extended-cycle rule is active: passing local gates places a task in review, and the next independent source-contract task remains eligible after delivery without reopening production gates.
