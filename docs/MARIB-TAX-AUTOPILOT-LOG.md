@@ -56,6 +56,7 @@
 - Added a semantic YAML contract test that discovers operations by `x-permission`, verifies inherited bearer security, and requires exact 401/403 component references to prevent future drift.
 - Local gates: OpenAPI PASS; typecheck PASS; 64 tests PASS; build PASS; lint PASS; formatting PASS; `git diff --check` PASS.
 - Production impact: **none**. No adapter, migration, SQL, deployment, credential, notification, or operational-data action occurred.
+- PR #38 passed Foundation CI and the Flutter gate, then merged as `d61a009`. Queue re-evaluation found no further safe `READY` task; PROD-DB-03 remains closed.
 
 ## 2026-07-18 — API-04 delivery and Flutter foundation
 
