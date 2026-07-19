@@ -1,5 +1,14 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-20 — Batch 06 design-decision gate HOLD + source correction
+
+- Reviewed Batch 06 against approved draft/close-archive/reopen/versioning boundaries before any PROD-DB-06 preflight.
+- Decision: **HOLD — BATCH_06_SOURCE_REQUIRES_CORRECTION** because `request_reopen_records.reason` and `reopened_by_staff_profile_id` were nullable.
+- Corrected unapplied source migration in place; new SHA `F0446C8964C4345D79669C6926B983776213CB06BFD6E4C2DB27BDC3EFB0AE7D`; verifier now asserts reopen NOT NULL / non-blank constraints.
+- Recorded ADR-016; closed DMOD-01 / DMOD-06 / DMOD-11 in open-decision registers.
+- No production preflight, dry-run, `db push`, seed, deploy, or real notifications.
+- PROD-DB-06 remains CLOSED.
+
 ## 2026-07-19 — PROD-DB-05 applied and verified; Batch 06 source authored
 
 - Explicit owner production approval received for Batch 05 only (`sjmtiwzddztxfrncwkpx`, CLI `2.109.1`, SHA `D3F15F918B721DD00865CFF8702BBF4313BB21FB741228D5ECCF5F82E7FB148C`).

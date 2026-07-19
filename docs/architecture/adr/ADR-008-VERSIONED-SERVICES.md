@@ -22,3 +22,7 @@ Tax services, requirements, and form schemas will evolve. Historical requests mu
 - Do not overwrite historical schema definitions in place.
 - Migrations must preserve historical version rows/data.
 - Breaking service definition changes require a new version and change control.
+
+## 2026-07-20 operational binding
+
+ADR-016 binds Batch 06 request persistence to this ADR: each request keeps a fixed submitted `schema_version`, submitted snapshots are immutable, and form changes create new versions without rewriting historical requests.

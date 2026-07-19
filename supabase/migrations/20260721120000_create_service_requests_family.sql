@@ -33,7 +33,7 @@ COMMENT ON COLUMN requests.service_types.code IS 'Stable unique service type cod
 COMMENT ON COLUMN requests.service_types.name IS 'Display name.';
 COMMENT ON COLUMN requests.service_types.description IS 'Optional description.';
 COMMENT ON COLUMN requests.service_types.is_active IS 'Catalogue active flag.';
-COMMENT ON COLUMN requests.service_types.version_label IS 'Optional version label (ADR-008 deferred detail).';
+COMMENT ON COLUMN requests.service_types.version_label IS 'Optional catalogue version label; form/schema changes create a new service-type or schema version (ADR-008 / ADR-016).';
 COMMENT ON COLUMN requests.service_types.created_at IS 'Database insertion timestamp.';
 COMMENT ON COLUMN requests.service_types.created_by_profile_id IS 'Optional creating application profile.';
 COMMENT ON COLUMN requests.service_types.updated_at IS 'Last application update timestamp.';
@@ -74,14 +74,14 @@ COMMENT ON COLUMN requests.service_requests.public_ref IS 'Optional unique publi
 COMMENT ON COLUMN requests.service_requests.service_type_id IS 'Service type catalogue reference.';
 COMMENT ON COLUMN requests.service_requests.taxpayer_id IS 'Subject taxpayer registry root.';
 COMMENT ON COLUMN requests.service_requests.status_code IS 'Current lifecycle status code.';
-COMMENT ON COLUMN requests.service_requests.submitted_at IS 'Optional submit timestamp.';
 COMMENT ON COLUMN requests.service_requests.created_at IS 'Database insertion timestamp.';
 COMMENT ON COLUMN requests.service_requests.created_by_profile_id IS 'Optional creating application profile.';
 COMMENT ON COLUMN requests.service_requests.updated_at IS 'Last application update timestamp.';
 COMMENT ON COLUMN requests.service_requests.updated_by_profile_id IS 'Optional last-updating application profile.';
 COMMENT ON COLUMN requests.service_requests.correlation_id IS 'Optional application operation correlation identifier.';
-COMMENT ON COLUMN requests.service_requests.archived_at IS 'Optional soft-archive timestamp.';
+COMMENT ON COLUMN requests.service_requests.archived_at IS 'Optional soft-archive marker complementary to independent archive events in request_close_archive_records.';
 COMMENT ON COLUMN requests.service_requests.idempotency_key IS 'Optional client idempotency key; scoped uniqueness deferred.';
+COMMENT ON COLUMN requests.service_requests.submitted_at IS 'Set on submit; after submit, hard delete and direct cancel are forbidden (NestJS); draft cancel is pre-submit only.';
 
 CREATE TABLE requests.request_selected_activities (
   id uuid NOT NULL,
@@ -166,13 +166,13 @@ CREATE INDEX request_form_snapshots_request_id_idx
   ON requests.request_form_snapshots (service_request_id);
 CREATE INDEX request_form_snapshots_captured_at_idx
   ON requests.request_form_snapshots (captured_at);
-COMMENT ON TABLE requests.request_form_snapshots IS 'TABLE-027 form snapshot header for a service request.';
+COMMENT ON TABLE requests.request_form_snapshots IS 'TABLE-027 form snapshot header; submitted snapshot is immutable (NestJS); request remains bound to its original schema_version.';
 COMMENT ON COLUMN requests.request_form_snapshots.id IS 'Application-supplied immutable UUID.';
 COMMENT ON COLUMN requests.request_form_snapshots.service_request_id IS 'Parent service request.';
 COMMENT ON COLUMN requests.request_form_snapshots.snapshot_version IS 'Snapshot version number (>= 1).';
 COMMENT ON COLUMN requests.request_form_snapshots.captured_at IS 'Capture timestamp.';
 COMMENT ON COLUMN requests.request_form_snapshots.captured_by_profile_id IS 'Optional capturing profile.';
-COMMENT ON COLUMN requests.request_form_snapshots.schema_version IS 'Form schema version label.';
+COMMENT ON COLUMN requests.request_form_snapshots.schema_version IS 'Fixed form schema version for this snapshot/request binding.';
 COMMENT ON COLUMN requests.request_form_snapshots.created_at IS 'Database insertion timestamp.';
 COMMENT ON COLUMN requests.request_form_snapshots.correlation_id IS 'Optional application operation correlation identifier.';
 
@@ -216,14 +216,14 @@ CREATE INDEX request_status_histories_request_id_idx
   ON requests.request_status_histories (service_request_id);
 CREATE INDEX request_status_histories_changed_at_idx
   ON requests.request_status_histories (changed_at);
-COMMENT ON TABLE requests.request_status_histories IS 'TABLE-029 append-only status history.';
+COMMENT ON TABLE requests.request_status_histories IS 'TABLE-029 append-only status history; used for draft cancel (actor/time/reason) and later transitions; NestJS forbids UPDATE/DELETE.';
 COMMENT ON COLUMN requests.request_status_histories.id IS 'Application-supplied immutable UUID.';
 COMMENT ON COLUMN requests.request_status_histories.service_request_id IS 'Parent service request.';
 COMMENT ON COLUMN requests.request_status_histories.changed_at IS 'Change occurrence timestamp.';
-COMMENT ON COLUMN requests.request_status_histories.changed_by_profile_id IS 'Optional actor profile.';
+COMMENT ON COLUMN requests.request_status_histories.changed_by_profile_id IS 'Actor profile; required by NestJS for draft cancel.';
 COMMENT ON COLUMN requests.request_status_histories.from_status_code IS 'Prior status code.';
 COMMENT ON COLUMN requests.request_status_histories.to_status_code IS 'New status code.';
-COMMENT ON COLUMN requests.request_status_histories.reason IS 'Optional change reason.';
+COMMENT ON COLUMN requests.request_status_histories.reason IS 'Change reason; required by NestJS for draft cancel.';
 COMMENT ON COLUMN requests.request_status_histories.correlation_id IS 'Optional application operation correlation identifier.';
 COMMENT ON COLUMN requests.request_status_histories.created_at IS 'Database insertion timestamp.';
 
@@ -412,10 +412,10 @@ CREATE INDEX request_close_archive_records_request_id_idx
   ON requests.request_close_archive_records (service_request_id);
 CREATE INDEX request_close_archive_records_acted_at_idx
   ON requests.request_close_archive_records (acted_at);
-COMMENT ON TABLE requests.request_close_archive_records IS 'TABLE-035 close or archive event; closed vs archived semantics remain open (DMOD-01).';
+COMMENT ON TABLE requests.request_close_archive_records IS 'TABLE-035 independent close or archive events (ADR-016): close ends processing with a final decision; archive is a later administrative retention action.';
 COMMENT ON COLUMN requests.request_close_archive_records.id IS 'Application-supplied immutable UUID.';
 COMMENT ON COLUMN requests.request_close_archive_records.service_request_id IS 'Parent service request.';
-COMMENT ON COLUMN requests.request_close_archive_records.action_code IS 'Close or archive action code.';
+COMMENT ON COLUMN requests.request_close_archive_records.action_code IS 'Independent action code distinguishing close versus archive.';
 COMMENT ON COLUMN requests.request_close_archive_records.reason IS 'Optional action reason.';
 COMMENT ON COLUMN requests.request_close_archive_records.acted_at IS 'Action timestamp.';
 COMMENT ON COLUMN requests.request_close_archive_records.acted_by_staff_profile_id IS 'Optional acting staff.';
@@ -425,12 +425,13 @@ COMMENT ON COLUMN requests.request_close_archive_records.created_at IS 'Database
 CREATE TABLE requests.request_reopen_records (
   id uuid NOT NULL,
   service_request_id uuid NOT NULL,
-  reason text NULL,
+  reason text NOT NULL,
   reopened_at timestamptz NOT NULL,
-  reopened_by_staff_profile_id uuid NULL,
+  reopened_by_staff_profile_id uuid NOT NULL,
   correlation_id uuid NULL,
   created_at timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT request_reopen_records_pkey PRIMARY KEY (id),
+  CONSTRAINT request_reopen_records_reason_not_blank_check CHECK (btrim(reason) <> ''),
   CONSTRAINT request_reopen_records_request_fkey FOREIGN KEY (service_request_id)
     REFERENCES requests.service_requests (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE,
   CONSTRAINT request_reopen_records_reopened_by_fkey FOREIGN KEY (reopened_by_staff_profile_id)
@@ -440,12 +441,12 @@ CREATE INDEX request_reopen_records_request_id_idx
   ON requests.request_reopen_records (service_request_id);
 CREATE INDEX request_reopen_records_reopened_at_idx
   ON requests.request_reopen_records (reopened_at);
-COMMENT ON TABLE requests.request_reopen_records IS 'TABLE-036 reopen event; reopen authority remains open (DMOD-11).';
+COMMENT ON TABLE requests.request_reopen_records IS 'TABLE-036 staff-only reopen event (ADR-016); taxpayer cannot reopen directly; prior statuses and decisions remain retained.';
 COMMENT ON COLUMN requests.request_reopen_records.id IS 'Application-supplied immutable UUID.';
 COMMENT ON COLUMN requests.request_reopen_records.service_request_id IS 'Parent service request.';
-COMMENT ON COLUMN requests.request_reopen_records.reason IS 'Optional reopen reason.';
+COMMENT ON COLUMN requests.request_reopen_records.reason IS 'Mandatory non-blank reopen reason.';
 COMMENT ON COLUMN requests.request_reopen_records.reopened_at IS 'Reopen timestamp.';
-COMMENT ON COLUMN requests.request_reopen_records.reopened_by_staff_profile_id IS 'Optional reopening staff.';
+COMMENT ON COLUMN requests.request_reopen_records.reopened_by_staff_profile_id IS 'Authorized staff actor; required.';
 COMMENT ON COLUMN requests.request_reopen_records.correlation_id IS 'Optional application operation correlation identifier.';
 COMMENT ON COLUMN requests.request_reopen_records.created_at IS 'Database insertion timestamp.';
 
