@@ -1,5 +1,14 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-20 — PROD-DB-06 applied and verified
+
+- Explicit owner production approval received for Batch 06 only (`sjmtiwzddztxfrncwkpx`, CLI `2.109.1`, SHA `F0446C8964C4345D79669C6926B983776213CB06BFD6E4C2DB27BDC3EFB0AE7D`).
+- Fresh preflight PASS: clean `origin/main` `9637b72`; SHA exact match; project ref match; history 01A–05 once each; Batch 06 absent; fourteen tables absent; `cases=0`; reopen constraints present; backup COMPLETED `2026-07-18T22:04:26.808Z`; dry-run listed only Batch 06.
+- Applied once: `npx --yes supabase@2.109.1 db push --linked --yes`.
+- Post-verify: remote history contains Batch 06 once; verifier `final_status=PASS`; all mismatch counts 0; fourteen tables empty; RLS enabled; no policies/forbidden grants/seed; reopen constraints true; no `cases`; dry-run `Remote database is up to date.`
+- Batch 06 production state: **APPLIED / VERIFIED PASS**. Batch 07 production apply remains closed.
+- Next: Batch 07 source authoring only; no Batch 07 apply without a new independent approval.
+
 ## 2026-07-20 — Batch 06 design acceptance PASS + PROD-DB-06 preflight
 
 - Resumed from `origin/main` `52b5604` after PR #54.
