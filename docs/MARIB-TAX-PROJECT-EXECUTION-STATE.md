@@ -24,7 +24,7 @@ Unchanged from prior checkpoint: Flutter / Next.js / NestJS API / worker / contr
 | 01A application schemas             | COMPLETE | APPLIED                | Migration `20260715175300_create_marib_tax_application_schemas.sql`.                                                                                                       |
 | 02 identity profiles                | COMPLETE | APPLIED                | Migration `20260716190000_create_identity_profiles.sql`.                                                                                                                   |
 | 03 authorization model              | COMPLETE | **APPLIED / VERIFIED PASS** | Migration `20260717120000_create_identity_authorization_model.sql`; SHA `BF15774686744A86D641D7B0B212F7B25E53D2AE6A8E4445662CA84475A00A86`; verifier `final_status=PASS`; four tables empty; post-apply dry-run up to date. |
-| 04 taxpayer registry/legal entities | ACTIVE (source) | NOT_STARTED / CLOSED for apply | ADR-015 unblocks source authoring; production apply requires a new separate approval. |
+| 04 taxpayer registry/legal entities | SOURCE_READY (PR pending) | NOT_STARTED / CLOSED for apply | Migration `20260719120000_create_taxpayer_registry_and_legal_entities.sql` authored with ADR-015 constraints; production apply requires PROD-DB-04. |
 | 05-18                               | BLOCKED  | NOT_STARTED            | Dependency-ordered behind Batch 04 apply + verification.                                                                                                                   |
 
 ## Execution queue

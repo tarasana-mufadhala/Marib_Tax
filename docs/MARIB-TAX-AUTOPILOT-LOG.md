@@ -1,5 +1,13 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-19 — Batch 04 source authoring
+
+- PR #41 post-apply report Foundation CI PASS and merged as `6b13e74`.
+- Authored Batch 04 source migration `20260719120000_create_taxpayer_registry_and_legal_entities.sql` for TABLE-008…013 with ADR-015 encodings (digits-only tax number text, issued-value unique index, correction_reason lineage, one active account link per profile).
+- Added read-only verifier `scripts/db/verify/verify_batch_04_taxpayer_registry_and_legal_entities.sql`.
+- Clarified worker `NotificationProviderPort` with disabled adapter; no real Twilio/WhatsApp send.
+- Production impact: **none**. Batch 04 was not applied; PROD-DB-04 remains closed.
+
 ## 2026-07-19 — PROD-DB-03 applied and verified
 
 - PR #40 (ADR-015 + PROD-DB-03 approval docs) Foundation CI PASS and merged as `1064485`.
