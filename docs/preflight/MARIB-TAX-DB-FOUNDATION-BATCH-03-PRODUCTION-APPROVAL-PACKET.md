@@ -1,6 +1,6 @@
 # MARIB-TAX-DB-FOUNDATION-BATCH-03 — Production Approval Packet
 
-**Status:** `APPROVED` on 2026-07-19 — explicit production authorization recorded for project `sjmtiwzddztxfrncwkpx` and the single migration below. Apply only after this documentation change is merged with CI PASS and all mandatory preflight gates succeed.
+**Status:** `APPLIED / VERIFIED PASS` on 2026-07-19 — see `docs/post-apply/MARIB-TAX-DB-FOUNDATION-BATCH-03-PRODUCTION-APPLY-POST-VERIFY-01-REPORT.md`. This packet is retained as the authorizing evidence; it does not authorize Batch 04 or any other migration.
 
 ## Reviewed artifact
 

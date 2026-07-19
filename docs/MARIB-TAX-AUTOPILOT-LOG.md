@@ -1,5 +1,13 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-19 — PROD-DB-03 applied and verified
+
+- PR #40 (ADR-015 + PROD-DB-03 approval docs) Foundation CI PASS and merged as `1064485`.
+- Preflight PASS: clean tree; SHA `BF15774686744A86D641D7B0B212F7B25E53D2AE6A8E4445662CA84475A00A86`; project `sjmtiwzddztxfrncwkpx`; history 01A+02 once each; Batch 03 absent; profiles present; four auth tables absent; latest physical backup COMPLETED `2026-07-18T22:04:26.808Z`; dry-run listed only Batch 03.
+- Applied once: `npx --yes supabase@2.109.1 db push --linked --yes` → `20260717120000_create_identity_authorization_model.sql`.
+- Post-verify: remote history contains Batch 03 once; verifier `final_status=PASS`; all mismatch counts 0; four tables empty (0 rows); no policies/forbidden grants/seed; post-apply dry-run `Remote database is up to date.`
+- Batch 03 production state: **APPLIED / VERIFIED PASS**. Batch 04 production apply remains closed.
+
 ## 2026-07-19 — Resume: decisions + PROD-DB-03 authorization
 
 - Focused freshness check only: no full inventory redo. Confirmed no `AGENTS.md`.
@@ -7,7 +15,7 @@
 - Recorded owner-approved business boundaries as ADR-015 covering tax number, v1 one-account/one-taxpayer, manual payment (1 due : N receipts, partial, no delete of confirmed receipts), staff-entered visits, attachment classification/archive versions, Twilio-via-provider-port with no real send, and report field matrix with separate `report.view` / `report.export`.
 - Created `docs/reports/MARIB-TAX-REPORT-TO-FIELD-MATRIX-01.md` and updated decision registers, migration sequence Batch 04 constraints, ADR-007 provider-port note, and Batch 03 approval packet to `APPROVED`.
 - Explicit PROD-DB-03 production approval recorded for project `sjmtiwzddztxfrncwkpx`, migration `20260717120000_create_identity_authorization_model.sql`, SHA-256 `BF15774686744A86D641D7B0B212F7B25E53D2AE6A8E4445662CA84475A00A86`, CLI `2.109.1`.
-- Next in-cycle: documentation PR + CI PASS, then mandatory preflight before any production push. Production impact at this step: **none** until apply.
+- Documentation PR #40 merged after CI PASS; production apply followed under the approval packet.
 
 ## 2026-07-17 — Initial orchestration inventory
 
