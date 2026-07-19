@@ -1,6 +1,6 @@
 # Marib Tax Project Execution State
 
-**Inventory time:** 2026-07-19 (Asia/Riyadh) — PROD-DB-05 preflight complete; apply closed
+**Inventory time:** 2026-07-19 (Asia/Riyadh) — stopped at PROD-DB-05 apply gate
 
 **Official repository:** `tarasana-mufadhala/Marib_Tax`
 
@@ -8,8 +8,8 @@
 
 ## Git
 
-- `origin/main`: `9462f68` (PR #46 Batch 05 source merged; Foundation CI PASS).
-- Active worktree branch: `chore/marib-tax-autopilot-orchestrator`.
+- `origin/main`: `c3aebec` (PR #49 masterdata source merged; Foundation CI PASS).
+- Prior: `6ae2977` (PR #47 Batch 05 preflight merged).
 
 ## Database
 
@@ -22,8 +22,8 @@
 
 ## Continuation checkpoint
 
-- **Last completed:** PROD-DB-05 preflight PASS (dry-run only; no apply).
-- **Active:** masterdata OpenAPI/DTO/ports/mocks source (non-production).
+- **Last completed:** PROD-DB-05 preflight + masterdata non-production source merge.
+- **Active:** none.
 - **Approval gates:** PROD-DB-05 apply remains closed pending explicit user approval.
-- **Highest next task:** wait for PROD-DB-05 apply approval, or finish/merge independent masterdata source work.
+- **Highest next task:** wait for explicit PROD-DB-05 apply approval (fresh preflight required at apply time).
 - **Forbidden without new approval:** Batch 05+ production apply, deploy/publish, secrets, real taxpayer data, real SMS/OTP/WhatsApp.
