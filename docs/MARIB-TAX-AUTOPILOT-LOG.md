@@ -1,5 +1,17 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-19 — PROD-DB-05 preflight + masterdata source cycle
+
+- Resumed from `origin/main` `9462f68`. Working tree clean; orchestrator checkpoint `4965e1a`.
+- Recomputed Batch 05 SHA — matched `D3F15F918B721DD00865CFF8702BBF4313BB21FB741228D5ECCF5F82E7FB148C`.
+- Linked project ref confirmed `sjmtiwzddztxfrncwkpx`.
+- Remote history: Batches 01A–04 once each; Batch 05 local-only.
+- Batch 05 tables absent (`commercial_activities=0|…|ownership_histories=0`).
+- Latest managed physical backup COMPLETED `2026-07-18T22:04:26.808Z`.
+- Dry-run only: `npx --yes supabase@2.109.1 db push --linked --dry-run` listed exactly `20260720120000_create_masterdata_activities_and_property.sql`.
+- No real `db push`. PROD-DB-05 apply remains closed.
+- Parallel source: owned masterdata OpenAPI/DTOs, repository ports, ownership/permission tests, Next.js/Flutter mocks (no production connection).
+
 ## 2026-07-19 — PROD-DB-04 applied and verified
 
 - Explicit owner production approval received for Batch 04 only.

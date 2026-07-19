@@ -25,11 +25,13 @@ Only decisions that require an authorized human are listed here. Source work mus
 
 ### PROD-DB-05 — Apply Batch 05 master data
 
-- **State:** REQUIRES_USER_APPROVAL (source authored; production apply closed)
+- **State:** REQUIRES_USER_APPROVAL (preflight PASS; production apply closed)
 - **Source migration:** `supabase/migrations/20260720120000_create_masterdata_activities_and_property.sql`
 - **SHA-256:** `D3F15F918B721DD00865CFF8702BBF4313BB21FB741228D5ECCF5F82E7FB148C`
 - **Verifier:** `scripts/db/verify/verify_batch_05_masterdata_activities_and_property.sql`
 - **Excluded from source:** CONDITIONAL TABLE-021 `property_ownership_units`; proposed `v_taxpayer_properties` view
+- **Preflight evidence:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-05-PRODUCTION-APPLY-PREFLIGHT-01-REPORT.md`
+- **Approval packet:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-05-PRODUCTION-APPROVAL-PACKET.md`
 - **Until approved:** do not run `db push` for Batch 05 or any later batch.
 
 ## Business/data decisions — approved 2026-07-19
