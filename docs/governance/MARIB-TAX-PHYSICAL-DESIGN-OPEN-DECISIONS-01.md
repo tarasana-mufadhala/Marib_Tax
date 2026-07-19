@@ -1,7 +1,7 @@
 # MARIB-TAX-PHYSICAL-DESIGN-OPEN-DECISIONS-01
 
 **Document ID:** MARIB-TAX-PHYSICAL-DESIGN-OPEN-DECISIONS-01
-**Status:** Mixed — PHY-06 / PHY-09 / PHY-10 accepted via ADR-015 (2026-07-19); other PHY rows remain Open / **PROPOSED**. No executable SQL in this register.
+**Status:** Mixed — PHY-06 / PHY-09 / PHY-10 accepted via ADR-015 (2026-07-19); DMOD-01 / DMOD-06 / DMOD-11 accepted via ADR-016 (2026-07-20); other PHY rows remain Open / **PROPOSED**. No executable SQL in this register.
 
 **Companions:** `MARIB-TAX-DATA-MODEL-OPEN-DECISIONS-01`, `MARIB-TAX-DOMAIN-DESIGN-OPEN-DECISIONS-01`, physical schema/table/identifier/reporting/migration/storage docs.
 
@@ -13,17 +13,17 @@
 
 | Reference | Question (summary) |
 | --- | --- |
-| DMOD-01 / OD-01 | Closed versus archived semantics |
+| DMOD-01 / OD-01 | **Approved** — close vs archive independent events (ADR-016) |
 | DMOD-02 / OD-02 | Final FR-205 mandatory attachment list |
 | DMOD-03 / OD-03 | Configured SLA durations |
 | DMOD-04 / OD-04 | Rejection/closure reason catalogs |
 | DMOD-05 / OD-05 | Geographical master-data structure |
-| DMOD-06 / OD-06 | Draft deletion retention/audit policy |
+| DMOD-06 / OD-06 | **Approved** — draft cancel before submit; no hard delete (ADR-016) |
 | DMOD-07 / OD-07 | Reviewer recommendation states and SoD |
 | DMOD-08 / OD-08 | Service-specific field-visit triggers |
 | DMOD-09 / OD-09 | File retention periods |
 | DMOD-10 / OD-10 | Content publication approval |
-| DMOD-11 / OD-11 | Reopen authority |
+| DMOD-11 / OD-11 | **Approved** — staff-only reopen with mandatory reason (ADR-016) |
 | DMOD-12 / OD-12 | Report scheduling configuration |
 | DMOD-13 / OD-13 | Import two-person approval and exceptions |
 | DMOD-14 / OD-14 | Decision revision scenarios and actors |

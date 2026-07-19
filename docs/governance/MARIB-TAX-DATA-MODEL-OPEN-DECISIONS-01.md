@@ -1,6 +1,6 @@
 # MARIB-TAX-DATA-MODEL-OPEN-DECISIONS-01
 
-**Status:** Mixed — approved boundaries recorded in ADR-015; remaining rows stay **يحتاج اعتماد لاحق**.
+**Status:** Mixed — approved boundaries recorded in ADR-015 and ADR-016; remaining rows stay **يحتاج اعتماد لاحق**.
 
 ## Approved boundaries (2026-07-19)
 
@@ -16,21 +16,29 @@ Canonical detail: `docs/architecture/adr/ADR-015-APPROVED-BUSINESS-DATA-BOUNDARI
 | DM-11 (provider) | Twilio via provider port for build/test; port must allow later local/WhatsApp API; no real send now |
 | DM-16 | Field coverage per report-to-field matrix; separate `report.view` / `report.export` |
 
+## Approved lifecycle boundaries (2026-07-20)
+
+Canonical detail: `docs/architecture/adr/ADR-016-SERVICE-REQUEST-LIFECYCLE-BOUNDARIES.md` and `docs/reviews/MARIB-TAX-BATCH-06-DESIGN-DECISION-GATE-01.md`.
+
+| Reference | Approved summary |
+| --- | --- |
+| DMOD-06 | No hard delete; applicant draft-cancel before submit only; record actor/time/reason; post-submit delete/direct cancel forbidden |
+| DMOD-01 | Close = final-decision end of processing; archive = later administrative historical retention; independent event records |
+| DMOD-11 | Staff-only reopen with explicit permission; mandatory reason; prior statuses/decisions retained |
+| ADR-008 binding | Fixed request `schema_version`; immutable submitted snapshot; form change → new version; old requests keep original binding |
+
 ## Carried-forward decisions (still open)
 
 | Reference | Question |
 | --- | --- |
-| DMOD-01 / OD-01 | Closed versus archived semantics |
 | DMOD-02 / OD-02 | Final FR-205 mandatory attachment list |
 | DMOD-03 / OD-03 | Configured SLA durations |
 | DMOD-04 / OD-04 | Rejection/closure reason catalogs |
 | DMOD-05 / OD-05 | Geographical master-data structure |
-| DMOD-06 / OD-06 | Draft deletion retention/audit policy |
 | DMOD-07 / OD-07 | Reviewer recommendation states and separation of duties |
 | DMOD-08 / OD-08 | Service-specific field-visit triggers |
 | DMOD-09 / OD-09 | File retention periods |
 | DMOD-10 / OD-10 | Content publication approval |
-| DMOD-11 / OD-11 | Reopen authority |
 | DMOD-12 / OD-12 | Report scheduling configuration |
 | DMOD-13 / OD-13 | Import two-person approval and exceptions |
 | DMOD-14 / OD-14 | Decision revision scenarios and actors |

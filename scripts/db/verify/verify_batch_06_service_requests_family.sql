@@ -134,6 +134,35 @@ excluded_objects AS (
         AND c.relkind IN ('r', 'p', 'v', 'm')
     ) AS cases_relation_present
 ),
+reopen_constraints AS (
+  SELECT
+    EXISTS (
+      SELECT 1
+      FROM information_schema.columns c
+      WHERE c.table_schema = 'requests'
+        AND c.table_name = 'request_reopen_records'
+        AND c.column_name = 'reason'
+        AND c.is_nullable = 'NO'
+    ) AS reopen_reason_not_null,
+    EXISTS (
+      SELECT 1
+      FROM information_schema.columns c
+      WHERE c.table_schema = 'requests'
+        AND c.table_name = 'request_reopen_records'
+        AND c.column_name = 'reopened_by_staff_profile_id'
+        AND c.is_nullable = 'NO'
+    ) AS reopen_staff_not_null,
+    EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_constraint x
+      JOIN pg_catalog.pg_class c ON c.oid = x.conrelid
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'requests'
+        AND c.relname = 'request_reopen_records'
+        AND x.contype = 'c'
+        AND x.conname = 'request_reopen_records_reason_not_blank_check'
+    ) AS reopen_reason_not_blank_check_present
+),
 seed_row_counts AS (
   SELECT
     (SELECT COUNT(*)::integer FROM requests.service_types) AS service_types_row_count,
@@ -183,6 +212,9 @@ SELECT
   gs.forbidden_grant_count,
   pc.policy_count,
   eo.cases_relation_present,
+  rc.reopen_reason_not_null,
+  rc.reopen_staff_not_null,
+  rc.reopen_reason_not_blank_check_present,
   ss.seed_mismatch_count,
   ss.service_types_row_count,
   ss.service_requests_row_count,
@@ -218,6 +250,10 @@ SELECT
     WHEN s.table_mismatch_count <> 0 THEN 'FAIL_TABLE_OR_RLS_MISMATCH'
     WHEN ix.index_mismatch_count <> 0 THEN 'FAIL_INDEX_MISMATCH'
     WHEN eo.cases_relation_present THEN 'FAIL_CASES_RELATION_PRESENT'
+    WHEN NOT rc.reopen_reason_not_null
+      OR NOT rc.reopen_staff_not_null
+      OR NOT rc.reopen_reason_not_blank_check_present
+      THEN 'FAIL_REOPEN_CONSTRAINT_MISSING'
     WHEN gs.forbidden_grant_count <> 0 THEN 'FAIL_FORBIDDEN_GRANT'
     WHEN pc.policy_count <> 0 THEN 'FAIL_UNEXPECTED_POLICY'
     WHEN ss.seed_mismatch_count <> 0 THEN 'FAIL_SEED_ROWS_PRESENT'
@@ -229,4 +265,5 @@ CROSS JOIN index_summary ix
 CROSS JOIN grant_summary gs
 CROSS JOIN policy_count pc
 CROSS JOIN excluded_objects eo
+CROSS JOIN reopen_constraints rc
 CROSS JOIN seed_summary ss;

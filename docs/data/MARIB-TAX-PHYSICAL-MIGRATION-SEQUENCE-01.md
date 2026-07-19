@@ -132,7 +132,7 @@ This sequence document does **not** authorize production link or apply by itself
 | --- | --- |
 | **Dependencies** | Batches 3–5 (service types, taxpayers, activities selectable) |
 | **Objects** | TABLE-023…036 (service types through reopen records, including form snapshot header/payload hybrid) |
-| **Constraints** | Selected branch under selected activity (REL-028); append-only status/assignment/decision revision histories; draft-delete policy **يحتاج اعتماد لاحق** (DMOD-06) |
+| **Constraints** | Selected branch under selected activity (REL-028); append-only status/assignment/decision revision histories; draft cancel / close-archive / reopen per ADR-016 |
 | **Backfill** | Seed `service_types` for FR-201…206; no silent rewrite of snapshot payloads |
 | **Later verification** | Public ref uniqueness when issued; decision VO embedded columns present; no table named `cases` |
 | **Rollback** | Prefer soft-close; never delete status history to “undo” |
