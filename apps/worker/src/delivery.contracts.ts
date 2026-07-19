@@ -28,7 +28,8 @@ export type NotificationDeliveryAdapter = NotificationProviderPort;
 export class DisabledNotificationProvider implements NotificationProviderPort {
   readonly providerKey = 'disabled' as const;
 
-  async deliver(_message: ClaimedOutboxMessage): Promise<void> {
-    throw new Error('NOTIFICATION_DELIVERY_DISABLED');
+  deliver(message: ClaimedOutboxMessage): Promise<void> {
+    void message;
+    return Promise.reject(new Error('NOTIFICATION_DELIVERY_DISABLED'));
   }
 }
