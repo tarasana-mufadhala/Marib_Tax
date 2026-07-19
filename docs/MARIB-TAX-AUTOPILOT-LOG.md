@@ -1,5 +1,13 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-20 — Batch 06 design acceptance PASS + PROD-DB-06 preflight
+
+- Resumed from `origin/main` `52b5604` after PR #54.
+- Recomputed Batch 06 SHA — matched `F0446C8964C4345D79669C6926B983776213CB06BFD6E4C2DB27BDC3EFB0AE7D`.
+- Post-correction acceptance: reopen NOT NULL + non-blank reason; no hard delete; close/archive independent; staff-only reopen; immutable submitted snapshots; no `cases`; no catalogue seed → **PASS — BATCH_06_SOURCE_COMPATIBLE_WITH_APPROVED_LIFECYCLE**.
+- Preflight PASS: project `sjmtiwzddztxfrncwkpx`; history 01A–05 once each; Batch 06 remote absent; fourteen tables absent; `cases=0`; backup COMPLETED `2026-07-18T22:04:26.808Z`; dry-run listed only Batch 06.
+- No real `db push`. PROD-DB-06 = **REQUIRES_USER_APPROVAL**.
+
 ## 2026-07-20 — Batch 06 design-decision gate HOLD + source correction
 
 - Reviewed Batch 06 against approved draft/close-archive/reopen/versioning boundaries before any PROD-DB-06 preflight.
