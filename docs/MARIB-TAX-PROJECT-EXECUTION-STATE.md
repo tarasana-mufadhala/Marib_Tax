@@ -1,6 +1,6 @@
 # Marib Tax Project Execution State
 
-**Inventory time:** 2026-07-19 (Asia/Riyadh) — end of extended cycle after Batch 04 source merge
+**Inventory time:** 2026-07-19 (Asia/Riyadh) — PROD-DB-04 preflight PASS; registry source in progress
 
 **Official repository:** `tarasana-mufadhala/Marib_Tax`
 
@@ -8,26 +8,21 @@
 
 ## Git and delivery state
 
-- `origin/main`: `a0dd811` (PR #42 Batch 04 source merged; Foundation CI PASS).
+- `origin/main`: `a0dd811` (PR #42); local autopilot includes checkpoint `eae49d0` plus in-cycle work.
 - Autopilot worktree: `C:\projects\Marib_Tax-autopilot`, branch `chore/marib-tax-autopilot-orchestrator`.
-- Primary worktree: `C:\projects\Marib_Tax`, local ahead commit preserved.
-- AGENTS.md: not present.
-- Merged this cycle: PR #40 (ADR-015), PR #41 (Batch 03 post-apply), PR #42 (Batch 04 source).
+- PROD-DB-03: APPLIED / VERIFIED PASS.
+- PROD-DB-04: preflight PASS; apply **CLOSED**.
 
-## Database and runtime
+## Database
 
-| Batch | Source | Production/runtime | Notes |
-| --- | --- | --- | --- |
-| 01A | COMPLETE | APPLIED | `20260715175300` |
-| 02 | COMPLETE | APPLIED | `20260716190000` |
-| 03 | COMPLETE | **APPLIED / VERIFIED PASS** | `20260717120000`; SHA `BF15774686744A86D641D7B0B212F7B25E53D2AE6A8E4445662CA84475A00A86`; verifier PASS; empty tables |
-| 04 | **COMPLETE (source)** | NOT_STARTED / CLOSED | `20260719120000`; SHA `19D92BF7FB23251BF17FE61A80194075ED9FEEB970EFD89EBC88CEF75174F3A4`; PROD-DB-04 required before apply |
-| 05-18 | BLOCKED | NOT_STARTED | Behind Batch 04 production apply |
+| Batch | Source | Production |
+| --- | --- | --- |
+| 01A–03 | COMPLETE | APPLIED |
+| 04 | COMPLETE | NOT_STARTED — dry-run lists only `20260719120000_...`; SHA `19D92BF7FB23251BF17FE61A80194075ED9FEEB970EFD89EBC88CEF75174F3A4` |
+| 05+ | BLOCKED | NOT_STARTED |
 
 ## Continuation checkpoint
 
-- **Last completed task:** Batch 04 source + provider-port hardening merged via PR #42 as `a0dd811`.
-- **Active task:** none.
-- **Approval gates:** PROD-DB-04 closed; real SMS/WhatsApp closed.
-- **Highest next safe task:** independent source work not blocked by Batch 04 apply, or wait for PROD-DB-04 approval packet preparation if requested.
-- **Next action:** focused freshness check only; do not re-apply Batch 03; do not apply Batch 04 without new explicit approval.
+- **Last completed:** PROD-DB-04 production preflight (history/objects/backup/dry-run PASS).
+- **Active:** preflight PR, then registry/legal source contracts + mock UIs.
+- **Stop gate:** PROD-DB-04 apply remains closed without separate explicit approval.

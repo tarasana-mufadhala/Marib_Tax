@@ -1,5 +1,12 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-19 — PROD-DB-04 preflight + registry source cycle
+
+- Focused resume from checkpoint; SHA `19D92BF7FB23251BF17FE61A80194075ED9FEEB970EFD89EBC88CEF75174F3A4` matched.
+- Preflight PASS: project `sjmtiwzddztxfrncwkpx`; Batches 01A/02/03 remote once; Batch 04 local-only; six Batch 04 tables absent; backup COMPLETED `2026-07-18T22:04:26.808Z`; dry-run listed only Batch 04.
+- No `db push` without `--dry-run`. Approval packet prepared; apply remains `REQUIRES_USER_APPROVAL`.
+- Source work started in parallel: taxpayer registry OpenAPI/DTOs, repository ports, in-memory tests, Next.js/Flutter mocks, report-field key binding.
+
 ## 2026-07-19 — Batch 04 source authoring
 
 - PR #41 post-apply report Foundation CI PASS and merged as `6b13e74`.
