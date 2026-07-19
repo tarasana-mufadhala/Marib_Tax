@@ -29,9 +29,57 @@ tags:
     description: Taxpayer-owned service request contracts.
   - name: Taxpayer registry
     description: Owned taxpayer, legal-entity, and tax-number read models (mock/in-memory only).
+  - name: Master data
+    description: Owned commercial-activity, branch, address, and property read models (mock/in-memory only).
   - name: Platform health
     description: Isolated non-data-bearing operational probes.
 paths:
+  /api/v1/masterdata/me:
+    get:
+      operationId: getOwnedMasterdataBundle
+      summary: Read the authenticated actor's owned masterdata bundle
+      tags: [Master data]
+      x-permission: taxpayer.profile.read
+      x-authorization-predicates: [OWNERSHIP]
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '200':
+          {
+            description: Owned activities, branches, addresses, properties, and ownership records,
+            content:
+              {
+                application/json:
+                  {
+                    schema:
+                      { $ref: '#/components/schemas/OwnedMasterdataBundle' },
+                  },
+              },
+          }
+  /api/v1/masterdata/activities/{id}:
+    parameters: [{ $ref: '#/components/parameters/ActivityId' }]
+    get:
+      operationId: getOwnedCommercialActivityById
+      summary: Read an owned commercial activity summary
+      tags: [Master data]
+      x-permission: taxpayer.profile.read
+      x-authorization-predicates: [OWNERSHIP]
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '200':
+          {
+            description: Owned commercial activity,
+            content:
+              {
+                application/json:
+                  {
+                    schema:
+                      { $ref: '#/components/schemas/CommercialActivitySummary' },
+                  },
+              },
+          }
+        '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/taxpayers/me:
     get:
       operationId: getOwnedTaxpayerBundle
@@ -350,6 +398,104 @@ components:
         taxNumbers:
           type: array
           items: { $ref: '#/components/schemas/TaxNumberSummary' }
+    CommercialActivitySummary:
+      type: object
+      additionalProperties: false
+      required: [id, publicRef, taxpayerId, name, statusCode]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        publicRef: { type: [string, 'null'], minLength: 1 }
+        taxpayerId: { $ref: '#/components/schemas/Uuid' }
+        name: { type: string, minLength: 1 }
+        statusCode: { type: string, minLength: 1 }
+    BranchSummary:
+      type: object
+      additionalProperties: false
+      required: [id, publicRef, commercialActivityId, name, statusCode]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        publicRef: { type: [string, 'null'], minLength: 1 }
+        commercialActivityId: { $ref: '#/components/schemas/Uuid' }
+        name: { type: string, minLength: 1 }
+        statusCode: { type: string, minLength: 1 }
+    ActivityAddressSummary:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          commercialActivityId,
+          branchId,
+          addressLine,
+          districtCode,
+          effectiveFrom,
+          effectiveTo,
+        ]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        commercialActivityId:
+          oneOf:
+            - { $ref: '#/components/schemas/Uuid' }
+            - { type: 'null' }
+        branchId:
+          oneOf:
+            - { $ref: '#/components/schemas/Uuid' }
+            - { type: 'null' }
+        addressLine: { type: [string, 'null'], minLength: 1 }
+        districtCode: { type: [string, 'null'], minLength: 1 }
+        effectiveFrom: { type: string, format: date-time }
+        effectiveTo: { type: [string, 'null'], format: date-time }
+    PropertySummary:
+      type: object
+      additionalProperties: false
+      required: [id, publicRef, statusCode, description]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        publicRef: { type: [string, 'null'], minLength: 1 }
+        statusCode: { type: string, minLength: 1 }
+        description: { type: [string, 'null'], minLength: 1 }
+    PropertyOwnershipSummary:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          propertyId,
+          taxpayerId,
+          partyRoleCode,
+          isCurrent,
+          effectiveFrom,
+          effectiveTo,
+        ]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        propertyId: { $ref: '#/components/schemas/Uuid' }
+        taxpayerId: { $ref: '#/components/schemas/Uuid' }
+        partyRoleCode: { type: string, minLength: 1 }
+        isCurrent: { type: boolean }
+        effectiveFrom: { type: string, format: date-time }
+        effectiveTo: { type: [string, 'null'], format: date-time }
+    OwnedMasterdataBundle:
+      type: object
+      additionalProperties: false
+      required:
+        [activities, branches, addresses, properties, ownershipRecords]
+      properties:
+        activities:
+          type: array
+          items: { $ref: '#/components/schemas/CommercialActivitySummary' }
+        branches:
+          type: array
+          items: { $ref: '#/components/schemas/BranchSummary' }
+        addresses:
+          type: array
+          items: { $ref: '#/components/schemas/ActivityAddressSummary' }
+        properties:
+          type: array
+          items: { $ref: '#/components/schemas/PropertySummary' }
+        ownershipRecords:
+          type: array
+          items: { $ref: '#/components/schemas/PropertyOwnershipSummary' }
     FieldError:
       type: object
       additionalProperties: false
@@ -407,6 +553,11 @@ components:
       required: true
       schema: { $ref: '#/components/schemas/Uuid' }
     TaxpayerId:
+      name: id
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    ActivityId:
       name: id
       in: path
       required: true
