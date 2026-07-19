@@ -1,6 +1,6 @@
 # Marib Tax Project Execution State
 
-**Inventory time:** 2026-07-19 (Asia/Riyadh) — stopped at PROD-DB-05 apply gate
+**Inventory time:** 2026-07-19 (Asia/Riyadh) — after PROD-DB-05 apply + verifier PASS
 
 **Official repository:** `tarasana-mufadhala/Marib_Tax`
 
@@ -8,23 +8,23 @@
 
 ## Git
 
-- `origin/main`: `63dac57` (PR #50 checkpoint merged; Foundation CI PASS).
-- Prior: `6ae2977` (PR #47 Batch 05 preflight merged).
+- `origin/main` at apply baseline: `c669f01` (Foundation CI PASS).
+- Autopilot worktree: `C:\projects\Marib_Tax-autopilot`.
+- Primary worktree: `C:\projects\Marib_Tax`, local `main` ahead commit preserved.
 
 ## Database
 
-| Batch  | Source                | Production                                                                                             |
-| ------ | --------------------- | ------------------------------------------------------------------------------------------------------ |
-| 01A–03 | COMPLETE              | APPLIED / VERIFIED                                                                                     |
-| 04     | COMPLETE              | **APPLIED / VERIFIED PASS**                                                                            |
-| 05     | **COMPLETE (source)** | PREFLIGHT PASS / APPLY CLOSED — SHA `D3F15F918B721DD00865CFF8702BBF4313BB21FB741228D5ECCF5F82E7FB148C` |
-| 06+    | BLOCKED               | NOT_STARTED                                                                                            |
+| Batch  | Source                | Production                                  |
+| ------ | --------------------- | ------------------------------------------ |
+| 01A–04 | COMPLETE              | APPLIED / VERIFIED                         |
+| 05     | COMPLETE              | **APPLIED / VERIFIED PASS**                |
+| 06     | NEXT (source only)    | NOT_STARTED — requires separate approval   |
+| 07+    | BLOCKED               | NOT_STARTED                               |
 
 ## Continuation checkpoint
 
-- **Last completed:** PROD-DB-05 preflight + masterdata non-production source merge.
-- **Active:** none.
-- **Latest production check:** a new approval naming PROD-DB-03 was rejected as stale on 2026-07-19 because remote migration history already contains Batches 03 and 04. No dry-run or apply was executed.
-- **Approval gates:** PROD-DB-05 apply remains closed pending explicit user approval.
-- **Highest next task:** wait for explicit PROD-DB-05 apply approval (fresh preflight required at apply time).
-- **Forbidden without new approval:** Batch 05+ production apply, deploy/publish, secrets, real taxpayer data, real SMS/OTP/WhatsApp.
+- **Last completed:** PROD-DB-05 production apply + structural verifier PASS.
+- **Evidence:** `docs/post-apply/MARIB-TAX-DB-FOUNDATION-BATCH-05-PRODUCTION-APPLY-POST-VERIFY-01-REPORT.md`
+- **Active:** Batch 06 source authoring only (no production apply).
+- **Approval gates:** PROD-DB-06 apply remains closed pending a new explicit user approval.
+- **Forbidden without new approval:** Batch 06+ production apply, deploy/publish, secrets, real taxpayer data, real SMS/OTP/WhatsApp.
