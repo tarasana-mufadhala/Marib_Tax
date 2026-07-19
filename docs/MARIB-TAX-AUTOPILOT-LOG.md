@@ -1,5 +1,13 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-19 — PROD-DB-04 applied and verified
+
+- Explicit owner production approval received for Batch 04 only.
+- Fresh preflight PASS: SHA `19D92BF7FB23251BF17FE61A80194075ED9FEEB970EFD89EBC88CEF75174F3A4`; project `sjmtiwzddztxfrncwkpx`; history 01A/02/03 once; Batch 04 absent; six tables absent; backup COMPLETED; dry-run single file.
+- Applied once: `npx --yes supabase@2.109.1 db push --linked --yes`.
+- Post-verify: remote history contains Batch 04 once; verifier `final_status=PASS`; all six tables empty; no policies/forbidden grants/seed; dry-run `Remote database is up to date.`
+- Batch 04 production state: **APPLIED / VERIFIED PASS**. Batch 05 production apply remains closed.
+
 ## 2026-07-19 — PROD-DB-04 preflight + registry source cycle
 
 - Focused resume from checkpoint; SHA `19D92BF7FB23251BF17FE61A80194075ED9FEEB970EFD89EBC88CEF75174F3A4` matched.

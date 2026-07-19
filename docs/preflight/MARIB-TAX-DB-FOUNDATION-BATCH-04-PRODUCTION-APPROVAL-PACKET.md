@@ -1,6 +1,6 @@
 # MARIB-TAX-DB-FOUNDATION-BATCH-04 — Production Approval Packet
 
-**Status:** `REQUIRES_USER_APPROVAL` — preflight prepared only; no production command has been executed.
+**Status:** `APPLIED / VERIFIED PASS` on 2026-07-19 — see `docs/post-apply/MARIB-TAX-DB-FOUNDATION-BATCH-04-PRODUCTION-APPLY-POST-VERIFY-01-REPORT.md`. This packet is retained as authorizing evidence; it does not authorize Batch 05 or any other migration.
 
 ## Reviewed artifact
 
@@ -14,9 +14,9 @@
 | Source review | PR #42 merged |
 | Production preflight | This packet + companion preflight report |
 
-## Approval requested
+## Approval recorded
 
-Approval must explicitly authorize one controlled production application of Batch 04 against project `sjmtiwzddztxfrncwkpx`. Approval of documentation, orchestration, ADR-015, Batch 03, or source contracts does not authorize this operation.
+On 2026-07-19 the project owner explicitly authorized one controlled production application of Batch 04 against project `sjmtiwzddztxfrncwkpx` using Supabase CLI `2.109.1`, migration `20260719120000_create_taxpayer_registry_and_legal_entities.sql`, and SHA-256 `19D92BF7FB23251BF17FE61A80194075ED9FEEB970EFD89EBC88CEF75174F3A4`. Approval of documentation, orchestration, or later batches still does not authorize any other production migration.
 
 ## Mandatory preflight
 
