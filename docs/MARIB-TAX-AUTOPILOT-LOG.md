@@ -1,5 +1,14 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-20 — Batch 07 design PASS + PROD-DB-07 preflight
+
+- Resumed from `origin/main` `31ad36d` after PR #58.
+- Post-correction acceptance found missing selection UNIQUE constraints vs owner uniqueness rule; corrected unapplied source + verifier before PASS.
+- Accepted SHA `10BA80E828CDB39AB60B1816F8EC6D263169CC6DFA6EC7821D979AE2EDA63118` (supersedes `4D51F41B…`).
+- Design gate: **PASS — BATCH_07_SOURCE_COMPATIBLE_WITH_APPROVED_BALAGHAT_RULES**.
+- Preflight-only: project `sjmtiwzddztxfrncwkpx`; CLI `2.109.1`; history 01A–06 once each; Batch 07 remote absent; sixteen tables absent; `cases=0`; TABLE-021 absent; backup COMPLETED `2026-07-19T22:03:52.367Z`; dry-run listed only `20260722120000_create_balaghat_family.sql`.
+- No real `db push`. PROD-DB-07 = **REQUIRES_USER_APPROVAL**.
+
 ## 2026-07-20 — Batch 07 design-decision gate HOLD + source correction
 
 - Reviewed Batch 07 against approved Balaghat filer/target/property/lifecycle/type boundaries before any PROD-DB-07 preflight.

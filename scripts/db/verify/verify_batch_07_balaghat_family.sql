@@ -149,7 +149,15 @@ excluded_objects AS (
       JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
       WHERE c.relname = 'cases'
         AND c.relkind IN ('r', 'p', 'v', 'm')
-    ) AS cases_relation_present
+    ) AS cases_relation_present,
+    EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_class c
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'masterdata'
+        AND c.relname = 'property_ownership_units'
+        AND c.relkind IN ('r', 'p', 'v', 'm')
+    ) AS property_ownership_units_present
 ),
 reopen_constraints AS (
   SELECT
@@ -198,6 +206,44 @@ filer_or_type_constraints AS (
         AND c.column_name = 'filer_profile_id'
         AND c.is_nullable = 'NO'
     ) AS filer_profile_id_not_null
+),
+selection_unique_constraints AS (
+  SELECT
+    EXISTS (
+      SELECT 1 FROM pg_catalog.pg_constraint x
+      JOIN pg_catalog.pg_class c ON c.oid = x.conrelid
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'balaghat' AND c.relname = 'balagh_selected_targets'
+        AND x.contype = 'u' AND x.conname = 'balagh_selected_targets_balagh_taxpayer_role_key'
+    ) AS targets_unique_present,
+    EXISTS (
+      SELECT 1 FROM pg_catalog.pg_constraint x
+      JOIN pg_catalog.pg_class c ON c.oid = x.conrelid
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'balaghat' AND c.relname = 'balagh_selected_properties'
+        AND x.contype = 'u' AND x.conname = 'balagh_selected_properties_balagh_property_key'
+    ) AS properties_unique_present,
+    EXISTS (
+      SELECT 1 FROM pg_catalog.pg_constraint x
+      JOIN pg_catalog.pg_class c ON c.oid = x.conrelid
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'balaghat' AND c.relname = 'balagh_selected_property_units'
+        AND x.contype = 'u' AND x.conname = 'balagh_selected_property_units_selected_property_unit_key'
+    ) AS property_units_unique_present,
+    EXISTS (
+      SELECT 1 FROM pg_catalog.pg_constraint x
+      JOIN pg_catalog.pg_class c ON c.oid = x.conrelid
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'balaghat' AND c.relname = 'balagh_selected_activities'
+        AND x.contype = 'u' AND x.conname = 'balagh_selected_activities_balagh_activity_key'
+    ) AS activities_unique_present,
+    EXISTS (
+      SELECT 1 FROM pg_catalog.pg_constraint x
+      JOIN pg_catalog.pg_class c ON c.oid = x.conrelid
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      WHERE n.nspname = 'balaghat' AND c.relname = 'balagh_selected_branches'
+        AND x.contype = 'u' AND x.conname = 'balagh_selected_branches_selected_activity_branch_key'
+    ) AS branches_unique_present
 ),
 seed_row_counts AS (
   SELECT
@@ -254,11 +300,17 @@ SELECT
   gs.forbidden_grant_count,
   pc.policy_count,
   eo.cases_relation_present,
+  eo.property_ownership_units_present,
   rc.reopen_reason_not_null,
   rc.reopen_staff_not_null,
   rc.reopen_reason_not_blank_check_present,
   ft.balagh_type_code_not_null,
   ft.filer_profile_id_not_null,
+  su.targets_unique_present,
+  su.properties_unique_present,
+  su.property_units_unique_present,
+  su.activities_unique_present,
+  su.branches_unique_present,
   ss.seed_mismatch_count,
   ss.balaghs_row_count,
   ss.balagh_selected_targets_row_count,
@@ -297,6 +349,7 @@ SELECT
     WHEN s.table_mismatch_count <> 0 THEN 'FAIL_TABLE_OR_RLS_MISMATCH'
     WHEN ix.index_mismatch_count <> 0 THEN 'FAIL_INDEX_MISMATCH'
     WHEN eo.cases_relation_present THEN 'FAIL_CASES_RELATION_PRESENT'
+    WHEN eo.property_ownership_units_present THEN 'FAIL_TABLE_021_PRESENT'
     WHEN NOT rc.reopen_reason_not_null
       OR NOT rc.reopen_staff_not_null
       OR NOT rc.reopen_reason_not_blank_check_present
@@ -304,6 +357,12 @@ SELECT
     WHEN NOT ft.balagh_type_code_not_null
       OR NOT ft.filer_profile_id_not_null
       THEN 'FAIL_FILER_OR_TYPE_CONSTRAINT_MISSING'
+    WHEN NOT su.targets_unique_present
+      OR NOT su.properties_unique_present
+      OR NOT su.property_units_unique_present
+      OR NOT su.activities_unique_present
+      OR NOT su.branches_unique_present
+      THEN 'FAIL_SELECTION_UNIQUE_MISSING'
     WHEN gs.forbidden_grant_count <> 0 THEN 'FAIL_FORBIDDEN_GRANT'
     WHEN pc.policy_count <> 0 THEN 'FAIL_UNEXPECTED_POLICY'
     WHEN ss.seed_mismatch_count <> 0 THEN 'FAIL_SEED_ROWS_PRESENT'
@@ -317,4 +376,5 @@ CROSS JOIN policy_count pc
 CROSS JOIN excluded_objects eo
 CROSS JOIN reopen_constraints rc
 CROSS JOIN filer_or_type_constraints ft
+CROSS JOIN selection_unique_constraints su
 CROSS JOIN seed_summary ss;
