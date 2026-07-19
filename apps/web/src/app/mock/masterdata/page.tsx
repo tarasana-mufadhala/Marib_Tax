@@ -18,8 +18,7 @@ export default function MasterdataMockPage() {
         <p>مرجع النشاط: {activities[0]?.publicRef ?? '—'}</p>
         <p>العقار: {properties[0]?.description ?? '—'}</p>
         <p>
-          الملكية الحالية:{' '}
-          {ownershipRecords[0]?.isCurrent ? 'نعم' : 'لا'} (
+          الملكية الحالية: {ownershipRecords[0]?.isCurrent ? 'نعم' : 'لا'} (
           {ownershipRecords[0]?.partyRoleCode})
         </p>
         <p>حقول التقارير المرتبطة: {reportFieldKeys.join(' · ')}</p>

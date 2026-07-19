@@ -36,9 +36,6 @@ export class MasterdataController {
   readActivity(
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<CommercialActivitySummary> {
-    return this.service.readOwnedActivityById(
-      this.actors.requireActorId(),
-      id,
-    );
+    return this.service.readOwnedActivityById(this.actors.requireActorId(), id);
   }
 }
