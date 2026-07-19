@@ -70,6 +70,8 @@ CREATE TABLE balaghat.balagh_selected_targets (
   correlation_id uuid NULL,
   CONSTRAINT balagh_selected_targets_pkey PRIMARY KEY (id),
   CONSTRAINT balagh_selected_targets_target_role_not_blank_check CHECK (btrim(target_role_code) <> ''),
+  CONSTRAINT balagh_selected_targets_balagh_taxpayer_role_key
+    UNIQUE (balagh_id, taxpayer_id, target_role_code),
   CONSTRAINT balagh_selected_targets_balagh_fkey FOREIGN KEY (balagh_id)
     REFERENCES balaghat.balaghs (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE,
   CONSTRAINT balagh_selected_targets_taxpayer_fkey FOREIGN KEY (taxpayer_id)
@@ -104,6 +106,7 @@ CREATE TABLE balaghat.balagh_selected_properties (
   created_by_profile_id uuid NULL,
   correlation_id uuid NULL,
   CONSTRAINT balagh_selected_properties_pkey PRIMARY KEY (id),
+  CONSTRAINT balagh_selected_properties_balagh_property_key UNIQUE (balagh_id, property_id),
   CONSTRAINT balagh_selected_properties_balagh_fkey FOREIGN KEY (balagh_id)
     REFERENCES balaghat.balaghs (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE,
   CONSTRAINT balagh_selected_properties_property_fkey FOREIGN KEY (property_id)
@@ -138,6 +141,8 @@ CREATE TABLE balaghat.balagh_selected_property_units (
   created_by_profile_id uuid NULL,
   correlation_id uuid NULL,
   CONSTRAINT balagh_selected_property_units_pkey PRIMARY KEY (id),
+  CONSTRAINT balagh_selected_property_units_selected_property_unit_key
+    UNIQUE (balagh_selected_property_id, property_unit_id),
   CONSTRAINT balagh_selected_property_units_balagh_fkey FOREIGN KEY (balagh_id)
     REFERENCES balaghat.balaghs (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE,
   CONSTRAINT balagh_selected_property_units_selected_property_fkey FOREIGN KEY (balagh_selected_property_id)
@@ -171,6 +176,7 @@ CREATE TABLE balaghat.balagh_selected_activities (
   created_by_profile_id uuid NULL,
   correlation_id uuid NULL,
   CONSTRAINT balagh_selected_activities_pkey PRIMARY KEY (id),
+  CONSTRAINT balagh_selected_activities_balagh_activity_key UNIQUE (balagh_id, commercial_activity_id),
   CONSTRAINT balagh_selected_activities_balagh_fkey FOREIGN KEY (balagh_id)
     REFERENCES balaghat.balaghs (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE,
   CONSTRAINT balagh_selected_activities_activity_fkey FOREIGN KEY (commercial_activity_id)
@@ -200,6 +206,8 @@ CREATE TABLE balaghat.balagh_selected_branches (
   created_by_profile_id uuid NULL,
   correlation_id uuid NULL,
   CONSTRAINT balagh_selected_branches_pkey PRIMARY KEY (id),
+  CONSTRAINT balagh_selected_branches_selected_activity_branch_key
+    UNIQUE (balagh_selected_activity_id, branch_id),
   CONSTRAINT balagh_selected_branches_balagh_fkey FOREIGN KEY (balagh_id)
     REFERENCES balaghat.balaghs (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE,
   CONSTRAINT balagh_selected_branches_selected_activity_fkey FOREIGN KEY (balagh_selected_activity_id)

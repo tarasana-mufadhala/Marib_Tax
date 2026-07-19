@@ -45,14 +45,16 @@ Only decisions that require an authorized human are listed here. Source work mus
 
 ### PROD-DB-07 — Apply Batch 07 balaghat family
 
-- **State:** CLOSED — design gate **HOLD** with source correction; production apply and preflight remain closed
+- **State:** REQUIRES_USER_APPROVAL — design acceptance PASS; preflight PASS_WITH_NOTES; production apply closed
 - **Source migration:** `supabase/migrations/20260722120000_create_balaghat_family.sql`
-- **SHA-256:** `4D51F41BF5363662E4F6B1F09B7186E18587FAFE7CBA2656A018DABEE229EE0C`
+- **SHA-256:** `10BA80E828CDB39AB60B1816F8EC6D263169CC6DFA6EC7821D979AE2EDA63118`
 - **Verifier:** `scripts/db/verify/verify_batch_07_balaghat_family.sql`
-- **Design gate:** `docs/reviews/MARIB-TAX-BATCH-07-DESIGN-DECISION-GATE-01.md`
+- **Design gate:** `docs/reviews/MARIB-TAX-BATCH-07-DESIGN-DECISION-GATE-01.md` — **PASS — BATCH_07_SOURCE_COMPATIBLE_WITH_APPROVED_BALAGHAT_RULES**
 - **Balaghat ADR:** ADR-017
+- **Preflight:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-07-PRODUCTION-APPLY-PREFLIGHT-01-REPORT.md`
+- **Approval packet:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-07-PRODUCTION-APPROVAL-PACKET.md`
 - **Source evidence:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-07-BALAGHAT-REPORT.md`
-- **Until separately approved:** do not run production preflight, dry-run, or `db push` for Batch 07 or any later batch.
+- **Until separately approved:** do not run real `db push` for Batch 07 or any later batch.
 
 ### Balaghat filer / targets / property selection
 

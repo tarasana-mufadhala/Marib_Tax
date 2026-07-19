@@ -20,6 +20,7 @@ Batch 07 initially mirrored the request-family shape with a single root `taxpaye
 
 - One balagh may target multiple taxpayers and/or users.
 - Persist targets in `balagh_selected_targets` with a non-blank `target_role_code`.
+- Prevent unintended duplicate target rows with UNIQUE `(balagh_id, taxpayer_id, target_role_code)`.
 - Do not encode multi-target scope as a single `target_taxpayer_id` column on the root.
 
 ### Activities and branches
@@ -32,6 +33,7 @@ Batch 07 initially mirrored the request-family shape with a single root `taxpaye
 ### Properties and units
 
 - Property balaghs may select one or more properties and, when needed, property units via case-selection tables.
+- Prevent unintended duplicate property/unit selection rows with UNIQUE `(balagh_id, property_id)` and `(balagh_selected_property_id, property_unit_id)`.
 - Do not create CONDITIONAL TABLE-021 `property_ownership_units` in Batch 07.
 - Flexible form snapshots/payloads carry evacuation/minutes-style content; do not invent fixed formal minute columns.
 
@@ -48,7 +50,7 @@ Batch 07 initially mirrored the request-family shape with a single root `taxpaye
 
 - Batch 07 persistence includes filer/type columns plus target/property/unit selection children.
 - Catalogue seeds for balagh types remain deferred.
-- PROD-DB-07 remains closed until corrected source review and a separate explicit production approval.
+- PROD-DB-07 requires a separate explicit production approval after design acceptance and preflight.
 
 ## Guardrails
 
