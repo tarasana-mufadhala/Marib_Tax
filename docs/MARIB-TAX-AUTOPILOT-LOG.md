@@ -6,7 +6,9 @@
 - Authored Batch 04 source migration `20260719120000_create_taxpayer_registry_and_legal_entities.sql` for TABLE-008…013 with ADR-015 encodings (digits-only tax number text, issued-value unique index, correction_reason lineage, one active account link per profile).
 - Added read-only verifier `scripts/db/verify/verify_batch_04_taxpayer_registry_and_legal_entities.sql`.
 - Clarified worker `NotificationProviderPort` with disabled adapter; no real Twilio/WhatsApp send.
+- PR #42 Foundation CI PASS and merged as `a0dd811`.
 - Production impact: **none**. Batch 04 was not applied; PROD-DB-04 remains closed.
+- Cycle stop: no further safe READY production task; next run uses focused freshness check only.
 
 ## 2026-07-19 — PROD-DB-03 applied and verified
 
