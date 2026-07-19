@@ -16,13 +16,17 @@ Only decisions that require an authorized human are listed here. Source work mus
 
 ### PROD-DB-04 — Apply Batch 04 taxpayer registry / legal entities
 
-- **State:** REQUIRES_USER_APPROVAL — production preflight PASS on 2026-07-19; apply still closed
+- **State:** COMPLETE — APPLIED / VERIFIED PASS on 2026-07-19
 - **Source migration:** `supabase/migrations/20260719120000_create_taxpayer_registry_and_legal_entities.sql`
 - **SHA-256:** `19D92BF7FB23251BF17FE61A80194075ED9FEEB970EFD89EBC88CEF75174F3A4`
 - **Verifier:** `scripts/db/verify/verify_batch_04_taxpayer_registry_and_legal_entities.sql`
-- **Preflight evidence:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-04-PRODUCTION-APPLY-PREFLIGHT-01-REPORT.md`
-- **Approval packet:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-04-PRODUCTION-APPROVAL-PACKET.md`
-- **Until approved:** do not run `db push` for Batch 04 or any later batch.
+- **Evidence:** `docs/post-apply/MARIB-TAX-DB-FOUNDATION-BATCH-04-PRODUCTION-APPLY-POST-VERIFY-01-REPORT.md`
+- **Still forbidden without a new approval:** any later migration (including Batch 05), `--include-all`, migration repair, `db reset --linked`, dashboard SQL, direct `psql`, or blind retry.
+
+### PROD-DB-05 — Apply Batch 05 master data
+
+- **State:** REQUIRES_USER_APPROVAL (source authoring may proceed; production apply closed)
+- **Until approved:** do not run `db push` for Batch 05 or any later batch.
 
 ## Business/data decisions — approved 2026-07-19
 
