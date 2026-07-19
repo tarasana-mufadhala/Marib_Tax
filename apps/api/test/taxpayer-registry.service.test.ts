@@ -19,24 +19,32 @@ class MemoryRepository implements TaxpayerRegistryRepository {
   entities: StoredLegalEntityLink[] = [];
   numbers: StoredTaxNumberRecord[] = [];
 
-  async findOwnedByActor(actorId: string) {
-    return (
+  findOwnedByActor(actorId: string): Promise<StoredTaxpayerRecord | null> {
+    return Promise.resolve(
       [...this.taxpayers.values()].find(
         (row) => row.ownerActorId === actorId,
-      ) ?? null
+      ) ?? null,
     );
   }
 
-  async findTaxpayerById(id: string) {
-    return this.taxpayers.get(id) ?? null;
+  findTaxpayerById(id: string): Promise<StoredTaxpayerRecord | null> {
+    return Promise.resolve(this.taxpayers.get(id) ?? null);
   }
 
-  async listLegalEntitiesForTaxpayer(taxpayerId: string) {
-    return this.entities.filter((row) => row.taxpayerId === taxpayerId);
+  listLegalEntitiesForTaxpayer(
+    taxpayerId: string,
+  ): Promise<StoredLegalEntityLink[]> {
+    return Promise.resolve(
+      this.entities.filter((row) => row.taxpayerId === taxpayerId),
+    );
   }
 
-  async listTaxNumbersForTaxpayer(taxpayerId: string) {
-    return this.numbers.filter((row) => row.taxpayerId === taxpayerId);
+  listTaxNumbersForTaxpayer(
+    taxpayerId: string,
+  ): Promise<StoredTaxNumberRecord[]> {
+    return Promise.resolve(
+      this.numbers.filter((row) => row.taxpayerId === taxpayerId),
+    );
   }
 }
 

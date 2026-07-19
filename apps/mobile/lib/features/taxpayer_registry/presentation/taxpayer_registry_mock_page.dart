@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../domain/taxpayer_registry_models.dart';
 
 class TaxpayerRegistryMockPage extends StatelessWidget {
-  const TaxpayerRegistryMockPage({super.key, OwnedTaxpayerBundleMock? bundle})
+  TaxpayerRegistryMockPage({super.key, OwnedTaxpayerBundleMock? bundle})
     : bundle = bundle ?? OwnedTaxpayerBundleMock.demo();
 
   final OwnedTaxpayerBundleMock bundle;

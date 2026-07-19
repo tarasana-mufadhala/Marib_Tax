@@ -35,7 +35,12 @@ export class TaxpayerRegistryService {
     return toTaxpayerResponse(taxpayer);
   }
 
-  private async owned(actorId: string, taxpayerId: string) {
+  private async owned(
+    actorId: string,
+    taxpayerId: string,
+  ): Promise<NonNullable<
+    Awaited<ReturnType<TaxpayerRegistryRepository['findTaxpayerById']>>
+  >> {
     const taxpayer = await this.repository.findTaxpayerById(taxpayerId);
     if (taxpayer === null) throw new NotFoundException();
     if (taxpayer.ownerActorId !== actorId) throw new ForbiddenException();
