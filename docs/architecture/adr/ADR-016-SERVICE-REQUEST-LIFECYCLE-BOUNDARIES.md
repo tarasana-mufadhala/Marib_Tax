@@ -41,7 +41,7 @@ Batch 06 source for TABLE-023…036 was complete while draft-delete, close-versu
 
 - Batch 06 persistence must support soft/status-driven draft cancel, independent close/archive events, staff-only reopen with mandatory reason, and versioned immutable snapshots.
 - NestJS owns transition authorization and append-only history mutation rules beyond foundation RLS default-deny.
-- PROD-DB-06 remains closed until a separate explicit production approval after corrected source review.
+- Corrected Batch 06 source was design-accepted PASS on 2026-07-20. PROD-DB-06 apply remains closed until a separate explicit production approval after preflight.
 
 ## Guardrails
 

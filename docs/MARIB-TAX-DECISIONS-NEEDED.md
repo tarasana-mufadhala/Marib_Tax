@@ -36,14 +36,15 @@ Only decisions that require an authorized human are listed here. Source work mus
 
 ### PROD-DB-06 — Apply Batch 06 service requests family
 
-- **State:** CLOSED — design gate **HOLD** with source correction; production apply and preflight remain closed
+- **State:** REQUIRES_USER_APPROVAL (design acceptance PASS; preflight PASS; production apply closed)
 - **Source migration:** `supabase/migrations/20260721120000_create_service_requests_family.sql`
 - **SHA-256:** `F0446C8964C4345D79669C6926B983776213CB06BFD6E4C2DB27BDC3EFB0AE7D`
 - **Verifier:** `scripts/db/verify/verify_batch_06_service_requests_family.sql`
-- **Design gate:** `docs/reviews/MARIB-TAX-BATCH-06-DESIGN-DECISION-GATE-01.md`
-- **Lifecycle ADR:** `docs/architecture/adr/ADR-016-SERVICE-REQUEST-LIFECYCLE-BOUNDARIES.md`
-- **Source evidence:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-06-SERVICE-REQUESTS-REPORT.md`
-- **Until separately approved:** do not run production preflight, dry-run, or `db push` for Batch 06 or any later batch.
+- **Design gate:** `docs/reviews/MARIB-TAX-BATCH-06-DESIGN-DECISION-GATE-01.md` — PASS
+- **Lifecycle ADR:** ADR-016
+- **Preflight evidence:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-06-PRODUCTION-APPLY-PREFLIGHT-01-REPORT.md`
+- **Approval packet:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-06-PRODUCTION-APPROVAL-PACKET.md`
+- **Until approved:** do not run `db push` for Batch 06 or any later batch.
 
 ### DMOD-01 / DMOD-06 / DMOD-11 — Service request lifecycle
 

@@ -10,7 +10,7 @@ This is a **source-only** authoring batch. It has not been applied to any databa
 - SHA-256: `F0446C8964C4345D79669C6926B983776213CB06BFD6E4C2DB27BDC3EFB0AE7D`
 - Prior SHA (superseded before apply): `162E35E352956E5AC7AFE907D95FC0046A1AE6D76F2F27D5E1126FDA3DB6690E`
 - Read-only verifier: `scripts/db/verify/verify_batch_06_service_requests_family.sql`
-- Design gate: `docs/reviews/MARIB-TAX-BATCH-06-DESIGN-DECISION-GATE-01.md` — **HOLD** with source correction applied
+- Design gate: `docs/reviews/MARIB-TAX-BATCH-06-DESIGN-DECISION-GATE-01.md` — **PASS** after post-correction acceptance
 - Lifecycle ADR: `docs/architecture/adr/ADR-016-SERVICE-REQUEST-LIFECYCLE-BOUNDARIES.md`
 
 ## Scope
@@ -38,4 +38,4 @@ Each table uses application-supplied UUID identifiers, default-deny RLS with no 
 - No FR-201…206 `service_types` catalogue seed/backfill
 - No table named `cases`
 - No production `db push`, repair, reset, dashboard SQL, or direct `psql`
-- No production preflight/dry-run while the design gate is HOLD / PROD-DB-06 closed
+- Production apply remains closed; PROD-DB-06 requires separate explicit approval
