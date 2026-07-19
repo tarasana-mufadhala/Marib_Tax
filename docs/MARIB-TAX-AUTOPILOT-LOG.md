@@ -9,6 +9,7 @@
 - Batch 04 production state: **APPLIED / VERIFIED PASS**. Batch 05 production apply remains closed.
 - Post-apply report PR #45 Foundation CI PASS and merged as `42f5fa1`.
 - Authored Batch 05 source migration `20260720120000_create_masterdata_activities_and_property.sql` (SHA `D3F15F918B721DD00865CFF8702BBF4313BB21FB741228D5ECCF5F82E7FB148C`) with verifier; excluded CONDITIONAL TABLE-021 and proposed ownership view. No Batch 05 production apply.
+- Batch 05 source PR #46 Foundation CI PASS and merged as `9462f68`. Cycle stop at PROD-DB-05 approval gate.
 
 ## 2026-07-19 — PROD-DB-04 preflight + registry source cycle
 

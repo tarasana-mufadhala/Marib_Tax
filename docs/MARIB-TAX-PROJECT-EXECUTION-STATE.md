@@ -1,23 +1,29 @@
 # Marib Tax Project Execution State
 
-**Inventory time:** 2026-07-19 (Asia/Riyadh) — after PROD-DB-04 PASS; Batch 05 source authored
+**Inventory time:** 2026-07-19 (Asia/Riyadh) — end of PROD-DB-04 success cycle
 
 **Official repository:** `tarasana-mufadhala/Marib_Tax`
 
 **Supabase project:** `sjmtiwzddztxfrncwkpx`
 
-## Database and runtime
+## Git
 
-| Batch | Source | Production/runtime | Notes |
-| --- | --- | --- | --- |
-| 01A–03 | COMPLETE | APPLIED / VERIFIED | Prior |
-| 04 | COMPLETE | **APPLIED / VERIFIED PASS** | Post-apply PR #45 merged as `42f5fa1` |
-| 05 | **SOURCE_READY** | NOT_STARTED / CLOSED | `20260720120000`; SHA `D3F15F918B721DD00865CFF8702BBF4313BB21FB741228D5ECCF5F82E7FB148C`; TABLE-021 excluded |
-| 06+ | BLOCKED | NOT_STARTED | Behind Batch 05 apply |
+- `origin/main`: `9462f68` (PR #46 Batch 05 source merged; Foundation CI PASS).
+- Merged this cycle: PR #45 (Batch 04 post-apply), PR #46 (Batch 05 source).
+
+## Database
+
+| Batch | Source | Production |
+| --- | --- | --- |
+| 01A–03 | COMPLETE | APPLIED / VERIFIED |
+| 04 | COMPLETE | **APPLIED / VERIFIED PASS** |
+| 05 | **COMPLETE (source)** | NOT_STARTED / CLOSED — SHA `D3F15F918B721DD00865CFF8702BBF4313BB21FB741228D5ECCF5F82E7FB148C` |
+| 06+ | BLOCKED | NOT_STARTED |
 
 ## Continuation checkpoint
 
-- **Last completed:** PROD-DB-04 apply/verify + post-apply report; Batch 05 source authoring.
-- **Active:** Batch 05 source PR.
-- **Approval gates:** PROD-DB-05 closed — no production apply without new explicit approval.
-- **Next action after source merge:** focused freshness only, or independent non-production source work.
+- **Last completed:** Batch 05 source merge `9462f68`.
+- **Active:** none.
+- **Approval gates:** PROD-DB-05 closed.
+- **Highest next task:** independent non-production source work, or wait for PROD-DB-05 approval packet/apply if requested.
+- **Forbidden without new approval:** Batch 05+ production apply, deploy/publish, secrets, real taxpayer data, real SMS/OTP/WhatsApp.
