@@ -1,6 +1,6 @@
 # Marib Tax Project Execution State
 
-**Inventory time:** 2026-07-20 (Asia/Riyadh) — after PROD-DB-06 apply + verifier PASS
+**Inventory time:** 2026-07-20 (Asia/Riyadh) — after PROD-DB-06 apply PASS; Batch 07 source authored
 
 **Official repository:** `tarasana-mufadhala/Marib_Tax`
 
@@ -8,22 +8,21 @@
 
 ## Git
 
-- `origin/main` at apply baseline: `9637b72` (PR #55 preflight merged; Foundation CI PASS).
+- `origin/main` after Batch 06 post-verify: `848e437` (PR #56 merged; Foundation CI PASS).
 - Autopilot worktree: `C:\projects\Marib_Tax-autopilot`.
 
 ## Database
 
-| Batch  | Source                | Production                                |
-| ------ | --------------------- | ----------------------------------------- |
-| 01A–05 | COMPLETE              | APPLIED / VERIFIED PASS                   |
-| 06     | COMPLETE              | **APPLIED / VERIFIED PASS**               |
-| 07     | NEXT (source only)    | NOT_STARTED — requires separate approval  |
-| 08+    | BLOCKED               | NOT_STARTED                               |
+| Batch  | Source                              | Production                                              |
+| ------ | ----------------------------------- | ------------------------------------------------------ |
+| 01A–06 | COMPLETE                            | APPLIED / VERIFIED PASS                                 |
+| 07     | **COMPLETE (source)**               | APPLY CLOSED — SHA `71A430F7D9B11BC01202E675DEBD8ED5D7D15769E30F12A1FE07353807B9F7C7` |
+| 08+    | BLOCKED                             | NOT_STARTED                                             |
 
 ## Continuation checkpoint
 
-- **Last completed:** PROD-DB-06 production apply + structural verifier PASS.
+- **Last completed:** PROD-DB-06 production apply + structural verifier PASS; Batch 07 source authored.
 - **Evidence:** `docs/post-apply/MARIB-TAX-DB-FOUNDATION-BATCH-06-PRODUCTION-APPLY-POST-VERIFY-01-REPORT.md`
-- **Active:** Batch 07 source authoring only (no production apply).
-- **Approval gates:** PROD-DB-07 apply remains closed pending a new explicit user approval.
+- **Active:** none.
+- **Approval gates:** PROD-DB-07 apply remains closed pending a new explicit user approval and fresh preflight.
 - **Forbidden without new approval:** Batch 07+ production apply, deploy/publish, secrets, real taxpayer data, real SMS/OTP/WhatsApp.

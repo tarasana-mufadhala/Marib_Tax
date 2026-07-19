@@ -32,6 +32,8 @@ Use one dependency-ordered migration batch at a time. Record filename and SHA-25
 
 An approval for a migration already present in remote history is stale and must never be treated as permission to replay it. Record the mismatch, perform no dry-run/apply retry, and keep the actual next production batch behind its own fresh approval.
 
+Source-only authoring of the next dependency-ordered batch does not authorize its linked preflight or apply. Preserve the migration SHA and verifier as review evidence, then keep production closed until a fresh approval names that exact batch and hash.
+
 ## Cycle loop
 
 Every scheduled run and every Run now is an **extended work cycle**, not a single-task invocation.

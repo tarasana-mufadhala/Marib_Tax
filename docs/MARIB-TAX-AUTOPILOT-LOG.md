@@ -1,13 +1,15 @@
 # Marib Tax Autopilot Log
 
-## 2026-07-20 — PROD-DB-06 applied and verified
+## 2026-07-20 — PROD-DB-06 applied and verified; Batch 07 source authored
 
 - Explicit owner production approval received for Batch 06 only (`sjmtiwzddztxfrncwkpx`, CLI `2.109.1`, SHA `F0446C8964C4345D79669C6926B983776213CB06BFD6E4C2DB27BDC3EFB0AE7D`).
 - Fresh preflight PASS: clean `origin/main` `9637b72`; SHA exact match; project ref match; history 01A–05 once each; Batch 06 absent; fourteen tables absent; `cases=0`; reopen constraints present; backup COMPLETED `2026-07-18T22:04:26.808Z`; dry-run listed only Batch 06.
 - Applied once: `npx --yes supabase@2.109.1 db push --linked --yes`.
 - Post-verify: remote history contains Batch 06 once; verifier `final_status=PASS`; all mismatch counts 0; fourteen tables empty; RLS enabled; no policies/forbidden grants/seed; reopen constraints true; no `cases`; dry-run `Remote database is up to date.`
-- Batch 06 production state: **APPLIED / VERIFIED PASS**. Batch 07 production apply remains closed.
-- Next: Batch 07 source authoring only; no Batch 07 apply without a new independent approval.
+- Batch 06 production state: **APPLIED / VERIFIED PASS**.
+- Post-apply report PR #56 Foundation CI PASS and merged as `848e437`.
+- Authored Batch 07 source migration `20260722120000_create_balaghat_family.sql` (SHA `71A430F7D9B11BC01202E675DEBD8ED5D7D15769E30F12A1FE07353807B9F7C7`) with verifier; ADR-016 reopen/close-archive parallels; 13 tables; no `cases`; no seed. No Batch 07 production apply.
+- Cycle stop at PROD-DB-07 approval gate.
 
 ## 2026-07-20 — Batch 06 design acceptance PASS + PROD-DB-06 preflight
 
