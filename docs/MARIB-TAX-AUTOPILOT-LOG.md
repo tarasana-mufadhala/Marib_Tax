@@ -11,6 +11,8 @@
 - Dry-run only: `npx --yes supabase@2.109.1 db push --linked --dry-run` listed exactly `20260720120000_create_masterdata_activities_and_property.sql`.
 - No real `db push`. PROD-DB-05 apply remains closed.
 - Parallel source: owned masterdata OpenAPI/DTOs, repository ports, ownership/permission tests, Next.js/Flutter mocks (no production connection).
+- Preflight PR #47 Foundation CI PASS and merged as `6ae2977`. PROD-DB-05 apply still closed.
+- Masterdata source authored locally and prepared for PR/CI; no production connection and no Batch 05 apply.
 
 ## 2026-07-19 — PROD-DB-04 applied and verified
 
