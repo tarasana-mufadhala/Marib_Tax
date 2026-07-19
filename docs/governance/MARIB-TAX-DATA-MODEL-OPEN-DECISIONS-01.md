@@ -1,8 +1,22 @@
 # MARIB-TAX-DATA-MODEL-OPEN-DECISIONS-01
 
-**Status:** Open — يحتاج اعتماد لاحق. This register records no approved implementation choice.
+**Status:** Mixed — approved boundaries recorded in ADR-015; remaining rows stay **يحتاج اعتماد لاحق**.
 
-## Carried-forward decisions
+## Approved boundaries (2026-07-19)
+
+Canonical detail: `docs/architecture/adr/ADR-015-APPROVED-BUSINESS-DATA-BOUNDARIES.md` and `docs/reports/MARIB-TAX-REPORT-TO-FIELD-MATRIX-01.md`.
+
+| Reference | Approved summary |
+| --- | --- |
+| DM-04 / DM-23 | Digits-only tax number issued in Aden; system stores numeric text as entered (no generation); unique among active taxpayers; corrections retain previous value, reason, actor |
+| DM-21 (v1) | One account → one taxpayer; no multi-taxpayer representation in first release |
+| DM-22 | Manual payment; receipt to admin; payer identity irrelevant; partial payment allowed; one due : N receipts; admin confirms; no delete of confirmed receipts |
+| DM-08 (entry) | Visit location/result entered by admin/authorized staff only; no auto-generation |
+| DM-10 (classify/archive) | Type classification; permanent archive of versions; correction = new version, no delete of prior |
+| DM-11 (provider) | Twilio via provider port for build/test; port must allow later local/WhatsApp API; no real send now |
+| DM-16 | Field coverage per report-to-field matrix; separate `report.view` / `report.export` |
+
+## Carried-forward decisions (still open)
 
 | Reference | Question |
 | --- | --- |
@@ -24,33 +38,33 @@
 
 ## Data-specific decisions
 
-| ID | Open question |
-| --- | --- |
-| DM-01 | Identifier/reference representation and generation |
-| DM-02 | Public-reference issue/display point |
-| DM-03 | Taxpayer matching, merge, split, and correction |
-| DM-04 | Tax Number format, verification, duplicate, and uniqueness |
-| DM-05 | Effective-dated Activity, Branch, Property fields |
-| DM-06 | Request/Balagh lifecycle reason catalogs |
-| DM-07 | Decision visibility, restricted basis, correction evidence |
-| DM-08 | Visit visibility, team masking, result structure |
-| DM-09 | Due basis, status, confirmation, and correction evidence |
-| DM-10 | Attachment classification, access, replacement, legal holds |
-| DM-11 | Delivery state, read-state, retry, OTP minimization |
-| DM-12 | Import source, validation/error taxonomy, remediation |
-| DM-13 | Audit catalogue, sensitive threshold, actor context |
-| DM-14 | Representation, staff purpose, own-data attributes |
-| DM-15 | Projection freshness, rebuild, reconciliation |
-| DM-16 | Report fields, masking, aggregation, export |
-| DM-17 | Retention, archive, legal-hold, destruction periods |
-| DM-18 | Access/security event taxonomy and minimization |
-| DM-19 | Conditional analytics scope and consent |
-| DM-20 | Logical-control implementation strategy and idempotency handling |
-| DM-21 | Account linkage: whether one User Profile may represent multiple taxpayers; delegated representation; approval/revocation rules; one taxpayer linked to multiple accounts |
-| DM-22 | Due–Receipt cardinality **يحتاج اعتماد لاحق**: one due/one receipt; one due/multiple receipts; one receipt/multiple dues; partial payments; receipt replacement versus multiple payment evidence; impact on payment confirmation. No fixed Mermaid edge. |
-| DM-23 | Tax-number policy: uniqueness scope; correction/versioning; duplicate-resolution procedure |
-| DM-24 | Property relationship: direct Taxpayer↔Property navigation remains derived from active Ownership Records; no second authoritative link |
-| DM-25 | Notification read tracking: definition of read/acknowledged; supported channels; retention |
-| DM-26 | Attachment storage metrics: accounting source; retention; replaced/deleted version treatment |
+| ID | Status | Question / remaining open |
+| --- | --- | --- |
+| DM-01 | Open | Identifier/reference representation and generation |
+| DM-02 | Open | Public-reference issue/display point |
+| DM-03 | Open | Taxpayer matching, merge, split, and correction |
+| DM-04 | **Approved** | Tax Number format/verification/uniqueness — see ADR-015 |
+| DM-05 | Open | Effective-dated Activity, Branch, Property fields |
+| DM-06 | Open | Request/Balagh lifecycle reason catalogs |
+| DM-07 | Open | Decision visibility, restricted basis, correction evidence |
+| DM-08 | **Partial** | Entry source approved; team masking and full result structure still open |
+| DM-09 | Open | Due basis, status, confirmation semantics beyond DM-22 payment evidence rules |
+| DM-10 | **Partial** | Classification + archive/versioning approved; legal-hold/destruction detail with DM-17 |
+| DM-11 | **Partial** | Provider port + Twilio build intent approved; delivery/read/retry detail still open with DM-25 |
+| DM-12 | Open | Import source, validation/error taxonomy, remediation |
+| DM-13 | Open | Audit catalogue, sensitive threshold, actor context |
+| DM-14 | Open | Representation, staff purpose, own-data attributes |
+| DM-15 | Open | Projection freshness, rebuild, reconciliation |
+| DM-16 | **Approved** | Report fields + view/export separation — see matrix |
+| DM-17 | Open | Retention, archive, legal-hold, destruction periods (version archive retained per DM-10) |
+| DM-18 | Open | Access/security event taxonomy and minimization |
+| DM-19 | Open | Conditional analytics scope and consent |
+| DM-20 | Open | Logical-control implementation strategy and idempotency handling |
+| DM-21 | **Partial** | v1 one-account/one-taxpayer approved; multi-account and future delegation still open |
+| DM-22 | **Approved** | Due–Receipt cardinality and partial payments — see ADR-015 |
+| DM-23 | **Approved** | Tax-number uniqueness/correction/versioning — see ADR-015 |
+| DM-24 | Open | Property relationship: direct Taxpayer↔Property navigation remains derived from active Ownership Records; no second authoritative link |
+| DM-25 | Open | Notification read tracking: definition of read/acknowledged; supported channels; retention |
+| DM-26 | Open | Attachment storage metrics: accounting source; retention; replaced/deleted version treatment |
 
-**Open decision count: 41** — 15 carried-forward and 26 data-specific decisions.
+**Open decision count:** 15 carried-forward + 19 fully open data-specific + 3 partial (DM-08, DM-10, DM-11/DM-21 deferred slices) — fully closed data-specific: DM-04, DM-16, DM-22, DM-23 (and DM-21/DM-08/DM-10/DM-11 closed only for the approved slices above).

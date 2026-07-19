@@ -1,5 +1,14 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-19 — Resume: decisions + PROD-DB-03 authorization
+
+- Focused freshness check only: no full inventory redo. Confirmed no `AGENTS.md`.
+- `origin/main` at `e202274` (PR #39); Foundation CI PASS on main; worktree clean at cycle start; primary `main` local ahead commit preserved.
+- Recorded owner-approved business boundaries as ADR-015 covering tax number, v1 one-account/one-taxpayer, manual payment (1 due : N receipts, partial, no delete of confirmed receipts), staff-entered visits, attachment classification/archive versions, Twilio-via-provider-port with no real send, and report field matrix with separate `report.view` / `report.export`.
+- Created `docs/reports/MARIB-TAX-REPORT-TO-FIELD-MATRIX-01.md` and updated decision registers, migration sequence Batch 04 constraints, ADR-007 provider-port note, and Batch 03 approval packet to `APPROVED`.
+- Explicit PROD-DB-03 production approval recorded for project `sjmtiwzddztxfrncwkpx`, migration `20260717120000_create_identity_authorization_model.sql`, SHA-256 `BF15774686744A86D641D7B0B212F7B25E53D2AE6A8E4445662CA84475A00A86`, CLI `2.109.1`.
+- Next in-cycle: documentation PR + CI PASS, then mandatory preflight before any production push. Production impact at this step: **none** until apply.
+
 ## 2026-07-17 — Initial orchestration inventory
 
 - Read the supplied orchestration charter and checked both official and autopilot worktrees.

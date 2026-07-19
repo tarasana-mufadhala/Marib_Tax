@@ -1,6 +1,6 @@
 # Marib Tax Project Execution State
 
-**Inventory time:** 2026-07-18 (Asia/Riyadh)
+**Inventory time:** 2026-07-19 (Asia/Riyadh) — focused freshness check after PR #39 checkpoint
 
 **Official repository:** `tarasana-mufadhala/Marib_Tax`
 
@@ -8,19 +8,17 @@
 
 ## Git and delivery state
 
-- `origin/main`: `d61a009` (PR #38 merged; Foundation and Flutter CI PASS).
-- Local `main`: `8c3628f46e0d8644380f5bc120c868da92e65757`, one local documentation commit ahead of `origin/main`.
-- Autopilot worktree: `C:\projects\Marib_Tax-autopilot`, branch `chore/marib-tax-autopilot-orchestrator`, clean at inventory start.
-- Primary worktree: `C:\projects\Marib_Tax`, branch `main`; its ahead commit is preserved and not rewritten.
-- PR #17, `docs(db): record Batch 03 production preflight`, is MERGED with Foundation CI PASS.
-- PR #18, `docs: initialize Marib Tax autopilot state`, is MERGED with Foundation CI PASS.
-- Latest `origin/main` Foundation CI is PASS at `c11794a`.
+- `origin/main`: `e202274` (PR #39 merged; Foundation CI PASS on main).
+- Autopilot worktree: `C:\projects\Marib_Tax-autopilot`, branch `chore/marib-tax-autopilot-orchestrator`.
+- Primary worktree: `C:\projects\Marib_Tax`, branch `main` at local `8c3628f` (ahead 1 / behind origin; preserved, not rewritten).
+- No open PRs at cycle start; latest main Foundation CI PASS.
+- AGENTS.md: not present.
 
 ## Applications and packages
 
 | Area                        | Status        | Evidence                                                                                             |
 | --------------------------- | ------------- | ---------------------------------------------------------------------------------------------------- |
-| Monorepo/governance/ADRs/CI | COMPLETE      | Repository structure, ADRs, validation workflow, and baseline documents exist.                       |
+| Monorepo/governance/ADRs/CI | COMPLETE      | Repository structure, ADRs through ADR-015, validation workflow, and baseline documents exist.       |
 | Flutter taxpayer app        | RUNTIME_READY | PR #32 merged; Android/iOS-ready Arabic RTL foundation and API-03 local draft model/UI with CI PASS. |
 | Next.js web/admin           | RUNTIME_READY | PR #34 merged; Next.js 16 Arabic RTL public shell and fail-closed `/admin`, CI PASS.                 |
 | NestJS API                  | RUNTIME_READY | Buildable/tested foundation with safe `/health` and `/ready`; no business or production integration. |
@@ -34,62 +32,47 @@
 | ----------------------------------- | -------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 01A application schemas             | COMPLETE | APPLIED                | Migration `20260715175300_create_marib_tax_application_schemas.sql`; post-apply report merged in PR #12.                                                                   |
 | 02 identity profiles                | COMPLETE | APPLIED                | Migration `20260716190000_create_identity_profiles.sql`; post-apply verification merged in PR #15.                                                                         |
-| 03 authorization model              | COMPLETE | REQUIRES_USER_APPROVAL | Migration `20260717120000_create_identity_authorization_model.sql` merged in PR #16. Production preflight PR #17 is merged and green. No apply was performed by autopilot. |
-| 04 taxpayer registry/legal entities | BLOCKED  | NOT_STARTED            | Sequence requires Batch 03 application and accepted verification first; open tax-number/account-link decisions must not be guessed.                                        |
-| 05-18                               | BLOCKED  | NOT_STARTED            | Dependency-ordered behind earlier database batches and unresolved decisions.                                                                                               |
-
-RLS and database authorization source exist through Batch 03. Production RLS was not disabled, no production SQL was run, and no secrets or taxpayer data were accessed or changed during this inventory.
+| 03 authorization model              | COMPLETE | APPROVED — apply next  | Migration `20260717120000_create_identity_authorization_model.sql`; SHA `BF15774686744A86D641D7B0B212F7B25E53D2AE6A8E4445662CA84475A00A86`; explicit PROD-DB-03 approval 2026-07-19. |
+| 04 taxpayer registry/legal entities | READY (source after 03) | NOT_STARTED | ADR-015 unblocks tax-number/account-link encoding; apply only after Batch 03 APPLIED / VERIFIED PASS. Source authoring only — no production apply. |
+| 05-18                               | BLOCKED  | NOT_STARTED            | Dependency-ordered behind earlier database batches.                                                                                                                        |
 
 ## Execution queue
 
 | Priority | Task                                                 | State                  | Owner/worktree                                      | Gate/result                                                                                |
 | -------- | ---------------------------------------------------- | ---------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| 1        | Merge PR #17 after final review                      | COMPLETE               | `docs/db-foundation-batch-03-production-preflight`  | Merged as `c9cf9c0`; CI PASS; documentation-only change.                                   |
-| 2        | Apply Batch 03 to production                         | REQUIRES_USER_APPROVAL | Production operator                                 | Explicit fresh approval required; exact preflight/apply/post-verify sequence must be used. |
-| 3        | Post-apply verification for Batch 03                 | BLOCKED                | Future isolated worktree                            | Depends on successful authorized apply.                                                    |
-| 4        | Author Batch 04 source migration                     | BLOCKED                | Future isolated worktree                            | Depends on accepted Batch 03 and approved DM-04/DM-21/DM-23 choices where encoded.         |
-| 5        | OpenAPI paths, verbs, and version boundary           | COMPLETE               | API-01 / ADR-011                                    | Explicitly approved on 2026-07-17.                                                         |
-| 6        | OpenAPI, NestJS API, and shared-contract foundation  | COMPLETE               | PR #24 / `054cd3526e75a5a700419cdb19d3ea53f46fe401` | Expanded CI PASS; production remains closed.                                               |
-| 7        | Stable error-code catalog and runtime error envelope | COMPLETE               | PR #25 / `5707f58c88be860b34ff9ad01742c0e9ae6608be` | Expanded CI PASS.                                                                          |
-| 8        | Stable endpoint permission identifiers               | COMPLETE               | API-02 / ADR-012                                    | Explicitly approved on 2026-07-18.                                                         |
-| 9        | Fail-closed NestJS authorization foundation          | COMPLETE               | PR #27 / `8f4280351f2a67deab978484a753d1a5ea0e7115` | Expanded CI PASS; no admin bypass.                                                         |
-| 10       | First taxpayer request-draft business contract       | COMPLETE               | PR #29 / `1e80e3809bca4e3a72e302f3e75ecf5962f4cbfc` | Foundation CI PASS; production integration intentionally absent.                           |
-| 11       | Supabase Auth and current-actor source boundary      | COMPLETE               | PR #31 / `ba717a43c909e10e17312a299a408c45871d856f` | Foundation CI PASS; production adapters remain unconnected.                                |
-| 12       | Flutter taxpayer application foundation              | COMPLETE               | PR #32 / `7619dfa2c502cec564d193fdfe9c92b57f0607dc` | Foundation and Flutter CI PASS; no production connection.                                  |
-| 13       | Next.js public/admin application foundation          | COMPLETE               | PR #34 / `5c64a39858842826d65a0efbe24c539c95e5403e` | Foundation CI PASS; no credentials or backend connection.                                  |
-| 14       | Notification worker source foundation                | COMPLETE               | PR #35 / `cb6127276982f3729356549c8188203bd44f22a7` | CI PASS; no provider, database, credential, or delivery adapter.                           |
-| 15       | Request ownership/resource-state policy evaluator    | COMPLETE               | PR #37 / `7110703`                                  | Foundation and Flutter CI PASS; no production wiring.                                      |
-| 16       | Protected-operation authentication response contract | COMPLETE               | PR #38 / `d61a009`                                  | Reusable 401/403 responses and semantic drift tests; Foundation and Flutter CI PASS.       |
+| 1        | Record ADR-015 business decisions + report matrix    | ACTIVE                 | `chore/marib-tax-autopilot-orchestrator`            | Documentation PR then CI PASS.                                                             |
+| 2        | Apply Batch 03 to production (PROD-DB-03)            | APPROVED               | Production operator / this worktree after docs merge | Exact preflight/apply/post-verify sequence mandatory.                                      |
+| 3        | Post-apply verification for Batch 03                 | BLOCKED                | Same cycle after apply                              | Depends on successful authorized apply + verifier PASS.                                    |
+| 4        | Author Batch 04 source migration                     | BLOCKED until 03 PASS  | Same cycle after 03 verified                        | Source only; never apply Batch 04 in this cycle.                                           |
+| 5–16     | Prior API/app foundations                            | COMPLETE               | Merged PRs #23–#39                                  | See prior checkpoint.                                                                      |
 
 ## Quality gates
 
-- Foundation validation: PASS on PR #17 and current `origin/main`.
-- API/web/worker/contracts: OpenAPI PASS, typecheck PASS, 64 tests PASS, build PASS, lint PASS, formatting PASS, `git diff --check` PASS for authentication response-contract hardening locally.
-- Flutter/Next.js/worker: NOT_STARTED.
-- Migration execution: CLOSED pending explicit approval.
-- Production deployment: NOT_STARTED and CLOSED.
+- Foundation validation: PASS on current `origin/main` (`e202274`).
+- Migration execution: OPEN only for the single approved Batch 03 command after docs merge + preflight PASS.
+- Production deployment: NOT_STARTED and CLOSED for applications.
 
 ## Current blockers and dependencies
 
-- Production Batch 03 application requires explicit user approval.
-- The physical model decision register contains 41 open decisions. Batch-specific decisions must be resolved before source code encodes them.
-- API-01/API-02/API-03 are approved; the first request-draft source slice may proceed under ADR-013.
-- Local `main` has a preserved ahead commit corresponding to Batch 03 preflight work; do not reset or discard it.
+- PROD-DB-03 apply waits for this documentation PR merge + CI PASS, then mandatory preflight.
+- Remaining open DM/DMOD/PHY items do not block Batch 04 source for the ADR-015 slices.
+- Local primary `main` ahead commit remains preserved.
 
 ## Highest next safe task
 
-No additional dependency-correct source task is presently recorded as `READY`. The highest remaining executable item is PROD-DB-03, which remains closed pending separate explicit approval.
+1. Merge documentation recording ADR-015 + PROD-DB-03 approval.
+2. Execute PROD-DB-03 under the approval packet.
+3. On verifier PASS, author Batch 04 source only.
 
 ## Continuation checkpoint
 
-- **Last completed task:** protected-operation 401/403 contract hardening merged through PR #38 as `d61a009` after Foundation and Flutter CI PASS.
-- **Active task:** none.
+- **Last completed task:** PR #39 checkpoint merge `e202274` with Foundation CI PASS.
+- **Active task:** record approved business decisions + report-to-field matrix; then PROD-DB-03.
 - **Owner:** `chore/marib-tax-autopilot-orchestrator` in `C:\projects\Marib_Tax-autopilot`.
-- **Approval gates:** production Batch 03 (`PROD-DB-03`) remains closed. API-01 through API-04 are approved; reversible source engineering decisions are delegated.
-- **Queue result:** no safe task remains in `READY`; production persistence is gated by PROD-DB-03 and later database work depends on its accepted application.
-- **Highest next task:** PROD-DB-03 only after a new separate explicit production approval, or a newly recorded independent source task.
-- **Next action:** on the next heartbeat, perform only a focused freshness check for newly READY source work or changed approval state; do not repeat completed gates.
+- **Approval gates:** PROD-DB-03 explicitly approved 2026-07-19 for the single reviewed migration/SHA/project/CLI only.
+- **Highest next task:** documentation PR → CI → PROD-DB-03 preflight/apply/verify.
+- **Next action:** after docs merge, recompute SHA, confirm project ref, history, objects, backup, dry-run single file, then one `db push --linked`.
 
 ## Realistic completion estimate
 
-Repository/governance and database foundation through Batch 03 source are established, but all four runtime applications and most business database batches remain unimplemented. Overall implementation completion is estimated at **12%**; this is a planning estimate, not a delivery claim.
+Repository/governance and database foundation through Batch 03 source are established; Batch 03 production apply is approved and next. Overall implementation completion remains approximately **12–15%**; this is a planning estimate, not a delivery claim.

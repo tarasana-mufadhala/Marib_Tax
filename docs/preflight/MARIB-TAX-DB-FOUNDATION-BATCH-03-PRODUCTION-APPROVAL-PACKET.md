@@ -1,6 +1,6 @@
 # MARIB-TAX-DB-FOUNDATION-BATCH-03 — Production Approval Packet
 
-**Status:** `REQUIRES_USER_APPROVAL` — prepared only; no production command has been executed.
+**Status:** `APPROVED` on 2026-07-19 — explicit production authorization recorded for project `sjmtiwzddztxfrncwkpx` and the single migration below. Apply only after this documentation change is merged with CI PASS and all mandatory preflight gates succeed.
 
 ## Reviewed artifact
 
@@ -14,9 +14,9 @@
 | Source review | PR #16 merged |
 | Production preflight | PR #17 merged; dry-run identified exactly Batch 03 |
 
-## Approval requested
+## Approval recorded
 
-Approval must explicitly authorize one controlled production application of Batch 03 against project `sjmtiwzddztxfrncwkpx`. Approval of documentation, orchestration, or later batches does not authorize this operation.
+On 2026-07-19 the project owner explicitly authorized one controlled production application of Batch 03 against project `sjmtiwzddztxfrncwkpx` using Supabase CLI `2.109.1`, migration `20260717120000_create_identity_authorization_model.sql`, and SHA-256 `BF15774686744A86D641D7B0B212F7B25E53D2AE6A8E4445662CA84475A00A86`. Approval of documentation, orchestration, or later batches still does not authorize any other production migration.
 
 ## Mandatory preflight
 
