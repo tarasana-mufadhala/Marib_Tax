@@ -7,6 +7,8 @@
 - No `db push` without `--dry-run`. Approval packet prepared; apply remains `REQUIRES_USER_APPROVAL`.
 - Source work started in parallel: taxpayer registry OpenAPI/DTOs, repository ports, in-memory tests, Next.js/Flutter mocks, report-field key binding.
 - Preflight PR #43 Foundation CI PASS and merged as `a0785ee`. PROD-DB-04 apply still closed.
+- Registry source PR #44 Foundation + Flutter CI PASS and merged as `9ff9c4c`.
+- Queue re-evaluation: no further safe production task; stopped at PROD-DB-04 approval gate as instructed.
 
 ## 2026-07-19 — Batch 04 source authoring
 
