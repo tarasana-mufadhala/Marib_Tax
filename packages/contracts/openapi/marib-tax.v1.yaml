@@ -46,7 +46,7 @@ paths:
         '403': { $ref: '#/components/responses/Forbidden' }
         '200':
           {
-            description: Owned activities, branches, addresses, properties, and ownership records,
+            description: 'Owned activities, branches, addresses, properties, and ownership records',
             content:
               {
                 application/json:
@@ -75,7 +75,9 @@ paths:
                 application/json:
                   {
                     schema:
-                      { $ref: '#/components/schemas/CommercialActivitySummary' },
+                      {
+                        $ref: '#/components/schemas/CommercialActivitySummary',
+                      },
                   },
               },
           }
@@ -478,8 +480,7 @@ components:
     OwnedMasterdataBundle:
       type: object
       additionalProperties: false
-      required:
-        [activities, branches, addresses, properties, ownershipRecords]
+      required: [activities, branches, addresses, properties, ownershipRecords]
       properties:
         activities:
           type: array
