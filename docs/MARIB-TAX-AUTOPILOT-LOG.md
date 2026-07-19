@@ -6,6 +6,7 @@
 - Preflight PASS: project `sjmtiwzddztxfrncwkpx`; Batches 01A/02/03 remote once; Batch 04 local-only; six Batch 04 tables absent; backup COMPLETED `2026-07-18T22:04:26.808Z`; dry-run listed only Batch 04.
 - No `db push` without `--dry-run`. Approval packet prepared; apply remains `REQUIRES_USER_APPROVAL`.
 - Source work started in parallel: taxpayer registry OpenAPI/DTOs, repository ports, in-memory tests, Next.js/Flutter mocks, report-field key binding.
+- Preflight PR #43 Foundation CI PASS and merged as `a0785ee`. PROD-DB-04 apply still closed.
 
 ## 2026-07-19 — Batch 04 source authoring
 

@@ -27,9 +27,58 @@ x-authorization-predicates:
 tags:
   - name: Requests
     description: Taxpayer-owned service request contracts.
+  - name: Taxpayer registry
+    description: Owned taxpayer, legal-entity, and tax-number read models (mock/in-memory only).
   - name: Platform health
     description: Isolated non-data-bearing operational probes.
 paths:
+  /api/v1/taxpayers/me:
+    get:
+      operationId: getOwnedTaxpayerBundle
+      summary: Read the authenticated actor's linked taxpayer bundle
+      tags: [Taxpayer registry]
+      x-permission: taxpayer.profile.read
+      x-authorization-predicates: [OWNERSHIP]
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '200':
+          {
+            description: Owned taxpayer with legal entities and masked tax numbers,
+            content:
+              {
+                application/json:
+                  {
+                    schema:
+                      { $ref: '#/components/schemas/OwnedTaxpayerBundle' },
+                  },
+              },
+          }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/taxpayers/{id}:
+    parameters: [{ $ref: '#/components/parameters/TaxpayerId' }]
+    get:
+      operationId: getOwnedTaxpayerById
+      summary: Read an owned taxpayer profile summary
+      tags: [Taxpayer registry]
+      x-permission: taxpayer.profile.read
+      x-authorization-predicates: [OWNERSHIP]
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '200':
+          {
+            description: Owned taxpayer profile,
+            content:
+              {
+                application/json:
+                  {
+                    schema:
+                      { $ref: '#/components/schemas/TaxpayerProfileResponse' },
+                  },
+              },
+          }
+        '404': { $ref: '#/components/responses/NotFound' }
   /api/v1/requests:
     post:
       operationId: createRequestDraft
@@ -239,6 +288,68 @@ components:
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
         submittedAt: { type: string, format: date-time }
+    TaxpayerProfileResponse:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          publicRef,
+          displayName,
+          statusCode,
+          hasTaxNumber,
+          activeLegalEntityCount,
+          openDuesFlag,
+        ]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        publicRef: { type: [string, 'null'], minLength: 1 }
+        displayName: { type: string, minLength: 1 }
+        statusCode: { type: string, minLength: 1 }
+        hasTaxNumber: { type: boolean }
+        activeLegalEntityCount: { type: integer, minimum: 0 }
+        openDuesFlag: { type: boolean }
+    LegalEntitySummary:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          publicRef,
+          legalName,
+          classificationCode,
+          isActive,
+          associationTypeCode,
+        ]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        publicRef: { type: [string, 'null'], minLength: 1 }
+        legalName: { type: string, minLength: 1 }
+        classificationCode: { type: [string, 'null'], minLength: 1 }
+        isActive: { type: boolean }
+        associationTypeCode: { type: string, minLength: 1 }
+    TaxNumberSummary:
+      type: object
+      additionalProperties: false
+      required: [id, taxNumberValueMasked, statusCode, legalEntityId, issuedAt]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        taxNumberValueMasked: { type: string, minLength: 1 }
+        statusCode: { type: string, enum: [issued, invalid, replaced] }
+        legalEntityId: { $ref: '#/components/schemas/Uuid' }
+        issuedAt: { type: [string, 'null'], format: date-time }
+    OwnedTaxpayerBundle:
+      type: object
+      additionalProperties: false
+      required: [taxpayer, legalEntities, taxNumbers]
+      properties:
+        taxpayer: { $ref: '#/components/schemas/TaxpayerProfileResponse' }
+        legalEntities:
+          type: array
+          items: { $ref: '#/components/schemas/LegalEntitySummary' }
+        taxNumbers:
+          type: array
+          items: { $ref: '#/components/schemas/TaxNumberSummary' }
     FieldError:
       type: object
       additionalProperties: false
@@ -291,6 +402,11 @@ components:
         totalPages: { type: integer, minimum: 0 }
   parameters:
     RequestId:
+      name: id
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
+    TaxpayerId:
       name: id
       in: path
       required: true

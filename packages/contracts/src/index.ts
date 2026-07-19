@@ -102,3 +102,4 @@ export function isPermissionCode(value: string): value is PermissionCode {
 }
 
 export * from './request-draft.js';
+export * from './taxpayer-registry.js';

@@ -75,3 +75,7 @@
 - Timed destruction vs indefinite archive beyond version retention (DM-17).
 - Report scheduling / automatic delivery (DMOD-12) — out of MVP.
 - Analytics provider selection for report 29 (FCR-03).
+
+## Source binding (2026-07-19)
+
+Read-model field keys for taxpayer/legal reports **12–15** are exported as `registryReportFieldKeys` in `@marib-tax/contracts` (`packages/contracts/src/taxpayer-registry.ts`). Mock Next.js/Flutter surfaces illustrate masked `tax_number_value` under `report.view` semantics only; no production data path.
