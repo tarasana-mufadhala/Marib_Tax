@@ -26,14 +26,19 @@ Only decisions that require an authorized human are listed here. Source work mus
 
 ### PROD-DB-05 — Apply Batch 05 master data
 
-- **State:** REQUIRES_USER_APPROVAL (preflight PASS; production apply closed)
+- **State:** COMPLETE — APPLIED / VERIFIED PASS on 2026-07-19
 - **Source migration:** `supabase/migrations/20260720120000_create_masterdata_activities_and_property.sql`
 - **SHA-256:** `D3F15F918B721DD00865CFF8702BBF4313BB21FB741228D5ECCF5F82E7FB148C`
 - **Verifier:** `scripts/db/verify/verify_batch_05_masterdata_activities_and_property.sql`
 - **Excluded from source:** CONDITIONAL TABLE-021 `property_ownership_units`; proposed `v_taxpayer_properties` view
-- **Preflight evidence:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-05-PRODUCTION-APPLY-PREFLIGHT-01-REPORT.md`
-- **Approval packet:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-05-PRODUCTION-APPROVAL-PACKET.md`
-- **Until approved:** do not run `db push` for Batch 05 or any later batch.
+- **Evidence:** `docs/post-apply/MARIB-TAX-DB-FOUNDATION-BATCH-05-PRODUCTION-APPLY-POST-VERIFY-01-REPORT.md`
+- **Still forbidden without a new approval:** any later migration (including Batch 06), `--include-all`, migration repair, `db reset --linked`, dashboard SQL, direct `psql`, or blind retry.
+
+### PROD-DB-06 — Apply Batch 06 service requests family
+
+- **State:** NOT_STARTED (source authoring may begin; production apply closed)
+- **Intended objects:** TABLE-023…036 in `requests` schema
+- **Until approved:** do not run `db push` for Batch 06 or any later batch.
 
 ## Business/data decisions — approved 2026-07-19
 
