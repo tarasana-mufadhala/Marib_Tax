@@ -45,7 +45,7 @@ Only decisions that require an authorized human are listed here. Source work mus
 
 ### PROD-DB-07 — Apply Batch 07 balaghat family
 
-- **State:** REQUIRES_USER_APPROVAL — design acceptance PASS; preflight PASS_WITH_NOTES; production apply closed
+- **State:** APPLIED / VERIFIED PASS on 2026-07-20
 - **Source migration:** `supabase/migrations/20260722120000_create_balaghat_family.sql`
 - **SHA-256:** `10BA80E828CDB39AB60B1816F8EC6D263169CC6DFA6EC7821D979AE2EDA63118`
 - **Verifier:** `scripts/db/verify/verify_batch_07_balaghat_family.sql`
@@ -53,8 +53,13 @@ Only decisions that require an authorized human are listed here. Source work mus
 - **Balaghat ADR:** ADR-017
 - **Preflight:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-07-PRODUCTION-APPLY-PREFLIGHT-01-REPORT.md`
 - **Approval packet:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-07-PRODUCTION-APPROVAL-PACKET.md`
-- **Source evidence:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-07-BALAGHAT-REPORT.md`
-- **Until separately approved:** do not run real `db push` for Batch 07 or any later batch.
+- **Evidence:** `docs/post-apply/MARIB-TAX-DB-FOUNDATION-BATCH-07-PRODUCTION-APPLY-POST-VERIFY-01-REPORT.md`
+- **Still forbidden without a new approval:** any later migration (including Batch 08), `--include-all`, migration repair, `db reset --linked`, dashboard SQL, direct `psql`, or blind retry.
+
+### PROD-DB-08 — Apply Batch 08 (next foundation batch)
+
+- **State:** NOT_STARTED (source authoring may begin; production apply closed)
+- **Until approved:** do not run `db push` for Batch 08 or any later batch.
 
 ### Balaghat filer / targets / property selection
 
