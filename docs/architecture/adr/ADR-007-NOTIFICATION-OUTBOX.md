@@ -20,5 +20,7 @@ SMS (Twilio) and push (FCM) are unreliable relative to database commits. Couplin
 ## Guardrails
 
 - Controllers and domain services must not call Twilio/FCM directly for fire-and-forget side effects outside the outbox abstraction.
+- Delivery goes through a **provider port** (`NotificationDeliveryAdapter` and successors) so Twilio (build/test intent), a later local provider, or WhatsApp API can be swapped without changing domain/outbox contracts (ADR-015).
+- No real external send is authorized until a separate production communication approval.
 - Provider credentials remain server-only on API/worker.
 - At-least-once delivery requires idempotent notification handling where applicable.

@@ -1,7 +1,7 @@
 # MARIB-TAX-PHYSICAL-DESIGN-OPEN-DECISIONS-01
 
 **Document ID:** MARIB-TAX-PHYSICAL-DESIGN-OPEN-DECISIONS-01
-**Status:** Open — يحتاج اعتماد لاحق. Physical design decision register. Recommendations are **PROPOSED** only. No executable SQL.
+**Status:** Mixed — PHY-06 / PHY-09 / PHY-10 accepted via ADR-015 (2026-07-19); other PHY rows remain Open / **PROPOSED**. No executable SQL in this register.
 
 **Companions:** `MARIB-TAX-DATA-MODEL-OPEN-DECISIONS-01`, `MARIB-TAX-DOMAIN-DESIGN-OPEN-DECISIONS-01`, physical schema/table/identifier/reporting/migration/storage docs.
 
@@ -36,31 +36,31 @@
 | DM-01 | Identifier/reference representation and generation |
 | DM-02 | Public-reference issue/display point |
 | DM-03 | Taxpayer matching, merge, split, and correction |
-| DM-04 | Tax Number format, verification, duplicate, and uniqueness |
+| DM-04 | **Approved** — Tax Number format/verification/uniqueness (ADR-015) |
 | DM-05 | Effective-dated Activity, Branch, Property fields |
 | DM-06 | Request/Balagh lifecycle reason catalogs |
 | DM-07 | Decision visibility, restricted basis, correction evidence |
-| DM-08 | Visit visibility, team masking, result structure |
+| DM-08 | **Partial** — staff entry only approved; masking/structure detail open |
 | DM-09 | Due basis, status, confirmation, and correction evidence |
-| DM-10 | Attachment classification, access, replacement, legal holds |
-| DM-11 | Delivery state, read-state, retry, OTP minimization |
+| DM-10 | **Partial** — classification + version archive approved |
+| DM-11 | **Partial** — Twilio via provider port; no real send; read/retry open |
 | DM-12 | Import source, validation/error taxonomy, remediation |
 | DM-13 | Audit catalogue, sensitive threshold, actor context |
 | DM-14 | Representation, staff purpose, own-data attributes |
 | DM-15 | Projection freshness, rebuild, reconciliation |
-| DM-16 | Report fields, masking, aggregation, export |
+| DM-16 | **Approved** — report field matrix + view/export separation |
 | DM-17 | Retention, archive, legal-hold, destruction periods |
 | DM-18 | Access/security event taxonomy and minimization |
 | DM-19 | Conditional analytics scope and consent |
 | DM-20 | Logical-control implementation strategy and idempotency handling |
-| DM-21 | Account linkage multiplicity / delegation |
-| DM-22 | Due–Receipt cardinality and partial payments |
-| DM-23 | Tax-number uniqueness scope and duplicate resolution |
+| DM-21 | **Partial** — v1 one account / one taxpayer approved |
+| DM-22 | **Approved** — 1 due : N receipts; partial payment; manual admin confirm |
+| DM-23 | **Approved** — active uniqueness + correction lineage |
 | DM-24 | Property relationship via ownership only (derived Taxpayer↔Property) |
 | DM-25 | Notification read tracking definition and retention |
 | DM-26 | Attachment storage metrics accounting source and retention |
 
-**Carried logical open count: 41** (15 DMOD/OD + 26 DM) — unchanged from `MARIB-TAX-DATA-MODEL-OPEN-DECISIONS-01`.
+**Carried logical open count:** see `MARIB-TAX-DATA-MODEL-OPEN-DECISIONS-01` (approved slices removed from the blocking set for Batch 04).
 
 ---
 
@@ -75,11 +75,11 @@ Each row: **Status = Open** (يحتاج اعتماد لاحق). **Recommended** 
 | PHY-03 | UUID generation locus | A. App-generated · B. DB `gen_random_uuid()` · C. Mixed | **C** — app-generated for aggregates; DB default allowed | Idempotent create semantics | Key material never client-trusted | Default clauses in early batches | Minor | Architecture | Batch 2 | Open |
 | PHY-04 | Public numbering format | A. Opaque random text · B. Structured office series · C. Hybrid | Carry **DM-01/DM-02**; no silent pick | Taxpayer/staff usability; letterhead | Public ref ≠ credential | UNIQUE on `public_ref` | Lookup indexes | Tax Office + Architecture | Before issuing production public refs | Open |
 | PHY-05 | Public ref issue/display point | A. On draft create · B. On submit · C. On first staff accept | Carry **DM-02** | When numbers appear in UX/reports | Early disclosure surface | Nullable then SET UNIQUE | None material | Tax Office + Product | API/DB before submit go-live | Open |
-| PHY-06 | Tax number uniqueness scope | A. Global unique active · B. Unique per legal entity · C. Soft unique + DQ reports | Carry **DM-04/DM-23**; prefer not to enforce wrong UNIQUE early | Registration/DQ (report 24) | Mis-unique can hide fraud or block legit | Batch 4 constraints | Unique index cost | Tax Office + Legal module owner | Before tax-number enforce constraints | Open |
+| PHY-06 | Tax number uniqueness scope | A. Global unique active · B. Unique per legal entity · C. Soft unique + DQ reports | **A** — unique among active taxpayers; numeric text; no generation; correction lineage | Registration/DQ (report 24) | Mis-unique can hide fraud or block legit | Batch 4 constraints | Unique index cost | Tax Office + Legal module owner | Before tax-number enforce constraints | **Accepted 2026-07-19** |
 | PHY-07 | Phone normalization storage | A. Store raw only · B. E.164 normalized + raw · C. Normalized only | **B** — normalized search column + raw display where needed | Contact matching / report 24 | Masking/encryption still required; not auth key | Batch 4 contact columns | Duplicate detection indexes | Security + Registry | Before contact DQ reports | Open |
 | PHY-08 | Property/unit ownership grain | A. Property-only · B. Unit-only · C. Both (record + optional units) | **C** documentation option; **not** final — TABLE-021 `masterdata.property_ownership_units` remains **CONDITIONAL_OPEN** (not a baseline business rule) | FR-205 multi-unit | Highly Sensitive party data shape | Batch 5 optional table | Extra joins if both | Tax Office + Architecture | Before FR-205 ownership write path | Open |
-| PHY-09 | Due–Receipt cardinality | A. 1:1 · B. 1 due : N receipts · C. 1 receipt : N dues · D. Allocation link table | Carry **DM-22**; **no** FK fixed now; no `due_receipt_links` until decided | Payment ops; report 16 | Financial evidence integrity | Batch 10 must stay additive | Join shape for indexes | Tax Office + Dues owner | Before dues confirmation hardening | Open |
-| PHY-10 | Partial payments | A. Disallowed · B. Allowed via multiple receipts · C. Allowed via partial allocation rows | Tied to **PHY-09/DM-22** | Cashier workload; aging metrics | Under/over payment disputes | May require allocation object | Extra rows | Tax Office | Before partial-pay UX | Open |
+| PHY-09 | Due–Receipt cardinality | A. 1:1 · B. 1 due : N receipts · C. 1 receipt : N dues · D. Allocation link table | **B** — one due may associate with multiple receipts; manual evidence; confirmed receipts immutable | Payment ops; report 16 | Financial evidence integrity | Batch 10 additive link/evidence | Join shape for indexes | Tax Office + Dues owner | Before dues confirmation hardening | **Accepted 2026-07-19** |
+| PHY-10 | Partial payments | A. Disallowed · B. Allowed via multiple receipts · C. Allowed via partial allocation rows | **B** — partial payment via multiple receipts per due | Cashier workload; aging metrics | Under/over payment disputes | Receipt association object | Extra rows | Tax Office | Before partial-pay UX | **Accepted 2026-07-19** |
 | PHY-11 | Form snapshot JSONB vs typed | A. JSONB only · B. Fully typed columns · C. Hybrid header + JSONB payload | **C** — hybrid (TABLE snapshot + payload) | FR field evolution | Highly Sensitive payloads | Batches 6–7 | JSONB query limits | Architecture + Product | Before request/balagh form persist | Open |
 | PHY-12 | Attachment polymorphic links | A. Per-parent link tables · B. Single `attachment_links` + `owner_type` · C. Mix | **B** — single polymorphic link table | Simpler attachment UX | Reference ≠ authorization critical | Batch 8 | Owner-type indexes | Architecture + Attachments | Batch 8 | Open |
 | PHY-13 | Audit before/after storage | A. Raw values · B. Masked only · C. Raw vault + masked report cols | **C** — masked for normal audit read; raw vault/restricted **يحتاج اعتماد لاحق** | Reports 25–26 usefulness | Breach blast radius | Batch 14 columns | Storage growth | Security + Audit owner | Before sensitive-change reporting | Open |
@@ -144,12 +144,12 @@ These are physical-pack design normalizations. They remain **PROPOSED** document
 
 | Metric | Count |
 | --- | ---: |
-| Carried logical opens (DMOD/OD + DM) | **41** |
+| Carried logical opens (remaining) | see data-model register |
 | Physical decisions in this register (PHY-01…PHY-36) | **36** |
-| All PHY Status values | **Open** (none marked approved) |
-| Recommendations marked | **PROPOSED** only |
+| PHY accepted (ADR-015) | **PHY-06, PHY-09, PHY-10** |
+| Remaining PHY Status Open / PROPOSED | **33** |
 | Catalogued TABLE IDs referenced | **94** |
 
-**Physical open decision count: 36** (PHY-01 through PHY-36), plus **41** carried logical opens noted above (not renumbered). No business open is marked approved by this register.
+**Physical open decision count: 33** remaining (PHY-01…PHY-36 minus PHY-06/09/10). Accepted rows are binding for Batch 04+ source authoring where applicable.
 
 **End of MARIB-TAX-PHYSICAL-DESIGN-OPEN-DECISIONS-01**

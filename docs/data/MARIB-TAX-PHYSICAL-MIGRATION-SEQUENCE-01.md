@@ -104,13 +104,13 @@ This sequence document does **not** authorize production link or apply by itself
 | --- | --- |
 | **Dependencies** | Batches 2–3 (actors exist for audited creates) |
 | **Objects** | TABLE-008…011 (`taxpayers`, `taxpayer_contacts`, `taxpayer_account_links`, `taxpayer_legal_entity_associations`); TABLE-012…013 (`legal_entities`, `tax_numbers`) |
-| **Constraints** | Registry owns associations; Legal owns tax numbers; Account Link path constraints; tax-number uniqueness **not** silently fixed (DM-04/DM-23 **يحتاج اعتماد لاحق**) |
+| **Constraints** | Registry owns associations; Legal owns tax numbers; Account Link is one account → one taxpayer (DM-21 v1 / ADR-015); tax-number digits-only numeric text, no generation, unique among active taxpayers, correction lineage (DM-04/DM-23 / PHY-06 / ADR-015) |
 | **Backfill** | None unless approved legacy import (then via Imports module later — do not bypass) |
 | **Later verification** | Own-data path Identity→Profile→Link→Taxpayer; phone/tax not usable as sole auth proof |
 | **Rollback** | Soft-archive preferred; retain link grant/revoke evidence |
 | **Data-loss risks** | Contact/tax PII loss; broken own-data authorization if links purged |
 | **Security gate** | Highly Sensitive masking posture; no client writes |
-| **Stop conditions** | Attempt to place tax numbers under registry ownership; multiplicity rules contradict DM-21 without approval |
+| **Stop conditions** | Attempt to place tax numbers under registry ownership; encode multi-taxpayer-per-account contrary to ADR-015 v1; generate tax numbers in-database |
 
 ### Batch 5 — Master data (activities, property, ownership)
 
@@ -188,13 +188,13 @@ This sequence document does **not** authorize production link or apply by itself
 | --- | --- |
 | **Dependencies** | Batches 6–9 (case + attachment basis docs) |
 | **Objects** | TABLE-056…062 (`payment_dues`, basis refs, corrections, notices, receipts, receipt replacements, confirmations) |
-| **Constraints** | **No** `due_receipt_links` (or fixed Due–Receipt FK cardinality) until DM-22 resolved; no payment-gateway columns; confirmation requires accepted receipt; confirmation ≠ final case approval |
+| **Constraints** | 1 due : N receipts (ADR-015 / DM-22); partial payments via multiple receipts; no payment-gateway columns; admin confirmation requires accepted receipt; confirmation ≠ final case approval; confirmed receipts never hard-deleted |
 | **Backfill** | None |
 | **Later verification** | Manual model only; partial-payment behavior not silently assumed; replacement lineage intact |
 | **Rollback** | Archive dues; retain correction/replacement evidence |
 | **Data-loss risks** | Financial evidence loss; false “paid/approved” if confirmation misused as final decision |
 | **Security gate** | Highly Sensitive amounts/receipts; NestJS-only |
-| **Stop conditions** | Adding checkout/provider settlement columns; fixing Due–Receipt cardinality without DM-22 approval |
+| **Stop conditions** | Adding checkout/provider settlement columns; encoding 1:1-only due–receipt contrary to ADR-015; hard-delete path for confirmed receipts |
 
 ### Batch 11 — Notify and notification delivery outbox
 
@@ -349,7 +349,7 @@ Before production cutover (after batch 18):
 1. Rebuildability spot-check for reporting projections.
 2. RLS/grants adversarial check (client roles).
 3. Storage private-by-default check.
-4. Confirm open decisions that were temporarily deferred remain labeled **يحتاج اعتماد لاحق** (especially DM-22 Due–Receipt, TABLE-021 ownership units, DM-15 freshness).
+4. Confirm open decisions that were temporarily deferred remain labeled **يحتاج اعتماد لاحق** (especially TABLE-021 ownership units, DM-15 freshness; DM-22 payment cardinality is closed by ADR-015).
 
 ## 5. Counts
 
