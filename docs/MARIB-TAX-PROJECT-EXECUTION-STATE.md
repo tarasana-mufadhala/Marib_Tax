@@ -8,8 +8,8 @@
 
 ## Git
 
-- `origin/main`: `9462f68` (PR #46 Batch 05 source merged; Foundation CI PASS).
-- Active worktree branch: `chore/marib-tax-autopilot-orchestrator`.
+- `origin/main`: `6ae2977` (PR #47 Batch 05 preflight merged; Foundation CI PASS).
+- Active worktree branch: `chore/marib-tax-autopilot-orchestrator` (PR #48 masterdata source open).
 
 ## Database
 
@@ -22,8 +22,8 @@
 
 ## Continuation checkpoint
 
-- **Last completed:** PROD-DB-05 preflight PASS (dry-run only; no apply).
-- **Active:** masterdata OpenAPI/DTO/ports/mocks source (non-production).
+- **Last completed:** PROD-DB-05 preflight PASS + PR #47 merged; no apply.
+- **Active:** masterdata source PR #48 (OpenAPI/DTOs/ports/mocks); waiting CI PASS.
 - **Approval gates:** PROD-DB-05 apply remains closed pending explicit user approval.
-- **Highest next task:** wait for PROD-DB-05 apply approval, or finish/merge independent masterdata source work.
+- **Highest next task:** merge PR #48 after CI PASS, then stop at PROD-DB-05 apply gate.
 - **Forbidden without new approval:** Batch 05+ production apply, deploy/publish, secrets, real taxpayer data, real SMS/OTP/WhatsApp.
