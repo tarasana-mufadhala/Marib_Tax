@@ -6,13 +6,18 @@ Only decisions that require an authorized human are listed here. Source work mus
 
 ### PROD-DB-03 — Apply Batch 03 authorization model
 
-- **State:** APPROVED on 2026-07-19
+- **State:** COMPLETE — APPLIED / VERIFIED PASS on 2026-07-19
 - **Source migration:** `supabase/migrations/20260717120000_create_identity_authorization_model.sql`
 - **SHA-256:** `BF15774686744A86D641D7B0B212F7B25E53D2AE6A8E4445662CA84475A00A86`
 - **Project:** `sjmtiwzddztxfrncwkpx`
 - **CLI:** Supabase `2.109.1`
-- **Approval boundary:** Explicit production authorization for one controlled `db push --linked` of the single reviewed migration above. Preflight, dry-run single-file gate, post-verify PASS, and stop conditions in the Batch 03 approval packet remain mandatory.
-- **Still forbidden without a new approval:** `--include-all`, migration repair, `db reset --linked`, dashboard SQL, direct `psql`, blind retry, or any other migration.
+- **Evidence:** `docs/post-apply/MARIB-TAX-DB-FOUNDATION-BATCH-03-PRODUCTION-APPLY-POST-VERIFY-01-REPORT.md`
+- **Still forbidden without a new approval:** any later migration (including Batch 04), `--include-all`, migration repair, `db reset --linked`, dashboard SQL, direct `psql`, or blind retry.
+
+### PROD-DB-04 — Apply Batch 04 taxpayer registry / legal entities
+
+- **State:** REQUIRES_USER_APPROVAL (source authoring may proceed; production apply closed)
+- **Until approved:** do not run `db push` for Batch 04 or any later batch.
 
 ## Business/data decisions — approved 2026-07-19
 
