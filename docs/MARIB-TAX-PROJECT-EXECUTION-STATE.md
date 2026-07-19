@@ -1,23 +1,29 @@
 # Marib Tax Project Execution State
 
-**Inventory time:** 2026-07-19 (Asia/Riyadh) — after PROD-DB-04 PASS; Batch 05 source authored
+**Inventory time:** 2026-07-19 (Asia/Riyadh) — PROD-DB-05 preflight complete; apply closed
 
 **Official repository:** `tarasana-mufadhala/Marib_Tax`
 
 **Supabase project:** `sjmtiwzddztxfrncwkpx`
 
-## Database and runtime
+## Git
 
-| Batch | Source | Production/runtime | Notes |
-| --- | --- | --- | --- |
-| 01A–03 | COMPLETE | APPLIED / VERIFIED | Prior |
-| 04 | COMPLETE | **APPLIED / VERIFIED PASS** | Post-apply PR #45 merged as `42f5fa1` |
-| 05 | **SOURCE_READY** | NOT_STARTED / CLOSED | `20260720120000`; SHA `D3F15F918B721DD00865CFF8702BBF4313BB21FB741228D5ECCF5F82E7FB148C`; TABLE-021 excluded |
-| 06+ | BLOCKED | NOT_STARTED | Behind Batch 05 apply |
+- `origin/main`: `9462f68` (PR #46 Batch 05 source merged; Foundation CI PASS).
+- Active worktree branch: `chore/marib-tax-autopilot-orchestrator`.
+
+## Database
+
+| Batch | Source | Production |
+| --- | --- | --- |
+| 01A–03 | COMPLETE | APPLIED / VERIFIED |
+| 04 | COMPLETE | **APPLIED / VERIFIED PASS** |
+| 05 | **COMPLETE (source)** | PREFLIGHT PASS / APPLY CLOSED — SHA `D3F15F918B721DD00865CFF8702BBF4313BB21FB741228D5ECCF5F82E7FB148C` |
+| 06+ | BLOCKED | NOT_STARTED |
 
 ## Continuation checkpoint
 
-- **Last completed:** PROD-DB-04 apply/verify + post-apply report; Batch 05 source authoring.
-- **Active:** Batch 05 source PR.
-- **Approval gates:** PROD-DB-05 closed — no production apply without new explicit approval.
-- **Next action after source merge:** focused freshness only, or independent non-production source work.
+- **Last completed:** PROD-DB-05 preflight PASS (dry-run only; no apply).
+- **Active:** masterdata OpenAPI/DTO/ports/mocks source (non-production).
+- **Approval gates:** PROD-DB-05 apply remains closed pending explicit user approval.
+- **Highest next task:** wait for PROD-DB-05 apply approval, or finish/merge independent masterdata source work.
+- **Forbidden without new approval:** Batch 05+ production apply, deploy/publish, secrets, real taxpayer data, real SMS/OTP/WhatsApp.
