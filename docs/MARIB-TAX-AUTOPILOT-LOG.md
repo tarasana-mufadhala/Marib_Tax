@@ -1,13 +1,15 @@
 # Marib Tax Autopilot Log
 
-## 2026-07-19 — PROD-DB-05 applied and verified
+## 2026-07-19 — PROD-DB-05 applied and verified; Batch 06 source authored
 
 - Explicit owner production approval received for Batch 05 only (`sjmtiwzddztxfrncwkpx`, CLI `2.109.1`, SHA `D3F15F918B721DD00865CFF8702BBF4313BB21FB741228D5ECCF5F82E7FB148C`).
 - Fresh preflight PASS: clean `origin/main` `c669f01`; SHA exact match; project ref match; history 01A–04 once each; Batch 05 absent; eight tables absent; TABLE-021 and `v_taxpayer_properties` absent; backup COMPLETED `2026-07-18T22:04:26.808Z`; dry-run listed only Batch 05.
 - Applied once: `npx --yes supabase@2.109.1 db push --linked --yes`.
 - Post-verify: remote history contains Batch 05 once; verifier `final_status=PASS`; all mismatch counts 0; eight tables empty; RLS enabled; no policies/forbidden grants/seed; TABLE-021 / view / `properties.taxpayer_id` absent; dry-run `Remote database is up to date.`
-- Batch 05 production state: **APPLIED / VERIFIED PASS**. Batch 06 production apply remains closed.
-- Next: Batch 06 source authoring only; no Batch 06 apply without a new independent approval.
+- Batch 05 production state: **APPLIED / VERIFIED PASS**.
+- Post-apply report PR #52 Foundation CI PASS and merged as `8609b05`.
+- Authored Batch 06 source migration `20260721120000_create_service_requests_family.sql` (SHA `162E35E352956E5AC7AFE907D95FC0046A1AE6D76F2F27D5E1126FDA3DB6690E`) with verifier; no `cases` table; no FR-201…206 catalogue seed. No Batch 06 production apply.
+- Cycle stop at PROD-DB-06 approval gate.
 
 ## 2026-07-19 — PROD-DB-05 preflight + masterdata source cycle
 
