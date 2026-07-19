@@ -1,5 +1,13 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-20 — Batch 07 design-decision gate HOLD + source correction
+
+- Reviewed Batch 07 against approved Balaghat filer/target/property/lifecycle/type boundaries before any PROD-DB-07 preflight.
+- Decision: **HOLD — BATCH_07_SOURCE_REQUIRES_CORRECTION** (missing multi-target table, property/unit selections, filer profile, balagh_type_code).
+- Corrected unapplied source in place; new SHA `4D51F41BF5363662E4F6B1F09B7186E18587FAFE7CBA2656A018DABEE229EE0C`; verifier expanded to 16 tables.
+- Recorded ADR-017. No production preflight, dry-run, `db push`, seed, deploy, or real notifications.
+- PROD-DB-07 remains CLOSED.
+
 ## 2026-07-20 — PROD-DB-06 applied and verified; Batch 07 source authored
 
 - Explicit owner production approval received for Batch 06 only (`sjmtiwzddztxfrncwkpx`, CLI `2.109.1`, SHA `F0446C8964C4345D79669C6926B983776213CB06BFD6E4C2DB27BDC3EFB0AE7D`).
