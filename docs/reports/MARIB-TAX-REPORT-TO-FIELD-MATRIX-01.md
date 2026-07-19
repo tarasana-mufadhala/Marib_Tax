@@ -1,7 +1,9 @@
 # MARIB-TAX-REPORT-TO-FIELD-MATRIX-01
 
-**Status:** Approved field-coverage matrix for analytical reports **4–29** (DM-16 / ADR-015).  
-**Authorization:** `report.view` and `report.export` are separate. Export never follows from view.  
+**Status:** Approved field-coverage matrix for analytical reports **4–29** (DM-16 / ADR-015).
+
+**Authorization:** `report.view` and `report.export` are separate. Export never follows from view.
+
 **Companions:** `MARIB-TAX-REPORTS-BASELINE-01`, `MARIB-TAX-REPORT-DATA-TRACEABILITY-01`, `MARIB-TAX-REPORTING-PHYSICAL-DESIGN-01`.
 
 ## Rules
