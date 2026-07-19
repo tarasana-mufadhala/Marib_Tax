@@ -38,9 +38,11 @@ export class TaxpayerRegistryService {
   private async owned(
     actorId: string,
     taxpayerId: string,
-  ): Promise<NonNullable<
-    Awaited<ReturnType<TaxpayerRegistryRepository['findTaxpayerById']>>
-  >> {
+  ): Promise<
+    NonNullable<
+      Awaited<ReturnType<TaxpayerRegistryRepository['findTaxpayerById']>>
+    >
+  > {
     const taxpayer = await this.repository.findTaxpayerById(taxpayerId);
     if (taxpayer === null) throw new NotFoundException();
     if (taxpayer.ownerActorId !== actorId) throw new ForbiddenException();
@@ -48,7 +50,9 @@ export class TaxpayerRegistryService {
   }
 
   private async bundleFor(
-    taxpayer: Awaited<ReturnType<TaxpayerRegistryRepository['findOwnedByActor']>>,
+    taxpayer: Awaited<
+      ReturnType<TaxpayerRegistryRepository['findOwnedByActor']>
+    >,
   ): Promise<OwnedTaxpayerBundle> {
     if (taxpayer === null) throw new NotFoundException();
     const [legalEntities, taxNumbers] = await Promise.all([

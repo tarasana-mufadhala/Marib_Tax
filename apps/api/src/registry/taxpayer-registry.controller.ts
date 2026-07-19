@@ -1,11 +1,8 @@
-import {
-  Controller,
-  Get,
-  Inject,
-  Param,
-  ParseUUIDPipe,
-} from '@nestjs/common';
-import type { OwnedTaxpayerBundle, TaxpayerProfileResponse } from '@marib-tax/contracts';
+import { Controller, Get, Inject, Param, ParseUUIDPipe } from '@nestjs/common';
+import type {
+  OwnedTaxpayerBundle,
+  TaxpayerProfileResponse,
+} from '@marib-tax/contracts';
 import {
   RequirePermission,
   RequirePredicates,
@@ -39,9 +36,6 @@ export class TaxpayerRegistryController {
   readById(
     @Param('id', new ParseUUIDPipe()) id: string,
   ): Promise<TaxpayerProfileResponse> {
-    return this.service.readOwnedTaxpayerById(
-      this.actors.requireActorId(),
-      id,
-    );
+    return this.service.readOwnedTaxpayerById(this.actors.requireActorId(), id);
   }
 }

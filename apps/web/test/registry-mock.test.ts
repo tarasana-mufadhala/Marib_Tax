@@ -9,6 +9,8 @@ describe('registry mock data', () => {
     expect(mockOwnedTaxpayerBundle.reportFieldKeys).toContain(
       'tax_number_value',
     );
-    expect(JSON.stringify(mockOwnedTaxpayerBundle)).not.toMatch(/service_role/i);
+    expect(JSON.stringify(mockOwnedTaxpayerBundle)).not.toMatch(
+      /service_role/i,
+    );
   });
 });

@@ -331,8 +331,7 @@ components:
     TaxNumberSummary:
       type: object
       additionalProperties: false
-      required:
-        [id, taxNumberValueMasked, statusCode, legalEntityId, issuedAt]
+      required: [id, taxNumberValueMasked, statusCode, legalEntityId, issuedAt]
       properties:
         id: { $ref: '#/components/schemas/Uuid' }
         taxNumberValueMasked: { type: string, minLength: 1 }
