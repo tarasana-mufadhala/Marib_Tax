@@ -13,6 +13,7 @@ Only decisions that require an authorized human are listed here. Source work mus
 - **CLI:** Supabase `2.109.1`
 - **Evidence:** `docs/post-apply/MARIB-TAX-DB-FOUNDATION-BATCH-03-PRODUCTION-APPLY-POST-VERIFY-01-REPORT.md`
 - **Still forbidden without a new approval:** any later migration (including Batch 04), `--include-all`, migration repair, `db reset --linked`, dashboard SQL, direct `psql`, or blind retry.
+- **2026-07-19 stale repeat approval:** read-only history confirmed Batch 03 already present remotely (with Batch 04 also present), so the repeat approval was not executed. It does not authorize Batch 05.
 
 ### PROD-DB-04 — Apply Batch 04 taxpayer registry / legal entities
 

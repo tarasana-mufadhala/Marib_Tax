@@ -103,6 +103,14 @@
 - Synchronized the active hourly automation prompt with the extended-cycle and checkpoint rules.
 - Production impact: **none**.
 
+## 2026-07-19 — Stale PROD-DB-03 repeat approval rejected
+
+- Received a one-time approval naming Batch 03 and requiring that Batch 03 be absent remotely before apply.
+- Verified the migration SHA as `BF15774686744A86D641D7B0B212F7B25E53D2AE6A8E4445662CA84475A00A86` and Supabase CLI as `2.109.1`.
+- Read-only linked migration history showed Batches 01A, 02, 03, and 04 already applied; Batch 05 alone is local-only/pending.
+- Stopped immediately on the required precondition mismatch. Did not run `db push --dry-run`, `db push`, verifier SQL, repair, reset, seed, or any other production write.
+- PROD-DB-05 remains closed and requires its own fresh explicit approval.
+
 ## 2026-07-18 — Request policy evaluator
 
 - Resumed from PR #36 merge `2e7136cfe4e06432ff82e13499a3146be80adf53`; verified no open PRs and Foundation CI PASS.

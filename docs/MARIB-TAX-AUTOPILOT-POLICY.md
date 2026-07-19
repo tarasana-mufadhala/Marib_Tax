@@ -30,6 +30,8 @@ Use precheck, baseline validation, positive and negative authorization tests, ty
 
 Use one dependency-ordered migration batch at a time. Record filename and SHA-256; review all SQL; verify RLS and dependency order; prohibit automatic destructive rollback; stop on partial/failing apply; and never start the next batch until the previous batch is applied, verified, and accepted.
 
+An approval for a migration already present in remote history is stale and must never be treated as permission to replay it. Record the mismatch, perform no dry-run/apply retry, and keep the actual next production batch behind its own fresh approval.
+
 ## Cycle loop
 
 Every scheduled run and every Run now is an **extended work cycle**, not a single-task invocation.
