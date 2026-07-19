@@ -45,9 +45,12 @@ Only decisions that require an authorized human are listed here. Source work mus
 
 ### PROD-DB-07 — Apply Batch 07 balaghat family
 
-- **State:** NOT_STARTED (source authoring may begin; production apply closed)
-- **Intended objects:** TABLE-037…049 in `balaghat` schema
-- **Until approved:** do not run `db push` for Batch 07 or any later batch.
+- **State:** NOT_STARTED for production (source authored; production apply closed)
+- **Source migration:** `supabase/migrations/20260722120000_create_balaghat_family.sql`
+- **SHA-256:** `71A430F7D9B11BC01202E675DEBD8ED5D7D15769E30F12A1FE07353807B9F7C7`
+- **Verifier:** `scripts/db/verify/verify_batch_07_balaghat_family.sql`
+- **Source evidence:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-07-BALAGHAT-REPORT.md`
+- **Until approved:** do not run production preflight or `db push` for Batch 07 or any later batch.
 
 ### DMOD-01 / DMOD-06 / DMOD-11 — Service request lifecycle
 
