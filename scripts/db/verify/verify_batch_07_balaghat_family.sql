@@ -9,12 +9,18 @@ dependency_presence AS (
     pg_catalog.to_regclass('registry.taxpayers') IS NOT NULL AS taxpayers_present,
     pg_catalog.to_regclass('masterdata.commercial_activities') IS NOT NULL AS commercial_activities_present,
     pg_catalog.to_regclass('masterdata.branches') IS NOT NULL AS branches_present,
+    pg_catalog.to_regclass('masterdata.properties') IS NOT NULL AS properties_present,
+    pg_catalog.to_regclass('masterdata.property_units') IS NOT NULL AS property_units_present,
+    pg_catalog.to_regclass('masterdata.property_ownership_records') IS NOT NULL AS property_ownership_records_present,
     pg_catalog.to_regclass('identity.user_profiles') IS NOT NULL AS user_profiles_present,
     pg_catalog.to_regclass('identity.staff_profiles') IS NOT NULL AS staff_profiles_present
 ),
 expected_tables(schema_name, table_name) AS (
   VALUES
     ('balaghat', 'balaghs'),
+    ('balaghat', 'balagh_selected_targets'),
+    ('balaghat', 'balagh_selected_properties'),
+    ('balaghat', 'balagh_selected_property_units'),
     ('balaghat', 'balagh_selected_activities'),
     ('balaghat', 'balagh_selected_branches'),
     ('balaghat', 'balagh_form_snapshots'),
@@ -35,12 +41,14 @@ actual_tables AS (
   JOIN pg_catalog.pg_class c ON c.relnamespace = n.oid
   WHERE n.nspname = 'balaghat'
     AND c.relname IN (
-      'balaghs', 'balagh_selected_activities', 'balagh_selected_branches',
-      'balagh_form_snapshots', 'balagh_form_snapshot_payloads',
-      'balagh_status_histories', 'balagh_assignment_histories',
-      'balagh_completion_requests', 'balagh_completion_responses',
-      'balagh_decision_records', 'balagh_decision_revisions',
-      'balagh_close_archive_records', 'balagh_reopen_records'
+      'balaghs', 'balagh_selected_targets', 'balagh_selected_properties',
+      'balagh_selected_property_units', 'balagh_selected_activities',
+      'balagh_selected_branches', 'balagh_form_snapshots',
+      'balagh_form_snapshot_payloads', 'balagh_status_histories',
+      'balagh_assignment_histories', 'balagh_completion_requests',
+      'balagh_completion_responses', 'balagh_decision_records',
+      'balagh_decision_revisions', 'balagh_close_archive_records',
+      'balagh_reopen_records'
     )
 ),
 table_mismatches AS (
@@ -57,8 +65,18 @@ table_mismatches AS (
 ),
 expected_indexes(index_name) AS (
   VALUES
+    ('balaghs_balagh_type_code_idx'),
+    ('balaghs_filer_profile_id_idx'),
     ('balaghs_taxpayer_id_idx'),
     ('balaghs_status_code_idx'),
+    ('balagh_selected_targets_balagh_id_idx'),
+    ('balagh_selected_targets_taxpayer_id_idx'),
+    ('balagh_selected_properties_balagh_id_idx'),
+    ('balagh_selected_properties_property_id_idx'),
+    ('balagh_selected_properties_ownership_record_id_idx'),
+    ('balagh_selected_property_units_balagh_id_idx'),
+    ('balagh_selected_property_units_selected_property_id_idx'),
+    ('balagh_selected_property_units_property_unit_id_idx'),
     ('balagh_selected_activities_balagh_id_idx'),
     ('balagh_selected_activities_activity_id_idx'),
     ('balagh_selected_branches_balagh_id_idx'),
@@ -95,12 +113,14 @@ forbidden_grants AS (
   FROM information_schema.role_table_grants a
   WHERE a.table_schema = 'balaghat'
     AND a.table_name IN (
-      'balaghs', 'balagh_selected_activities', 'balagh_selected_branches',
-      'balagh_form_snapshots', 'balagh_form_snapshot_payloads',
-      'balagh_status_histories', 'balagh_assignment_histories',
-      'balagh_completion_requests', 'balagh_completion_responses',
-      'balagh_decision_records', 'balagh_decision_revisions',
-      'balagh_close_archive_records', 'balagh_reopen_records'
+      'balaghs', 'balagh_selected_targets', 'balagh_selected_properties',
+      'balagh_selected_property_units', 'balagh_selected_activities',
+      'balagh_selected_branches', 'balagh_form_snapshots',
+      'balagh_form_snapshot_payloads', 'balagh_status_histories',
+      'balagh_assignment_histories', 'balagh_completion_requests',
+      'balagh_completion_responses', 'balagh_decision_records',
+      'balagh_decision_revisions', 'balagh_close_archive_records',
+      'balagh_reopen_records'
     )
     AND a.grantee IN ('PUBLIC', 'anon', 'authenticated', 'service_role')
 ),
@@ -111,12 +131,14 @@ policy_count AS (
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
   WHERE n.nspname = 'balaghat'
     AND c.relname IN (
-      'balaghs', 'balagh_selected_activities', 'balagh_selected_branches',
-      'balagh_form_snapshots', 'balagh_form_snapshot_payloads',
-      'balagh_status_histories', 'balagh_assignment_histories',
-      'balagh_completion_requests', 'balagh_completion_responses',
-      'balagh_decision_records', 'balagh_decision_revisions',
-      'balagh_close_archive_records', 'balagh_reopen_records'
+      'balaghs', 'balagh_selected_targets', 'balagh_selected_properties',
+      'balagh_selected_property_units', 'balagh_selected_activities',
+      'balagh_selected_branches', 'balagh_form_snapshots',
+      'balagh_form_snapshot_payloads', 'balagh_status_histories',
+      'balagh_assignment_histories', 'balagh_completion_requests',
+      'balagh_completion_responses', 'balagh_decision_records',
+      'balagh_decision_revisions', 'balagh_close_archive_records',
+      'balagh_reopen_records'
     )
 ),
 excluded_objects AS (
@@ -158,9 +180,31 @@ reopen_constraints AS (
         AND x.conname = 'balagh_reopen_records_reason_not_blank_check'
     ) AS reopen_reason_not_blank_check_present
 ),
+filer_or_type_constraints AS (
+  SELECT
+    EXISTS (
+      SELECT 1
+      FROM information_schema.columns c
+      WHERE c.table_schema = 'balaghat'
+        AND c.table_name = 'balaghs'
+        AND c.column_name = 'balagh_type_code'
+        AND c.is_nullable = 'NO'
+    ) AS balagh_type_code_not_null,
+    EXISTS (
+      SELECT 1
+      FROM information_schema.columns c
+      WHERE c.table_schema = 'balaghat'
+        AND c.table_name = 'balaghs'
+        AND c.column_name = 'filer_profile_id'
+        AND c.is_nullable = 'NO'
+    ) AS filer_profile_id_not_null
+),
 seed_row_counts AS (
   SELECT
     (SELECT COUNT(*)::integer FROM balaghat.balaghs) AS balaghs_row_count,
+    (SELECT COUNT(*)::integer FROM balaghat.balagh_selected_targets) AS balagh_selected_targets_row_count,
+    (SELECT COUNT(*)::integer FROM balaghat.balagh_selected_properties) AS balagh_selected_properties_row_count,
+    (SELECT COUNT(*)::integer FROM balaghat.balagh_selected_property_units) AS balagh_selected_property_units_row_count,
     (SELECT COUNT(*)::integer FROM balaghat.balagh_selected_activities) AS balagh_selected_activities_row_count,
     (SELECT COUNT(*)::integer FROM balaghat.balagh_selected_branches) AS balagh_selected_branches_row_count,
     (SELECT COUNT(*)::integer FROM balaghat.balagh_form_snapshots) AS balagh_form_snapshots_row_count,
@@ -185,13 +229,14 @@ grant_summary AS (
 ),
 seed_summary AS (
   SELECT s.*,
-    CASE WHEN balaghs_row_count <> 0 OR balagh_selected_activities_row_count <> 0
-      OR balagh_selected_branches_row_count <> 0 OR balagh_form_snapshots_row_count <> 0
-      OR balagh_form_snapshot_payloads_row_count <> 0 OR balagh_status_histories_row_count <> 0
-      OR balagh_assignment_histories_row_count <> 0 OR balagh_completion_requests_row_count <> 0
-      OR balagh_completion_responses_row_count <> 0 OR balagh_decision_records_row_count <> 0
-      OR balagh_decision_revisions_row_count <> 0 OR balagh_close_archive_records_row_count <> 0
-      OR balagh_reopen_records_row_count <> 0
+    CASE WHEN balaghs_row_count <> 0 OR balagh_selected_targets_row_count <> 0
+      OR balagh_selected_properties_row_count <> 0 OR balagh_selected_property_units_row_count <> 0
+      OR balagh_selected_activities_row_count <> 0 OR balagh_selected_branches_row_count <> 0
+      OR balagh_form_snapshots_row_count <> 0 OR balagh_form_snapshot_payloads_row_count <> 0
+      OR balagh_status_histories_row_count <> 0 OR balagh_assignment_histories_row_count <> 0
+      OR balagh_completion_requests_row_count <> 0 OR balagh_completion_responses_row_count <> 0
+      OR balagh_decision_records_row_count <> 0 OR balagh_decision_revisions_row_count <> 0
+      OR balagh_close_archive_records_row_count <> 0 OR balagh_reopen_records_row_count <> 0
       THEN 1 ELSE 0 END AS seed_mismatch_count
   FROM seed_row_counts s
 )
@@ -199,6 +244,9 @@ SELECT
   dp.taxpayers_present,
   dp.commercial_activities_present,
   dp.branches_present,
+  dp.properties_present,
+  dp.property_units_present,
+  dp.property_ownership_records_present,
   dp.user_profiles_present,
   dp.staff_profiles_present,
   s.table_mismatch_count,
@@ -209,8 +257,13 @@ SELECT
   rc.reopen_reason_not_null,
   rc.reopen_staff_not_null,
   rc.reopen_reason_not_blank_check_present,
+  ft.balagh_type_code_not_null,
+  ft.filer_profile_id_not_null,
   ss.seed_mismatch_count,
   ss.balaghs_row_count,
+  ss.balagh_selected_targets_row_count,
+  ss.balagh_selected_properties_row_count,
+  ss.balagh_selected_property_units_row_count,
   ss.balagh_selected_activities_row_count,
   ss.balagh_selected_branches_row_count,
   ss.balagh_form_snapshots_row_count,
@@ -237,8 +290,9 @@ SELECT
   ), '[]'::jsonb) AS forbidden_grants,
   CASE
     WHEN NOT dp.taxpayers_present OR NOT dp.commercial_activities_present
-      OR NOT dp.branches_present OR NOT dp.user_profiles_present
-      OR NOT dp.staff_profiles_present
+      OR NOT dp.branches_present OR NOT dp.properties_present
+      OR NOT dp.property_units_present OR NOT dp.property_ownership_records_present
+      OR NOT dp.user_profiles_present OR NOT dp.staff_profiles_present
       THEN 'FAIL_DEPENDENCY_MISSING'
     WHEN s.table_mismatch_count <> 0 THEN 'FAIL_TABLE_OR_RLS_MISMATCH'
     WHEN ix.index_mismatch_count <> 0 THEN 'FAIL_INDEX_MISMATCH'
@@ -247,6 +301,9 @@ SELECT
       OR NOT rc.reopen_staff_not_null
       OR NOT rc.reopen_reason_not_blank_check_present
       THEN 'FAIL_REOPEN_CONSTRAINT_MISSING'
+    WHEN NOT ft.balagh_type_code_not_null
+      OR NOT ft.filer_profile_id_not_null
+      THEN 'FAIL_FILER_OR_TYPE_CONSTRAINT_MISSING'
     WHEN gs.forbidden_grant_count <> 0 THEN 'FAIL_FORBIDDEN_GRANT'
     WHEN pc.policy_count <> 0 THEN 'FAIL_UNEXPECTED_POLICY'
     WHEN ss.seed_mismatch_count <> 0 THEN 'FAIL_SEED_ROWS_PRESENT'
@@ -259,4 +316,5 @@ CROSS JOIN grant_summary gs
 CROSS JOIN policy_count pc
 CROSS JOIN excluded_objects eo
 CROSS JOIN reopen_constraints rc
+CROSS JOIN filer_or_type_constraints ft
 CROSS JOIN seed_summary ss;

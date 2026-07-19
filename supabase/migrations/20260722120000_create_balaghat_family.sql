@@ -1,16 +1,20 @@
 -- MARIB-TAX-DB-FOUNDATION-BATCH-07-BALAGHAT-FAMILY
--- Create balaghat.balaghs through balagh_reopen_records (TABLE-037…049).
--- Authoring batch: do not apply to production in this task.
+-- Create balaghat.balaghs through balagh_reopen_records (TABLE-037…049) plus selected target/property/unit tables.
+-- Authoring only; do not apply to production in this task.
 -- IDs are supplied by NestJS; no UUID-generating extension or database default is introduced.
 -- No seed/backfill rows are introduced here.
--- No table named cases. Detailed grants and RLS policies remain deferred to Batch 17.
--- ADR-016 lifecycle parallels: close vs archive are independent events; staff-only reopen with mandatory reason.
+-- No table named cases; TABLE-021 is not introduced.
+-- ADR-016 lifecycle parallels: close vs archive independent; staff-only reopen with mandatory reason.
+-- ADR-017 balaghat party/property selection boundaries.
+-- Detailed grants and RLS policies remain deferred to Batch 17.
 
 BEGIN;
 
 CREATE TABLE balaghat.balaghs (
   id uuid NOT NULL,
   public_ref text NULL,
+  balagh_type_code text NOT NULL,
+  filer_profile_id uuid NOT NULL,
   taxpayer_id uuid NOT NULL,
   status_code text NOT NULL,
   submitted_at timestamptz NULL,
@@ -23,7 +27,10 @@ CREATE TABLE balaghat.balaghs (
   idempotency_key text NULL,
   CONSTRAINT balaghs_pkey PRIMARY KEY (id),
   CONSTRAINT balaghs_public_ref_key UNIQUE (public_ref),
+  CONSTRAINT balaghs_balagh_type_not_blank_check CHECK (btrim(balagh_type_code) <> ''),
   CONSTRAINT balaghs_status_not_blank_check CHECK (btrim(status_code) <> ''),
+  CONSTRAINT balaghs_filer_profile_id_fkey FOREIGN KEY (filer_profile_id)
+    REFERENCES identity.user_profiles (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE,
   CONSTRAINT balaghs_taxpayer_id_fkey FOREIGN KEY (taxpayer_id)
     REFERENCES registry.taxpayers (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE,
   CONSTRAINT balaghs_created_by_fkey FOREIGN KEY (created_by_profile_id)
@@ -31,12 +38,16 @@ CREATE TABLE balaghat.balaghs (
   CONSTRAINT balaghs_updated_by_fkey FOREIGN KEY (updated_by_profile_id)
     REFERENCES identity.user_profiles (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE
 );
+CREATE INDEX balaghs_balagh_type_code_idx ON balaghat.balaghs (balagh_type_code);
+CREATE INDEX balaghs_filer_profile_id_idx ON balaghat.balaghs (filer_profile_id);
 CREATE INDEX balaghs_taxpayer_id_idx ON balaghat.balaghs (taxpayer_id);
 CREATE INDEX balaghs_status_code_idx ON balaghat.balaghs (status_code);
 COMMENT ON TABLE balaghat.balaghs IS 'TABLE-037 balagh aggregate root; not named cases.';
 COMMENT ON COLUMN balaghat.balaghs.id IS 'Application-supplied immutable UUID.';
 COMMENT ON COLUMN balaghat.balaghs.public_ref IS 'Optional unique public business reference when issued.';
-COMMENT ON COLUMN balaghat.balaghs.taxpayer_id IS 'Subject taxpayer registry root.';
+COMMENT ON COLUMN balaghat.balaghs.balagh_type_code IS 'Balagh type code (FR-201…206); free code without catalogue seed table.';
+COMMENT ON COLUMN balaghat.balaghs.filer_profile_id IS 'Submitter identity profile (property-owner filer).';
+COMMENT ON COLUMN balaghat.balaghs.taxpayer_id IS 'Notifying / property-owner taxpayer for the balagh; not a multi-target substitute.';
 COMMENT ON COLUMN balaghat.balaghs.status_code IS 'Current lifecycle status code.';
 COMMENT ON COLUMN balaghat.balaghs.submitted_at IS 'Set on submit; after submit, hard delete and direct cancel are forbidden (NestJS); draft cancel is pre-submit only.';
 COMMENT ON COLUMN balaghat.balaghs.created_at IS 'Database insertion timestamp.';
@@ -46,6 +57,110 @@ COMMENT ON COLUMN balaghat.balaghs.updated_by_profile_id IS 'Optional last-updat
 COMMENT ON COLUMN balaghat.balaghs.correlation_id IS 'Optional application operation correlation identifier.';
 COMMENT ON COLUMN balaghat.balaghs.archived_at IS 'Optional soft-archive marker complementary to independent archive events in balagh_close_archive_records.';
 COMMENT ON COLUMN balaghat.balaghs.idempotency_key IS 'Optional client idempotency key; scoped uniqueness deferred.';
+
+CREATE TABLE balaghat.balagh_selected_targets (
+  id uuid NOT NULL,
+  balagh_id uuid NOT NULL,
+  taxpayer_id uuid NOT NULL,
+  target_profile_id uuid NULL,
+  target_role_code text NOT NULL,
+  selection_snapshot jsonb NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  created_by_profile_id uuid NULL,
+  correlation_id uuid NULL,
+  CONSTRAINT balagh_selected_targets_pkey PRIMARY KEY (id),
+  CONSTRAINT balagh_selected_targets_target_role_not_blank_check CHECK (btrim(target_role_code) <> ''),
+  CONSTRAINT balagh_selected_targets_balagh_fkey FOREIGN KEY (balagh_id)
+    REFERENCES balaghat.balaghs (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE,
+  CONSTRAINT balagh_selected_targets_taxpayer_fkey FOREIGN KEY (taxpayer_id)
+    REFERENCES registry.taxpayers (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE,
+  CONSTRAINT balagh_selected_targets_target_profile_fkey FOREIGN KEY (target_profile_id)
+    REFERENCES identity.user_profiles (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE,
+  CONSTRAINT balagh_selected_targets_created_by_fkey FOREIGN KEY (created_by_profile_id)
+    REFERENCES identity.user_profiles (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE
+);
+CREATE INDEX balagh_selected_targets_balagh_id_idx
+  ON balaghat.balagh_selected_targets (balagh_id);
+CREATE INDEX balagh_selected_targets_taxpayer_id_idx
+  ON balaghat.balagh_selected_targets (taxpayer_id);
+COMMENT ON TABLE balaghat.balagh_selected_targets IS 'Multi-value balagh targets (ADR-017); one balagh may reference many taxpayers/users.';
+COMMENT ON COLUMN balaghat.balagh_selected_targets.id IS 'Application-supplied immutable UUID.';
+COMMENT ON COLUMN balaghat.balagh_selected_targets.balagh_id IS 'Parent balagh.';
+COMMENT ON COLUMN balaghat.balagh_selected_targets.taxpayer_id IS 'Selected target taxpayer.';
+COMMENT ON COLUMN balaghat.balagh_selected_targets.target_profile_id IS 'Optional selected user profile target.';
+COMMENT ON COLUMN balaghat.balagh_selected_targets.target_role_code IS 'Target role code (e.g. seller/buyer/subject/other); free code without seed.';
+COMMENT ON COLUMN balaghat.balagh_selected_targets.selection_snapshot IS 'Optional supporting snapshot; not sole authority.';
+COMMENT ON COLUMN balaghat.balagh_selected_targets.created_at IS 'Database insertion timestamp.';
+COMMENT ON COLUMN balaghat.balagh_selected_targets.created_by_profile_id IS 'Optional creating application profile.';
+COMMENT ON COLUMN balaghat.balagh_selected_targets.correlation_id IS 'Optional application operation correlation identifier.';
+
+CREATE TABLE balaghat.balagh_selected_properties (
+  id uuid NOT NULL,
+  balagh_id uuid NOT NULL,
+  property_id uuid NOT NULL,
+  ownership_record_id uuid NULL,
+  selection_snapshot jsonb NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  created_by_profile_id uuid NULL,
+  correlation_id uuid NULL,
+  CONSTRAINT balagh_selected_properties_pkey PRIMARY KEY (id),
+  CONSTRAINT balagh_selected_properties_balagh_fkey FOREIGN KEY (balagh_id)
+    REFERENCES balaghat.balaghs (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE,
+  CONSTRAINT balagh_selected_properties_property_fkey FOREIGN KEY (property_id)
+    REFERENCES masterdata.properties (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE,
+  CONSTRAINT balagh_selected_properties_ownership_fkey FOREIGN KEY (ownership_record_id)
+    REFERENCES masterdata.property_ownership_records (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE,
+  CONSTRAINT balagh_selected_properties_created_by_fkey FOREIGN KEY (created_by_profile_id)
+    REFERENCES identity.user_profiles (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE
+);
+CREATE INDEX balagh_selected_properties_balagh_id_idx
+  ON balaghat.balagh_selected_properties (balagh_id);
+CREATE INDEX balagh_selected_properties_property_id_idx
+  ON balaghat.balagh_selected_properties (property_id);
+CREATE INDEX balagh_selected_properties_ownership_record_id_idx
+  ON balaghat.balagh_selected_properties (ownership_record_id);
+COMMENT ON TABLE balaghat.balagh_selected_properties IS 'Selected property on a balagh (ADR-017); optional ownership evidence link.';
+COMMENT ON COLUMN balaghat.balagh_selected_properties.id IS 'Application-supplied immutable UUID.';
+COMMENT ON COLUMN balaghat.balagh_selected_properties.balagh_id IS 'Parent balagh.';
+COMMENT ON COLUMN balaghat.balagh_selected_properties.property_id IS 'Selected property.';
+COMMENT ON COLUMN balaghat.balagh_selected_properties.ownership_record_id IS 'Optional ownership record linking filer/owner capacity.';
+COMMENT ON COLUMN balaghat.balagh_selected_properties.selection_snapshot IS 'Optional supporting snapshot; not sole authority.';
+COMMENT ON COLUMN balaghat.balagh_selected_properties.created_at IS 'Database insertion timestamp.';
+COMMENT ON COLUMN balaghat.balagh_selected_properties.created_by_profile_id IS 'Optional creating application profile.';
+COMMENT ON COLUMN balaghat.balagh_selected_properties.correlation_id IS 'Optional application operation correlation identifier.';
+
+CREATE TABLE balaghat.balagh_selected_property_units (
+  id uuid NOT NULL,
+  balagh_id uuid NOT NULL,
+  balagh_selected_property_id uuid NOT NULL,
+  property_unit_id uuid NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  created_by_profile_id uuid NULL,
+  correlation_id uuid NULL,
+  CONSTRAINT balagh_selected_property_units_pkey PRIMARY KEY (id),
+  CONSTRAINT balagh_selected_property_units_balagh_fkey FOREIGN KEY (balagh_id)
+    REFERENCES balaghat.balaghs (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE,
+  CONSTRAINT balagh_selected_property_units_selected_property_fkey FOREIGN KEY (balagh_selected_property_id)
+    REFERENCES balaghat.balagh_selected_properties (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE,
+  CONSTRAINT balagh_selected_property_units_property_unit_fkey FOREIGN KEY (property_unit_id)
+    REFERENCES masterdata.property_units (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE,
+  CONSTRAINT balagh_selected_property_units_created_by_fkey FOREIGN KEY (created_by_profile_id)
+    REFERENCES identity.user_profiles (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE
+);
+CREATE INDEX balagh_selected_property_units_balagh_id_idx
+  ON balaghat.balagh_selected_property_units (balagh_id);
+CREATE INDEX balagh_selected_property_units_selected_property_id_idx
+  ON balaghat.balagh_selected_property_units (balagh_selected_property_id);
+CREATE INDEX balagh_selected_property_units_property_unit_id_idx
+  ON balaghat.balagh_selected_property_units (property_unit_id);
+COMMENT ON TABLE balaghat.balagh_selected_property_units IS 'Selected property units on a balagh; NOT TABLE-021; case selection only (ADR-017).';
+COMMENT ON COLUMN balaghat.balagh_selected_property_units.id IS 'Application-supplied immutable UUID.';
+COMMENT ON COLUMN balaghat.balagh_selected_property_units.balagh_id IS 'Parent balagh.';
+COMMENT ON COLUMN balaghat.balagh_selected_property_units.balagh_selected_property_id IS 'Parent selected property row.';
+COMMENT ON COLUMN balaghat.balagh_selected_property_units.property_unit_id IS 'Selected property unit.';
+COMMENT ON COLUMN balaghat.balagh_selected_property_units.created_at IS 'Database insertion timestamp.';
+COMMENT ON COLUMN balaghat.balagh_selected_property_units.created_by_profile_id IS 'Optional creating application profile.';
+COMMENT ON COLUMN balaghat.balagh_selected_property_units.correlation_id IS 'Optional application operation correlation identifier.';
 
 CREATE TABLE balaghat.balagh_selected_activities (
   id uuid NOT NULL,
@@ -67,7 +182,7 @@ CREATE INDEX balagh_selected_activities_balagh_id_idx
   ON balaghat.balagh_selected_activities (balagh_id);
 CREATE INDEX balagh_selected_activities_activity_id_idx
   ON balaghat.balagh_selected_activities (commercial_activity_id);
-COMMENT ON TABLE balaghat.balagh_selected_activities IS 'TABLE-038 selected commercial activity on a balagh.';
+COMMENT ON TABLE balaghat.balagh_selected_activities IS 'TABLE-038 optional selected commercial activity on a balagh (0..N); property-type balaghs need not select activity/branch.';
 COMMENT ON COLUMN balaghat.balagh_selected_activities.id IS 'Application-supplied immutable UUID.';
 COMMENT ON COLUMN balaghat.balagh_selected_activities.balagh_id IS 'Parent balagh.';
 COMMENT ON COLUMN balaghat.balagh_selected_activities.commercial_activity_id IS 'Selected commercial activity.';
@@ -100,10 +215,10 @@ CREATE INDEX balagh_selected_branches_selected_activity_id_idx
   ON balaghat.balagh_selected_branches (balagh_selected_activity_id);
 CREATE INDEX balagh_selected_branches_branch_id_idx
   ON balaghat.balagh_selected_branches (branch_id);
-COMMENT ON TABLE balaghat.balagh_selected_branches IS 'TABLE-039 selected branch under a selected activity (REL-044).';
+COMMENT ON TABLE balaghat.balagh_selected_branches IS 'TABLE-039 optional selected branch under a selected activity (REL-044, 0..N); NestJS must ensure branch.commercial_activity_id matches the selected activity commercial_activity_id.';
 COMMENT ON COLUMN balaghat.balagh_selected_branches.id IS 'Application-supplied immutable UUID.';
 COMMENT ON COLUMN balaghat.balagh_selected_branches.balagh_id IS 'Parent balagh.';
-COMMENT ON COLUMN balaghat.balagh_selected_branches.balagh_selected_activity_id IS 'Parent selected activity row; required when branch selected.';
+COMMENT ON COLUMN balaghat.balagh_selected_branches.balagh_selected_activity_id IS 'Parent selected activity row; required when branch selected (REL-044).';
 COMMENT ON COLUMN balaghat.balagh_selected_branches.branch_id IS 'Selected branch.';
 COMMENT ON COLUMN balaghat.balagh_selected_branches.created_at IS 'Database insertion timestamp.';
 COMMENT ON COLUMN balaghat.balagh_selected_branches.created_by_profile_id IS 'Optional creating application profile.';
@@ -152,7 +267,7 @@ CREATE TABLE balaghat.balagh_form_snapshot_payloads (
   CONSTRAINT balagh_form_snapshot_payloads_snapshot_fkey FOREIGN KEY (balagh_form_snapshot_id)
     REFERENCES balaghat.balagh_form_snapshots (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE
 );
-COMMENT ON TABLE balaghat.balagh_form_snapshot_payloads IS 'TABLE-041 JSONB payload child of form snapshot header; supporting not sole authority.';
+COMMENT ON TABLE balaghat.balagh_form_snapshot_payloads IS 'TABLE-041 JSONB payload child of form snapshot header; flexible for evacuation/minutes content without fixed formal minute columns; supporting not sole authority.';
 COMMENT ON COLUMN balaghat.balagh_form_snapshot_payloads.id IS 'Application-supplied immutable UUID.';
 COMMENT ON COLUMN balaghat.balagh_form_snapshot_payloads.balagh_form_snapshot_id IS 'Parent snapshot header; one payload row per header.';
 COMMENT ON COLUMN balaghat.balagh_form_snapshot_payloads.schema_version IS 'Payload schema version label.';
@@ -415,6 +530,9 @@ COMMENT ON COLUMN balaghat.balagh_reopen_records.correlation_id IS 'Optional app
 COMMENT ON COLUMN balaghat.balagh_reopen_records.created_at IS 'Database insertion timestamp.';
 
 ALTER TABLE balaghat.balaghs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE balaghat.balagh_selected_targets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE balaghat.balagh_selected_properties ENABLE ROW LEVEL SECURITY;
+ALTER TABLE balaghat.balagh_selected_property_units ENABLE ROW LEVEL SECURITY;
 ALTER TABLE balaghat.balagh_selected_activities ENABLE ROW LEVEL SECURITY;
 ALTER TABLE balaghat.balagh_selected_branches ENABLE ROW LEVEL SECURITY;
 ALTER TABLE balaghat.balagh_form_snapshots ENABLE ROW LEVEL SECURITY;
@@ -430,6 +548,9 @@ ALTER TABLE balaghat.balagh_reopen_records ENABLE ROW LEVEL SECURITY;
 
 REVOKE ALL ON TABLE
   balaghat.balaghs,
+  balaghat.balagh_selected_targets,
+  balaghat.balagh_selected_properties,
+  balaghat.balagh_selected_property_units,
   balaghat.balagh_selected_activities,
   balaghat.balagh_selected_branches,
   balaghat.balagh_form_snapshots,
