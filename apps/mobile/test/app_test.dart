@@ -7,7 +7,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(const MaribTaxApp());
-    expect(find.text('إخطار تغيير عنوان النشاط'), findsOneWidget);
+    expect(find.text('إضافة مرفق'), findsOneWidget);
     final direction = tester.widget<Directionality>(
       find.byType(Directionality).first,
     );

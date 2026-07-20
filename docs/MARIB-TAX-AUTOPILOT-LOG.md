@@ -1,5 +1,24 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-20 — Attachments Integration Wave 02 / Track A
+
+- Corrected PR #61 in place by adding required non-blank business/legal `document_category_code` while retaining server-owned `storage_accounting_category_code`.
+- Enforced the conditional checksum lifecycle: nullable during incomplete upload, with an executable database check requiring valid SHA-256 before `available`.
+- Updated the read-only verifier for both categories, checksum nullability/format constraints, three-table scope, RLS, empty tables, forbidden grants, policies, and Storage FKs.
+- Added partial active-link uniqueness while preserving retained unlink/relink history.
+- Final migration SHA is `1BEFCACAD87C0A3813F7335FAFC42BEB8066C70ECFE5191D9609C9759E9A4496`; verifier SHA is `97ADD70F0E0F4A821FC77ACAA95A2272DBF06533E07BEAD995104EC08254DBCE`; intermediate SHA `BDEDBD04...` and the Wave 01 SHA are superseded.
+- Local gates: static SQL scope PASS; typecheck PASS; 88 tests PASS (5 web, 5 worker, 22 contracts, 56 API); build PASS; lint PASS; `git diff --check` PASS. A combined recursive test invocation hit a transient contracts runner exit without diagnostics after web/worker passed; the contracts suite passed immediately in isolated execution.
+- Production impact: **none**. `PROD-DB-08 = CLOSED`; no linked preflight, dry-run, SQL, Storage operation, or apply occurred.
+
+## 2026-07-20 — Batch 08 files metadata source
+
+- Confirmed PROD-DB-07 apply/verifier PASS and merged post-verify evidence at PR #60 / `8087d74`; no production command was repeated.
+- Authored source-only TABLE-063…065 attachment metadata, polymorphic links, and additive version history with default-deny RLS and no policies/seeds.
+- Kept Postgres metadata separate from object bytes and excluded buckets, Storage policies, public ACLs, and `storage.objects` foreign keys.
+- Migration SHA: `C5BC82DFFC0D159FF19389398FF926820E71EDD8065EFDDA6894AACC6654D81C`; verifier SHA: `6CD57E5639F4642153CE830D2E69A0C6C7D18D5AFEA9886EF69960004C664D7C`.
+- Static SQL, OpenAPI, typecheck, 88 sequential workspace tests, builds, and formatting PASS. Web ESLint repeatedly crashed at the Windows process level without lint diagnostics; draft delivery relies on CI to confirm lint before any merge.
+- Production impact: **none**. PROD-DB-08 remains closed.
+
 ## 2026-07-20 — PROD-DB-07 applied and verified
 
 - Explicit owner production approval received for Batch 07 only (`sjmtiwzddztxfrncwkpx`, CLI `2.109.1`, SHA `10BA80E828CDB39AB60B1816F8EC6D263169CC6DFA6EC7821D979AE2EDA63118`, baseline `8d62af2`).
