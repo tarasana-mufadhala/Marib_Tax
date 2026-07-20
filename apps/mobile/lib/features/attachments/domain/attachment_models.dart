@@ -1,17 +1,23 @@
 enum AttachmentCategory {
-  identity('إثبات الهوية'),
-  taxDocument('وثيقة ضريبية'),
-  supportingDocument('مستند مؤيد');
+  identityDocument('identity_document', 'إثبات الهوية'),
+  taxDocument('tax_document', 'وثيقة ضريبية'),
+  financialEvidence('financial_evidence', 'إثبات مالي'),
+  correspondence('correspondence', 'مراسلات'),
+  license('license', 'ترخيص'),
+  supportingDocument('supporting_document', 'مستند مؤيد');
 
-  const AttachmentCategory(this.label);
+  const AttachmentCategory(this.code, this.label);
+  final String code;
   final String label;
 }
 
 enum AttachmentClassification {
-  private('خاص'),
-  sensitive('حساس');
+  internal('internal', 'داخلي'),
+  confidential('confidential', 'سري'),
+  highlySensitive('highly_sensitive', 'شديد الحساسية');
 
-  const AttachmentClassification(this.label);
+  const AttachmentClassification(this.code, this.label);
+  final String code;
   final String label;
 }
 

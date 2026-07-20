@@ -14,7 +14,7 @@ class MockAttachmentRepository implements AttachmentRepository {
       id: 'mock-attachment-1',
       name: 'السجل التجاري.pdf',
       category: AttachmentCategory.taxDocument,
-      classification: AttachmentClassification.private,
+      classification: AttachmentClassification.internal,
       availability: AttachmentAvailability.available,
       versions: [
         AttachmentVersion(number: 2, createdLabel: 'اليوم', note: 'نسخة مصححة'),
@@ -29,7 +29,7 @@ class MockAttachmentRepository implements AttachmentRepository {
       id: 'mock-attachment-2',
       name: 'مرفق غير متاح',
       category: AttachmentCategory.supportingDocument,
-      classification: AttachmentClassification.sensitive,
+      classification: AttachmentClassification.highlySensitive,
       availability: AttachmentAvailability.denied,
       versions: [],
     ),

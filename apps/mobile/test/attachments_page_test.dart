@@ -1,9 +1,38 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:marib_tax_mobile/features/attachments/domain/attachment_models.dart';
 import 'package:marib_tax_mobile/features/attachments/presentation/attachments_page.dart';
 
 void main() {
   Widget subject() => const MaterialApp(home: AttachmentsPage());
+
+  test('uses canonical attachment classification codes and Arabic labels', () {
+    expect(AttachmentClassification.values.map((value) => value.code), [
+      'internal',
+      'confidential',
+      'highly_sensitive',
+    ]);
+    expect(AttachmentClassification.values.map((value) => value.label), [
+      'داخلي',
+      'سري',
+      'شديد الحساسية',
+    ]);
+    expect(
+      AttachmentClassification.values.map((value) => value.code),
+      isNot(containsAll(['public', 'private', 'sensitive'])),
+    );
+  });
+
+  test('uses canonical business document category codes', () {
+    expect(AttachmentCategory.values.map((value) => value.code), [
+      'identity_document',
+      'tax_document',
+      'financial_evidence',
+      'correspondence',
+      'license',
+      'supporting_document',
+    ]);
+  });
 
   testWidgets('picker preview requires a category and never exposes a path', (
     tester,
