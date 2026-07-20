@@ -40,3 +40,18 @@ Verifier SHA-256:
 `PROD-DB-08 = CLOSED`.
 
 No database dry-run/apply, production preflight, Storage operation, bucket/policy, endpoint, deployment, real file, taxpayer data, secret, or notification was authorized or performed.
+
+## Ordered merge record
+
+| Order | PR                       | Merge commit                               |
+| ----- | ------------------------ | ------------------------------------------ |
+| 1     | #61 DB                   | `0415db6f7e394a46c9c3ec3e68e356ccc574ad48` |
+| 2     | #63 API                  | `828b91f317c28c54d0c4c71c4e66abb618c1c027` |
+| 3     | #65 Security             | `61c51118823b5206160f3ffa15cd5f4a2c36e655` |
+| 4     | #64 Flutter              | `6ba0bb20daa7826b3936f7d03e473342613268d4` |
+| 5     | #62 Web                  | `01e7bf8ac09733aed224ef0dc03e318cdc398568` |
+| 6     | #66 Integration evidence | `c2e37bc15867299bc1c53a6e47e8cff991b653b7` |
+
+Each next PR was updated on the then-current `main`, and both Foundation CI and the Flutter gate passed before its merge.
+
+`BATCH_08_SOURCE = MERGED / NOT APPLIED`.
