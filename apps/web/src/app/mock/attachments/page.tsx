@@ -1,4 +1,6 @@
 import {
+  attachmentClassificationLabels,
+  attachmentDocumentCategoryLabels,
   attachmentFilterOptions,
   filterMockAttachments,
 } from '../../../lib/attachments-mock';
@@ -15,7 +17,7 @@ export default async function AttachmentsMockPage({
   const query = await searchParams;
   const filters = {
     ownerType: value(query.ownerType),
-    category: value(query.category),
+    documentCategoryCode: value(query.documentCategoryCode),
     classification: value(query.classification),
     from: value(query.from),
     to: value(query.to),
@@ -60,16 +62,18 @@ export default async function AttachmentsMockPage({
           current={filters.ownerType}
         />
         <FilterSelect
-          name="category"
-          label="الفئة"
-          options={attachmentFilterOptions.categories}
-          current={filters.category}
+          name="documentCategoryCode"
+          label="فئة الوثيقة"
+          options={attachmentFilterOptions.documentCategories}
+          current={filters.documentCategoryCode}
+          labels={attachmentDocumentCategoryLabels}
         />
         <FilterSelect
           name="classification"
           label="التصنيف"
           options={attachmentFilterOptions.classifications}
           current={filters.classification}
+          labels={attachmentClassificationLabels}
         />
         <label>
           من تاريخ
@@ -113,12 +117,14 @@ export default async function AttachmentsMockPage({
                   <span className="owner-type">{item.ownerType}</span>
                   <small>{item.ownerLabel}</small>
                 </td>
-                <td>{item.category}</td>
+                <td>
+                  {attachmentDocumentCategoryLabels[item.documentCategoryCode]}
+                </td>
                 <td>
                   <span
                     className={`classification classification-${item.classification.replace(' ', '-')}`}
                   >
-                    {item.classification}
+                    {attachmentClassificationLabels[item.classification]}
                   </span>
                 </td>
                 <td>{item.updatedAt}</td>
@@ -193,18 +199,22 @@ function FilterSelect({
   label,
   options,
   current,
+  labels,
 }: {
   name: string;
   label: string;
   options: readonly string[];
   current?: string;
+  labels?: Readonly<Record<string, string>>;
 }) {
   return (
     <label>
       {label}
-      <select name={name} defaultValue={current ?? 'الكل'}>
+      <select name={name} defaultValue={current ?? (labels ? 'all' : 'الكل')}>
         {options.map((option) => (
-          <option key={option}>{option}</option>
+          <option key={option} value={option}>
+            {option === 'all' ? 'الكل' : (labels?.[option] ?? option)}
+          </option>
         ))}
       </select>
     </label>

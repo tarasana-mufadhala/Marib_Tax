@@ -1,5 +1,33 @@
 export type AttachmentClassification =
-  'عام' | 'داخلي' | 'سري' | 'شديد الحساسية';
+  'internal' | 'confidential' | 'highly_sensitive';
+export type AttachmentDocumentCategory =
+  | 'identity_document'
+  | 'tax_document'
+  | 'financial_evidence'
+  | 'correspondence'
+  | 'license'
+  | 'supporting_document';
+
+export const attachmentClassificationLabels: Record<
+  AttachmentClassification,
+  string
+> = {
+  internal: 'داخلي',
+  confidential: 'سري',
+  highly_sensitive: 'شديد الحساسية',
+};
+
+export const attachmentDocumentCategoryLabels: Record<
+  AttachmentDocumentCategory,
+  string
+> = {
+  identity_document: 'وثيقة هوية',
+  tax_document: 'وثيقة ضريبية',
+  financial_evidence: 'إثبات مالي',
+  correspondence: 'مراسلات',
+  license: 'ترخيص',
+  supporting_document: 'وثيقة مؤيدة',
+};
 export type AttachmentArchiveState = 'نشط' | 'مؤرشف' | 'قيد الحفظ الدائم';
 export type AttachmentAvailability = 'متاح' | 'غير مصرح' | 'ملف مفقود';
 
@@ -16,7 +44,7 @@ export interface MockAttachment {
   filename: string;
   ownerType: 'طلب' | 'بلاغ' | 'مكلف' | 'نشاط';
   ownerLabel: string;
-  category: 'هوية' | 'إثبات مالي' | 'مراسلات' | 'ترخيص';
+  documentCategoryCode: AttachmentDocumentCategory;
   classification: AttachmentClassification;
   archiveState: AttachmentArchiveState;
   availability: AttachmentAvailability;
@@ -33,8 +61,8 @@ export const mockAttachments: readonly MockAttachment[] = [
     filename: 'السجل-التجاري.pdf',
     ownerType: 'طلب',
     ownerLabel: 'طلب تعديل بيانات · REQ-MOCK-214',
-    category: 'ترخيص',
-    classification: 'داخلي',
+    documentCategoryCode: 'license',
+    classification: 'internal',
     archiveState: 'نشط',
     availability: 'متاح',
     mimeType: 'application/pdf',
@@ -62,8 +90,8 @@ export const mockAttachments: readonly MockAttachment[] = [
     filename: 'كشف-الحساب.xlsx',
     ownerType: 'مكلف',
     ownerLabel: 'شركة مأرب التجريبية · TAX-MOCK-031',
-    category: 'إثبات مالي',
-    classification: 'شديد الحساسية',
+    documentCategoryCode: 'financial_evidence',
+    classification: 'highly_sensitive',
     archiveState: 'قيد الحفظ الدائم',
     availability: 'غير مصرح',
     mimeType:
@@ -85,8 +113,8 @@ export const mockAttachments: readonly MockAttachment[] = [
     filename: 'خطاب-متابعة.pdf',
     ownerType: 'بلاغ',
     ownerLabel: 'بلاغ ميداني · BAL-MOCK-088',
-    category: 'مراسلات',
-    classification: 'سري',
+    documentCategoryCode: 'correspondence',
+    classification: 'confidential',
     archiveState: 'مؤرشف',
     availability: 'ملف مفقود',
     mimeType: 'application/pdf',
@@ -106,13 +134,21 @@ export const mockAttachments: readonly MockAttachment[] = [
 
 export const attachmentFilterOptions = {
   ownerTypes: ['الكل', 'طلب', 'بلاغ', 'مكلف', 'نشاط'],
-  categories: ['الكل', 'هوية', 'إثبات مالي', 'مراسلات', 'ترخيص'],
-  classifications: ['الكل', 'عام', 'داخلي', 'سري', 'شديد الحساسية'],
+  documentCategories: [
+    'all',
+    'identity_document',
+    'tax_document',
+    'financial_evidence',
+    'correspondence',
+    'license',
+    'supporting_document',
+  ],
+  classifications: ['all', 'internal', 'confidential', 'highly_sensitive'],
 } as const;
 
 export function filterMockAttachments(filters: {
   ownerType?: string;
-  category?: string;
+  documentCategoryCode?: string;
   classification?: string;
   from?: string;
   to?: string;
@@ -122,11 +158,11 @@ export function filterMockAttachments(filters: {
       (!filters.ownerType ||
         filters.ownerType === 'الكل' ||
         item.ownerType === filters.ownerType) &&
-      (!filters.category ||
-        filters.category === 'الكل' ||
-        item.category === filters.category) &&
+      (!filters.documentCategoryCode ||
+        filters.documentCategoryCode === 'all' ||
+        item.documentCategoryCode === filters.documentCategoryCode) &&
       (!filters.classification ||
-        filters.classification === 'الكل' ||
+        filters.classification === 'all' ||
         item.classification === filters.classification) &&
       (!filters.from || item.updatedAt >= filters.from) &&
       (!filters.to || item.updatedAt <= filters.to),

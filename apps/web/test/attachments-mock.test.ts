@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  attachmentFilterOptions,
   filterMockAttachments,
   mockAttachments,
 } from '../src/lib/attachments-mock';
@@ -9,14 +10,38 @@ describe('attachment admin mock', () => {
     expect(
       filterMockAttachments({
         ownerType: 'طلب',
-        category: 'ترخيص',
-        classification: 'داخلي',
+        documentCategoryCode: 'license',
+        classification: 'internal',
         from: '2026-07-18',
       }),
     ).toHaveLength(1);
     expect(
       filterMockAttachments({ to: '2026-07-10' }).map((item) => item.id),
     ).toEqual(['ATT-MOCK-1029']);
+  });
+
+  it('uses only canonical classification and document category codes', () => {
+    expect(mockAttachments.map((item) => item.classification)).toEqual(
+      expect.arrayContaining(['internal', 'confidential', 'highly_sensitive']),
+    );
+    expect(mockAttachments.map((item) => item.classification)).not.toContain(
+      'public',
+    );
+    expect(mockAttachments.every((item) => item.documentCategoryCode)).toBe(
+      true,
+    );
+    expect(attachmentFilterOptions.documentCategories).toEqual([
+      'all',
+      'identity_document',
+      'tax_document',
+      'financial_evidence',
+      'correspondence',
+      'license',
+      'supporting_document',
+    ]);
+    expect(JSON.stringify(mockAttachments)).not.toMatch(
+      /storageAccountingCategoryCode/,
+    );
   });
 
   it('represents denied, missing and version lineage states without storage details', () => {
