@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   attachmentAccessQuerySchema,
   attachmentMetadataResponseSchema,
+  archiveAttachmentSchema,
   authorizedDownloadIntentResponseSchema,
   createUploadIntentSchema,
   registerUploadedObjectSchema,
@@ -87,6 +88,17 @@ describe('attachment transport contracts', () => {
     ).toThrow();
   });
 
+  it('rejects caller-supplied permissions on retention transitions', () => {
+    expect(() =>
+      archiveAttachmentSchema.parse({
+        attachmentId: '00000000-0000-4000-8000-000000000001',
+        retentionState: 'legal_hold',
+        reason: 'Court order',
+        permissions: ['attachment.legal_hold.download'],
+      }),
+    ).toThrow();
+  });
+
   it('keeps metadata and download responses free of storage internals', () => {
     const metadata = {
       id: '00000000-0000-4000-8000-000000000010',
@@ -117,10 +129,28 @@ describe('attachment transport contracts', () => {
     });
   });
 
-  it('requires actor, owner context, and classification for access decisions', () => {
+  it('accepts only attachment identity at the transport access boundary', () => {
+    expect(
+      attachmentAccessQuerySchema.parse({
+        attachmentId: '00000000-0000-4000-8000-000000000001',
+      }),
+    ).toEqual({ attachmentId: '00000000-0000-4000-8000-000000000001' });
+  });
+
+  it.each([
+    { actorId: '00000000-0000-4000-8000-000000000002' },
+    { permissions: ['attachment.binary.download'] },
+    {
+      actor: {
+        actorId: '00000000-0000-4000-8000-000000000002',
+        permissions: ['attachment.binary.download'],
+      },
+    },
+  ])('rejects caller-supplied authorization context %j', (untrusted) => {
     expect(() =>
       attachmentAccessQuerySchema.parse({
         attachmentId: '00000000-0000-4000-8000-000000000001',
+        ...untrusted,
       }),
     ).toThrow();
   });
