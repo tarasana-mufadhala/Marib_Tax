@@ -67,7 +67,10 @@ CREATE TABLE files.attachment_links (
 );
 CREATE INDEX attachment_links_attachment_id_idx ON files.attachment_links (attachment_id);
 CREATE INDEX attachment_links_owner_idx ON files.attachment_links (owner_type, owner_id);
-COMMENT ON TABLE files.attachment_links IS 'TABLE-064 polymorphic metadata link; owner_type is application-constrained and a reference never grants authorization.';
+CREATE UNIQUE INDEX attachment_links_one_active_owner_link_idx
+  ON files.attachment_links (attachment_id, owner_type, owner_id)
+  WHERE unlinked_at IS NULL;
+COMMENT ON TABLE files.attachment_links IS 'TABLE-064 polymorphic metadata link; owner_type is application-constrained and a reference never grants authorization. A partial unique index prevents duplicate active links while retained unlinked rows permit legitimate historical unlink/relink cycles.';
 
 CREATE TABLE files.attachment_version_histories (
   id uuid NOT NULL,

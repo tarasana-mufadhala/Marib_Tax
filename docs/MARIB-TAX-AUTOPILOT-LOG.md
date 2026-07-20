@@ -5,7 +5,8 @@
 - Corrected PR #61 in place by adding required non-blank business/legal `document_category_code` while retaining server-owned `storage_accounting_category_code`.
 - Documented conditional checksum lifecycle: nullable during incomplete upload, valid SHA-256 required before `available`.
 - Updated the read-only verifier for both categories, checksum nullability/format constraints, three-table scope, RLS, empty tables, forbidden grants, policies, and Storage FKs.
-- New migration SHA is `71B17156E347582000B2F54E24A8E18EBB0BE45B3E2919F2C4CF17C6F2E845BA`; the Wave 01 SHA is superseded.
+- Added partial active-link uniqueness while preserving retained unlink/relink history.
+- New migration SHA is `BDEDBD040F2EA53D8AAA1BB4A9FB8307FC64A2513283D841632749C2D21E6C60`; verifier SHA is `CD02E901C7B65E543E9311F6A21133A08E6869C688D5106D5F81F1D53A3AF95C`; the Wave 01 SHA is superseded.
 - Local gates: static SQL scope PASS; typecheck PASS; 88 tests PASS (5 web, 5 worker, 22 contracts, 56 API); build PASS; lint PASS; `git diff --check` PASS. A combined recursive test invocation hit a transient contracts runner exit without diagnostics after web/worker passed; the contracts suite passed immediately in isolated execution.
 - Production impact: **none**. `PROD-DB-08 = CLOSED`; no linked preflight, dry-run, SQL, Storage operation, or apply occurred.
 

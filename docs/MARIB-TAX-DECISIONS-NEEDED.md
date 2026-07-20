@@ -65,7 +65,7 @@ Only decisions that require an authorized human are listed here. Source work mus
 
 - **State:** REQUIRES_USER_APPROVAL after source review; production preflight/apply closed
 - **Source migration:** `supabase/migrations/20260723120000_create_files_attachment_metadata.sql`
-- **Candidate SHA-256:** `71B17156E347582000B2F54E24A8E18EBB0BE45B3E2919F2C4CF17C6F2E845BA` (Wave 02; supersedes `C5BC82DFFC0D159FF19389398FF926820E71EDD8065EFDDA6894AACC6654D81C`)
+- **Candidate SHA-256:** `BDEDBD040F2EA53D8AAA1BB4A9FB8307FC64A2513283D841632749C2D21E6C60` (Wave 02; supersedes `C5BC82DFFC0D159FF19389398FF926820E71EDD8065EFDDA6894AACC6654D81C`)
 - **Verifier:** `scripts/db/verify/verify_batch_08_files_attachment_metadata.sql`
 - **Excluded:** bytes, buckets, Storage policies, `storage.objects` FK, seeds, retention periods, legal-hold destruction rules
 - **Until separately approved:** do not run linked preflight or `db push` for Batch 08 or later.

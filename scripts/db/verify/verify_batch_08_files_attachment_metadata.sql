@@ -46,6 +46,15 @@ WITH expected(table_name) AS (
   JOIN pg_catalog.pg_class c ON c.oid = x.conrelid
   JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
   WHERE n.nspname = 'files' AND c.relname = 'attachments' AND x.contype = 'c'
+), required_indexes AS (
+  SELECT count(*) FILTER (
+    WHERE indexname = 'attachment_links_one_active_owner_link_idx'
+      AND indexdef ILIKE 'CREATE UNIQUE INDEX%'
+      AND indexdef ILIKE '%(attachment_id, owner_type, owner_id)%'
+      AND indexdef ILIKE '%WHERE (unlinked_at IS NULL)%'
+  ) = 1 AS one_active_owner_link
+  FROM pg_catalog.pg_indexes
+  WHERE schemaname = 'files' AND tablename = 'attachment_links'
 ), row_counts AS (
   SELECT
     (SELECT count(*) FROM files.attachments) AS attachments,
@@ -61,6 +70,7 @@ WITH expected(table_name) AS (
 SELECT s.*, mc.filename_required, mc.mime_required, mc.checksum_conditionally_nullable,
   mc.document_category_required, mc.accounting_category_required,
   rc.checksum_format_check, rc.document_category_nonblank_check, rc.accounting_category_nonblank_check,
+  ri.one_active_owner_link,
   r.attachments, r.links, r.versions,
   COALESCE((SELECT jsonb_agg(to_jsonb(t)) FROM table_checks t WHERE status <> 'OK'), '[]'::jsonb) AS table_mismatches,
   CASE WHEN s.table_mismatch_count = 0
@@ -70,6 +80,8 @@ SELECT s.*, mc.filename_required, mc.mime_required, mc.checksum_conditionally_nu
       AND mc.filename_required AND mc.mime_required AND mc.checksum_conditionally_nullable
       AND mc.document_category_required AND mc.accounting_category_required
       AND rc.checksum_format_check AND rc.document_category_nonblank_check AND rc.accounting_category_nonblank_check
+      AND ri.one_active_owner_link
       AND r.attachments = 0 AND r.links = 0 AND r.versions = 0
     THEN 'PASS' ELSE 'FAIL' END AS final_status
-FROM summaries s CROSS JOIN metadata_columns mc CROSS JOIN required_checks rc CROSS JOIN row_counts r;
+FROM summaries s CROSS JOIN metadata_columns mc CROSS JOIN required_checks rc
+CROSS JOIN required_indexes ri CROSS JOIN row_counts r;
