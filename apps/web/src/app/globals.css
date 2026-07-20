@@ -65,3 +65,209 @@ h1 {
   color: var(--muted);
   line-height: 1.8;
 }
+
+.attachments-shell {
+  width: min(92rem, 100%);
+  padding-top: 3rem;
+}
+.attachments-hero h1 {
+  font-size: clamp(2.4rem, 6vw, 4.5rem);
+}
+.attachment-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 2rem 0;
+}
+.attachment-stats div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1.25rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 70%);
+}
+.attachment-stats strong {
+  font-size: 2rem;
+  color: var(--accent);
+}
+.attachment-stats span,
+.attachment-table small,
+.versions-panel small {
+  color: var(--muted);
+}
+.attachment-filters {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(9rem, 1fr));
+  gap: 1rem;
+  align-items: end;
+  padding: 1.25rem;
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 1rem 3rem rgb(16 37 31 / 8%);
+}
+.attachment-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  font-weight: 700;
+}
+.attachment-filters select,
+.attachment-filters input {
+  min-height: 2.75rem;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 0.65rem;
+  background: white;
+  color: var(--ink);
+  font: inherit;
+}
+.primary-action,
+.secondary-action {
+  min-height: 2.75rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--accent);
+  border-radius: 0.65rem;
+  font: inherit;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+.primary-action {
+  color: white;
+  background: var(--accent);
+}
+.secondary-action {
+  color: var(--accent);
+  background: white;
+}
+.attachment-table-wrap {
+  margin-top: 1.5rem;
+  overflow-x: auto;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: white;
+}
+.attachment-table {
+  width: 100%;
+  min-width: 72rem;
+  border-collapse: collapse;
+}
+.attachment-table th,
+.attachment-table td {
+  padding: 1rem;
+  border-bottom: 1px solid var(--line);
+  text-align: right;
+  vertical-align: top;
+}
+.attachment-table th {
+  color: var(--muted);
+  background: #f2f5f1;
+  font-size: 0.9rem;
+}
+.attachment-table td small {
+  display: block;
+  max-width: 18rem;
+  margin-top: 0.4rem;
+  line-height: 1.6;
+}
+.owner-type,
+.classification,
+.archive-state {
+  display: inline-flex;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  background: #e7eee9;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+.classification-سري {
+  color: #814400;
+  background: #fff0d1;
+}
+.classification-شديد-الحساسية {
+  color: #8b2030;
+  background: #ffe2e6;
+}
+.availability-warning {
+  color: #a12c39 !important;
+  font-weight: 700;
+}
+.row-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+.row-actions button {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--line);
+  border-radius: 0.55rem;
+  background: white;
+  color: var(--accent);
+  font: inherit;
+  cursor: pointer;
+}
+.row-actions button:disabled {
+  color: #7d8783;
+  background: #eef0ed;
+  cursor: not-allowed;
+}
+.empty-state {
+  padding: 3rem;
+  text-align: center;
+}
+.versions-panel {
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 74%);
+}
+.versions-panel h2 {
+  margin-top: 0;
+}
+.versions-panel ol {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+.versions-panel li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.25rem 1rem;
+  padding: 1rem;
+  border-right: 0.25rem solid var(--accent);
+  background: white;
+}
+.versions-panel li small,
+.versions-panel li p {
+  grid-column: 2;
+  margin: 0;
+}
+.version-number {
+  grid-row: 1 / span 3;
+  color: var(--accent);
+  font-weight: 700;
+}
+.mock-boundary {
+  margin-top: 1.5rem;
+  padding: 1rem 1.25rem;
+  border-radius: 0.75rem;
+  color: #624b12;
+  background: #fff3cb;
+  line-height: 1.8;
+}
+@media (max-width: 60rem) {
+  .attachment-filters {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 38rem) {
+  .attachment-stats,
+  .attachment-filters {
+    grid-template-columns: 1fr;
+  }
+}
