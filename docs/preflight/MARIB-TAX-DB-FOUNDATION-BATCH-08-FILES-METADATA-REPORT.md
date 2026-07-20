@@ -2,7 +2,7 @@
 
 ## Status
 
-Source only. No database, Storage bucket, object, policy, or production environment was changed. `PROD-DB-08` remains closed.
+Source only for this report. Production apply remains closed. Fresh linked preflight evidence (no apply) is recorded in `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-08-PRODUCTION-APPLY-PREFLIGHT-01-REPORT.md`. `PROD-DB-08 = REQUIRES_USER_APPROVAL`; `BATCH_08_SOURCE = MERGED / NOT APPLIED`.
 
 ## Artifacts
 
@@ -33,4 +33,4 @@ Intermediate SHA `BDEDBD040F2EA53D8AAA1BB4A9FB8307FC64A2513283D841632749C2D21E6C
 
 ## Non-actions
 
-No linked preflight, `db push`, SQL execution, seed, bucket creation, deploy, secret change, taxpayer-data mutation, or real notification occurred.
+This source report authorizes no apply. The later production preflight used linked read-only checks and `--dry-run` only; it did not apply Batch 08, create buckets, seed, deploy, or mutate taxpayer data.
