@@ -1,53 +1,42 @@
 # MARIB Tax Attachments Consolidated Readiness Report
 
-## Decision
+## Integration decision
 
-**HOLD — INTEGRATION NOT READY FOR MERGE AS A COMPLETE FEATURE**
+**PASS — ATTACHMENTS_WAVE_01_INTEGRATION_READY_FOR_ORDERED_MERGE**
 
-The delivered tracks are suitable for independent draft review. The attachment feature is not ready for endpoint, storage, database apply, or production integration.
+All corrected tracks implement the canonical decisions and pass their local and CI gates. The API rejects caller-supplied authorization context, Track C binds directly to that server-resolved boundary, and the database enforces a valid non-null checksum whenever an attachment is available. Ordered merge may begin under the documented stop conditions.
 
-## Evidence reviewed
+## Canonical decisions closed
 
-| PR                                                             | Scope                            | CI                                                       | Readiness                |
-| -------------------------------------------------------------- | -------------------------------- | -------------------------------------------------------- | ------------------------ |
-| [#61](https://github.com/tarasana-mufadhala/Marib_Tax/pull/61) | Batch 08 metadata source         | Foundation CI pass                                       | Source review only       |
-| [#63](https://github.com/tarasana-mufadhala/Marib_Tax/pull/63) | API/domain/application contracts | Foundation CI pass                                       | Contract review only     |
-| [#62](https://github.com/tarasana-mufadhala/Marib_Tax/pull/62) | Web Arabic RTL mocks             | Foundation CI pass                                       | UI review only           |
-| [#65](https://github.com/tarasana-mufadhala/Marib_Tax/pull/65) | Security matrix and threat model | 12 focused and 68 full API tests plus Foundation CI pass | Security review required |
-| [#64](https://github.com/tarasana-mufadhala/Marib_Tax/pull/64) | Flutter Arabic RTL mocks         | Analyze, 10 tests, debug APK, and Foundation CI pass     | UI review only           |
+- Classifications: `internal`, `confidential`, `highly_sensitive` with Arabic presentation labels `داخلي`, `سري`, `شديد الحساسية`.
+- Document categories: `identity_document`, `tax_document`, `financial_evidence`, `correspondence`, `license`, `supporting_document`.
+- `documentCategoryCode` is the client business/legal field; storage accounting category is server-owned.
+- Checksum is optional for upload intent, required for observed registration, and required before availability.
+- Retention: `active`, `archived`, `legal_hold`, `permanent_operational_archive`; no hard delete or automated purge.
+- Corrections create immutable versions.
+- Sanitized metadata/version/list/download-intent response DTOs expose no storage locator, service-role data, permanent public URL, or internal authorization details.
+- `AttachmentAuthorizationPolicy` is the concrete below-UI boundary with no general-admin bypass and separate metadata/download permissions.
 
-## Ready
+## Evidence checkpoint
 
-- Database metadata stays private/default-deny and stores no bytes.
-- API validates filename, MIME, size, checksum, owner type, and classification.
-- API version helper appends immutable lineage and rejects stale heads.
-- Storage dependency is a port with a disabled adapter; no real calls or endpoints exist.
-- Web UI is mock-only and omits storage paths and public URLs.
-- Flutter UI is repository-backed by mocks only and covers picker, offline, denied, version, and correction presentation.
-- Security evidence covers taxpayer, staff, admin, report, anonymous, and worker actors with positive and negative cases.
-- Current PRs have non-overlapping implementation files and passing Foundation CI.
+| PR           | Corrected head                             | CI state                                                               | Gate |
+| ------------ | ------------------------------------------ | ---------------------------------------------------------------------- | ---- |
+| #61 DB       | `9e652b2f1ff592501a062356855088996120453c` | Static lifecycle checks, 88 tests, typecheck/lint/build + both CI PASS | PASS |
+| #63 API      | `9a7526b4fb94f3d053c80d5a75cd3171b79ba950` | Caller authorization context rejection + both CI PASS                  | PASS |
+| #64 Flutter  | `77f73212d23a7375ab40f59e3e72ed158cbc463f` | Foundation + Flutter PASS                                              | PASS |
+| #62 Web      | `7948319bd186d1ba47c8e3d71dc53374161df82f` | 9 tests, lint/typecheck + both CI PASS                                 | PASS |
+| #65 Security | `7f74f5ca70cd678015397737fd54184de318597a` | 21 focused; 124 workspace tests; all local gates + both CI PASS        | PASS |
 
-## Required before integration
+Batch 08 corrected migration SHA-256:
 
-1. Review Track C PR #65, then bind its standalone policy matrix to the eventual concrete service below the UI.
-2. Review Track D PR #64 and reconcile its mock codes.
-3. Resolve canonical classification across API `internal/confidential/highly_sensitive`, web «عام», and Flutter `private/sensitive`.
-4. Resolve nullable database checksum versus required API checksum.
-5. Separate or approve the meaning of document category versus storage accounting category.
-6. Define sanitized metadata/version response DTOs, including version number, timestamps, actor display, and availability.
-7. Approve retention/legal-hold vocabulary and transitions before implementing archive behavior.
-8. Rebase/review cross-track changes and rerun all gates; do not auto-merge Draft PRs.
+`1BEFCACAD87C0A3813F7335FAFC42BEB8066C70ECFE5191D9609C9759E9A4496`
 
-## Production gate
+Verifier SHA-256:
+
+`97ADD70F0E0F4A821FC77ACAA95A2272DBF06533E07BEAD995104EC08254DBCE`
+
+## Production boundary
 
 `PROD-DB-08 = CLOSED`.
 
-No previous approval authorizes Batch 08 preflight/apply. No bucket, Storage policy, real upload/download, database write, secret, deployment, or production data operation is authorized by these documents.
-
-## Companion evidence
-
-- [Integration map](MARIB-TAX-ATTACHMENTS-INTEGRATION-MAP.md)
-- [API-to-UI contract matrix](MARIB-TAX-ATTACHMENTS-API-TO-UI-CONTRACT-MATRIX.md)
-- [Report-to-field matrix](MARIB-TAX-ATTACHMENTS-REPORT-TO-FIELD-MATRIX.md)
-- [Ownership and classification matrix](MARIB-TAX-ATTACHMENTS-OWNERSHIP-CLASSIFICATION-MATRIX.md)
-- [PR dependency order](MARIB-TAX-ATTACHMENTS-PR-DEPENDENCY-ORDER.md)
+No database dry-run/apply, production preflight, Storage operation, bucket/policy, endpoint, deployment, real file, taxpayer data, secret, or notification was authorized or performed.

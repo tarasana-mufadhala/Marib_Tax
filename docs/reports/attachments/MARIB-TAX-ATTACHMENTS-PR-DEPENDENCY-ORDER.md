@@ -1,22 +1,21 @@
 # MARIB Tax Attachments PR Dependency Order
 
-## Recommended review and merge sequence
+## Required ordered merge
 
-1. [PR #65](https://github.com/tarasana-mufadhala/Marib_Tax/pull/65) security architecture and automated matrix after Foundation CI passes. It defines the below-UI authorization invariant.
-2. [PR #61](https://github.com/tarasana-mufadhala/Marib_Tax/pull/61) database source after database review. Merge authorizes source only; `PROD-DB-08` stays closed.
-3. [PR #63](https://github.com/tarasana-mufadhala/Marib_Tax/pull/63) API contracts after resolving or explicitly deferring the field mismatches in the report-to-field matrix.
-4. [PR #64](https://github.com/tarasana-mufadhala/Marib_Tax/pull/64) Flutter mock foundation after CI passes and its `private`/`sensitive` values are reconciled to canonical codes.
-5. [PR #62](https://github.com/tarasana-mufadhala/Marib_Tax/pull/62) web mock foundation after removing/resolving the unsupported `public`/«عام» classification and retention label mismatch.
-6. Track F integration documentation after refreshing links, SHAs, CI, and C/D evidence.
+Do not merge until the consolidated report records `PASS — ATTACHMENTS_WAVE_01_INTEGRATION_READY_FOR_ORDERED_MERGE`.
 
-## Per-PR gates
+1. PR #61 — corrected Batch 08 database source.
+2. Fetch `origin/main`, update PR #63, rerun CI; merge API contracts and policy.
+3. Fetch `origin/main`, update PR #65, rerun CI; merge policy-bound security evidence.
+4. Fetch `origin/main`, update PR #64, rerun CI; merge Flutter mocks.
+5. Fetch `origin/main`, update PR #62, rerun CI; merge web mocks.
+6. Refresh this evidence with merge SHAs, update PR #66, rerun CI, then merge integration documents.
 
-- Draft reviewed for security boundaries, file overlap, secrets, generated lockfiles, and production operations.
-- Focused lint/typecheck/test/build and Foundation CI pass.
-- Canonical field/code mappings are explicit; localized labels do not become persistence codes.
-- No real storage adapter, bucket, endpoint, migration apply, or deploy is introduced by implication.
-- Integration captain changes Draft to Ready only after dependencies and review comments are satisfied.
+Stop the sequence on a conflict, dirty worktree, unexpected overlap, failed check, or contract drift. Every PR must remain free of `package-lock.json`, secrets, production operations, real storage access, and taxpayer data.
 
-## Separate future gates
+After all merges, verify clean `origin/main`, record every merge SHA, and state:
 
-Repository implementation, HTTP endpoints/OpenAPI operations, Storage bucket/policy, signed upload/download adapters, linked database preflight, production apply, and deployment each require later scoped work and applicable approval. They are not part of this merge sequence.
+- `PROD-DB-08 = CLOSED`
+- `BATCH_08_SOURCE = MERGED / NOT APPLIED`
+
+Production preflight/apply, HTTP endpoints, repositories, buckets, policies, signed-object adapters, deployment, and notifications require separate future gates.

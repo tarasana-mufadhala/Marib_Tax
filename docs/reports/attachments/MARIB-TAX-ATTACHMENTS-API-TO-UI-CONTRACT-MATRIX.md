@@ -1,28 +1,28 @@
 # MARIB Tax Attachments API-to-UI Contract Matrix
 
-| User capability    | Track B contract                | Web PR #62                              | Flutter                | Integration disposition                                                                                           |
-| ------------------ | ------------------------------- | --------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Select file        | `AttachmentFileDescriptor`      | Not in admin scope                      | Local preview mock     | Flutter selection lacks MIME/size/checksum contract fields; align before integration                              |
-| Request upload     | `CreateUploadIntentCommand`     | Inert action only                       | Progress mock          | Actor identity is server context; never accept a client service role                                              |
-| Register upload    | `RegisterUploadedObjectCommand` | Not connected                           | Not connected          | Server must compare observed metadata and authorize owner context                                                 |
-| List metadata      | `AttachmentMetadata`            | Mock table                              | Mock repository        | Requires a future authorized query/response DTO; no storage reference in UI                                       |
-| List versions      | `ListAttachmentVersionsQuery`   | Version panel                           | Version expansion mock | Current return contract exposes file descriptors only; add version id/number/date/actor DTO before UI integration |
-| Correct version    | `CreateNewVersionCommand`       | Inert action                            | Inert correction mock  | `replacesVersionId` must be latest; old versions remain immutable                                                 |
-| Request download   | `AuthorizedDownloadIntentQuery` | Inert action with denied/missing states | Denied state only      | Evaluate actor + owner + classification before calling storage; token must be short-lived                         |
-| Archive/legal hold | `ArchiveAttachmentCommand`      | Mock archive state                      | Not represented        | Retention semantics and permissions need an approved policy before implementation                                 |
+## Canonical transport vocabulary
 
-## Presentation mappings requiring resolution
+| Concern                     | Canonical contract                                                                                            | UI rule                                                                                                                        |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Classification              | `internal`, `confidential`, `highly_sensitive`                                                                | Present as `داخلي`, `سري`, `شديد الحساسية`; reject `public`, `private`, and `sensitive`                                        |
+| Document category           | `identity_document`, `tax_document`, `financial_evidence`, `correspondence`, `license`, `supporting_document` | Localize labels only; send the canonical code as `documentCategoryCode`                                                        |
+| Storage accounting category | `storage_accounting_category_code`                                                                            | Server-owned; clients must never supply or infer it                                                                            |
+| Retention                   | `active`, `archived`, `legal_hold`, `permanent_operational_archive`                                           | No hard delete or automated purge; correction creates an immutable version                                                     |
+| Checksum                    | SHA-256 hex                                                                                                   | Optional in `CreateUploadIntentDto`; mandatory in `RegisterUploadedObjectDto.observed`; availability requires a valid checksum |
 
-| API code           | Arabic label candidate | Current web mock               | Status                                                 |
-| ------------------ | ---------------------- | ------------------------------ | ------------------------------------------------------ |
-| `internal`         | داخلي                  | داخلي                          | Aligned                                                |
-| `confidential`     | سري                    | سري                            | Aligned                                                |
-| `highly_sensitive` | شديد الحساسية          | شديد الحساسية                  | Aligned                                                |
-| No API value       | عام                    | عام appears as a filter option | Conflict: remove from UI or approve/add a code         |
-| `active`           | نشط                    | نشط                            | Aligned                                                |
-| `archived`         | مؤرشف                  | مؤرشف                          | Aligned                                                |
-| `legal_hold`       | حجز قانوني             | قيد الحفظ الدائم               | Semantic mismatch; do not equate until policy approval |
+## Operation mapping
 
-Safe error responses must use stable codes such as denied, unavailable, invalid metadata, and version conflict. They must not include object references, storage paths, bucket names, or sensitive metadata.
+| User capability    | Track B contract                                        | UI integration boundary                                                     |
+| ------------------ | ------------------------------------------------------- | --------------------------------------------------------------------------- |
+| Select file        | `AttachmentUploadFileDescriptor`                        | Filename/MIME/size required; checksum may not yet exist                     |
+| Request upload     | `CreateUploadIntentCommand`                             | Actor is server context; `documentCategoryCode` is client supplied          |
+| Register upload    | `RegisterUploadedObjectCommand`                         | Observed descriptor requires checksum; object reference remains server-side |
+| List metadata      | `AttachmentMetadataResponse` / `AttachmentListResponse` | Sanitized response only                                                     |
+| List versions      | `AttachmentVersionResponse`                             | Version identity, lineage, metadata and audit fields; no object locator     |
+| Correct version    | `CreateNewVersionCommand`                               | Must replace latest version; prior versions are immutable                   |
+| Request download   | `AuthorizedDownloadIntentResponse`                      | Opaque `intentToken` and `expiresAt` only                                   |
+| Archive/legal hold | `ArchiveAttachmentCommand`                              | Uses canonical retention states; no delete operation                        |
 
-Flutter PR #64 independently uses `private`/«خاص» and `sensitive`/«حساس». Neither is a canonical Track B code, so the mobile enum must map to or adopt the approved three-value API vocabulary before integration.
+The response schemas are strict and do not expose `storage_object_path`, `storage_object_id`, service-role information, permanent public URLs, or internal authorization details. Metadata and binary download are separate decisions made by the concrete below-UI `AttachmentAuthorizationPolicy`.
+
+Transport schemas reject caller-supplied `actorId`, `permissions`, or nested actor objects. Application commands and queries receive a readonly `ServerResolvedAttachmentActorContext` from trusted server infrastructure, separately from parsed DTO input.
