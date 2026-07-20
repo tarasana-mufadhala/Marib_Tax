@@ -24,7 +24,7 @@ const attachment: AttachmentMetadata = Object.freeze({
   id: 'attachment-1',
   owner: Object.freeze({ ownerType: 'service_request', ownerId: 'owner-1' }),
   classification: 'confidential',
-  category: 'evidence',
+  documentCategoryCode: 'supporting_document',
   retentionState: 'active',
   versions: Object.freeze([firstVersion]),
 });

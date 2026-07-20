@@ -1,11 +1,13 @@
 import type {
   AttachmentClassification,
+  AttachmentDocumentCategoryCode,
   AttachmentFileDescriptor,
   AttachmentOwnerReference,
 } from '@marib-tax/contracts';
 import { attachmentFileDescriptorSchema } from '@marib-tax/contracts';
 
-export type AttachmentRetentionState = 'active' | 'archived' | 'legal_hold';
+export type AttachmentRetentionState =
+  'active' | 'archived' | 'legal_hold' | 'permanent_operational_archive';
 
 export interface AttachmentVersion {
   readonly id: string;
@@ -22,7 +24,7 @@ export interface AttachmentMetadata {
   readonly id: string;
   readonly owner: Readonly<AttachmentOwnerReference>;
   readonly classification: AttachmentClassification;
-  readonly category: string;
+  readonly documentCategoryCode: AttachmentDocumentCategoryCode;
   readonly retentionState: AttachmentRetentionState;
   readonly versions: readonly AttachmentVersion[];
 }

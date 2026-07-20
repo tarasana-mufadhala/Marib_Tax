@@ -10,6 +10,21 @@ export type AttachmentClassification = z.infer<
   typeof attachmentClassificationSchema
 >;
 
+export const attachmentDocumentCategoryCodes = [
+  'identity_document',
+  'tax_document',
+  'financial_evidence',
+  'correspondence',
+  'license',
+  'supporting_document',
+] as const;
+export const attachmentDocumentCategoryCodeSchema = z.enum(
+  attachmentDocumentCategoryCodes,
+);
+export type AttachmentDocumentCategoryCode = z.infer<
+  typeof attachmentDocumentCategoryCodeSchema
+>;
+
 export const attachmentOwnerTypes = [
   'service_request',
   'balagh',
@@ -29,7 +44,7 @@ export type AttachmentOwnerReference = z.infer<
   typeof attachmentOwnerReferenceSchema
 >;
 
-const sha256Schema = z
+export const attachmentSha256Schema = z
   .string()
   .regex(/^[a-f0-9]{64}$/i, 'Checksum must be a SHA-256 hex digest.');
 const filenameSchema = z
@@ -52,12 +67,26 @@ const sizeBytesSchema = z
   .positive()
   .max(25 * 1024 * 1024);
 
+const attachmentFileMetadataShape = {
+  originalFilename: filenameSchema,
+  mimeType: mimeTypeSchema,
+  sizeBytes: sizeBytesSchema,
+} as const;
+
+export const attachmentUploadFileDescriptorSchema = z
+  .object({
+    ...attachmentFileMetadataShape,
+    checksumSha256: attachmentSha256Schema.optional(),
+  })
+  .strict();
+export type AttachmentUploadFileDescriptor = z.infer<
+  typeof attachmentUploadFileDescriptorSchema
+>;
+
 export const attachmentFileDescriptorSchema = z
   .object({
-    originalFilename: filenameSchema,
-    mimeType: mimeTypeSchema,
-    sizeBytes: sizeBytesSchema,
-    checksumSha256: sha256Schema,
+    ...attachmentFileMetadataShape,
+    checksumSha256: attachmentSha256Schema,
   })
   .strict();
 export type AttachmentFileDescriptor = z.infer<
@@ -75,8 +104,8 @@ export const createUploadIntentSchema = z
   .object({
     owner: attachmentOwnerReferenceSchema,
     classification: attachmentClassificationSchema,
-    category: z.string().trim().min(1).max(80),
-    file: attachmentFileDescriptorSchema,
+    documentCategoryCode: attachmentDocumentCategoryCodeSchema,
+    file: attachmentUploadFileDescriptorSchema,
   })
   .strict();
 export type CreateUploadIntentDto = z.infer<typeof createUploadIntentSchema>;
@@ -120,8 +149,73 @@ export const archiveAttachmentSchema = z
   .object({
     attachmentId: z.uuid(),
     actor: actorContextSchema,
-    retentionState: z.enum(['active', 'archived', 'legal_hold']),
+    retentionState: z.enum([
+      'active',
+      'archived',
+      'legal_hold',
+      'permanent_operational_archive',
+    ]),
     reason: z.string().trim().min(1).max(500),
   })
   .strict();
 export type ArchiveAttachmentDto = z.infer<typeof archiveAttachmentSchema>;
+
+export const attachmentRetentionStates = [
+  'active',
+  'archived',
+  'legal_hold',
+  'permanent_operational_archive',
+] as const;
+export const attachmentRetentionStateSchema = z.enum(attachmentRetentionStates);
+
+export const attachmentVersionResponseSchema = z
+  .object({
+    id: z.uuid(),
+    versionNumber: z.number().int().positive(),
+    previousVersionId: z.uuid().nullable(),
+    originalFilename: filenameSchema,
+    mimeType: mimeTypeSchema,
+    sizeBytes: sizeBytesSchema,
+    checksumSha256: attachmentSha256Schema,
+    createdAt: z.iso.datetime(),
+    createdBy: z.uuid(),
+    correctionReason: z.string().trim().min(1).max(500).nullable(),
+  })
+  .strict();
+export type AttachmentVersionResponse = z.infer<
+  typeof attachmentVersionResponseSchema
+>;
+
+export const attachmentMetadataResponseSchema = z
+  .object({
+    id: z.uuid(),
+    owner: attachmentOwnerReferenceSchema,
+    classification: attachmentClassificationSchema,
+    documentCategoryCode: attachmentDocumentCategoryCodeSchema,
+    retentionState: attachmentRetentionStateSchema,
+    latestVersion: attachmentVersionResponseSchema.nullable(),
+  })
+  .strict();
+export type AttachmentMetadataResponse = z.infer<
+  typeof attachmentMetadataResponseSchema
+>;
+
+export const attachmentListResponseSchema = z
+  .object({
+    items: z.array(attachmentMetadataResponseSchema),
+    nextCursor: z.string().trim().min(1).nullable(),
+  })
+  .strict();
+export type AttachmentListResponse = z.infer<
+  typeof attachmentListResponseSchema
+>;
+
+export const authorizedDownloadIntentResponseSchema = z
+  .object({
+    intentToken: z.string().trim().min(1),
+    expiresAt: z.iso.datetime(),
+  })
+  .strict();
+export type AuthorizedDownloadIntentResponse = z.infer<
+  typeof authorizedDownloadIntentResponseSchema
+>;

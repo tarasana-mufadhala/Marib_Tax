@@ -1,13 +1,15 @@
 import type {
   ArchiveAttachmentDto,
   AttachmentAccessQueryDto,
-  AttachmentFileDescriptor,
+  AttachmentListResponse,
+  AttachmentMetadataResponse,
   AttachmentOwnerReference,
+  AttachmentVersionResponse,
+  AuthorizedDownloadIntentResponse,
   CreateNewAttachmentVersionDto,
   CreateUploadIntentDto,
   RegisterUploadedObjectDto,
 } from '@marib-tax/contracts';
-import type { AttachmentMetadata } from './attachment.domain.js';
 
 export interface CreateUploadIntentCommand extends CreateUploadIntentDto {
   actorId: string;
@@ -32,27 +34,25 @@ export interface UploadIntentResult {
   expiresAt: string;
   uploadToken: string;
 }
-export interface DownloadIntentResult {
-  expiresAt: string;
-  downloadToken: string;
-}
-
 export interface AttachmentApplicationPort {
   createUploadIntent(
     command: CreateUploadIntentCommand,
   ): Promise<UploadIntentResult>;
   registerUploadedObject(
     command: RegisterUploadedObjectCommand,
-  ): Promise<AttachmentMetadata>;
+  ): Promise<AttachmentMetadataResponse>;
   createNewVersion(
     command: CreateNewVersionCommand,
-  ): Promise<AttachmentMetadata>;
+  ): Promise<AttachmentMetadataResponse>;
   listVersions(
     query: ListAttachmentVersionsQuery,
-  ): Promise<readonly AttachmentFileDescriptor[]>;
+  ): Promise<readonly AttachmentVersionResponse[]>;
+  listAttachments(
+    query: Omit<ListAttachmentVersionsQuery, 'attachmentId'>,
+  ): Promise<AttachmentListResponse>;
   createAuthorizedDownloadIntent(
     query: AuthorizedDownloadIntentQuery,
-  ): Promise<DownloadIntentResult>;
+  ): Promise<AuthorizedDownloadIntentResponse>;
   setRetentionState(command: ArchiveAttachmentCommand): Promise<void>;
 }
 

@@ -1,9 +1,12 @@
-import type { AttachmentFileDescriptor } from '@marib-tax/contracts';
+import type {
+  AttachmentFileDescriptor,
+  AttachmentUploadFileDescriptor,
+} from '@marib-tax/contracts';
 
 export interface ObjectStoragePort {
   createUploadIntent(input: {
     objectReference: string;
-    expected: AttachmentFileDescriptor;
+    expected: AttachmentUploadFileDescriptor;
     expiresInSeconds: number;
   }): Promise<{ uploadToken: string; expiresAt: string }>;
   inspectObject(
@@ -20,7 +23,7 @@ export const OBJECT_STORAGE_PORT = Symbol('OBJECT_STORAGE_PORT');
 export class DisabledObjectStorageAdapter implements ObjectStoragePort {
   createUploadIntent(_input: {
     objectReference: string;
-    expected: AttachmentFileDescriptor;
+    expected: AttachmentUploadFileDescriptor;
     expiresInSeconds: number;
   }): Promise<never> {
     void _input;
