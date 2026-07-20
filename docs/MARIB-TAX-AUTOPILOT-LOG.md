@@ -1,5 +1,14 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-20 — Batch 08 files metadata source
+
+- Confirmed PROD-DB-07 apply/verifier PASS and merged post-verify evidence at PR #60 / `8087d74`; no production command was repeated.
+- Authored source-only TABLE-063…065 attachment metadata, polymorphic links, and additive version history with default-deny RLS and no policies/seeds.
+- Kept Postgres metadata separate from object bytes and excluded buckets, Storage policies, public ACLs, and `storage.objects` foreign keys.
+- Migration SHA: `C5BC82DFFC0D159FF19389398FF926820E71EDD8065EFDDA6894AACC6654D81C`; verifier SHA: `6CD57E5639F4642153CE830D2E69A0C6C7D18D5AFEA9886EF69960004C664D7C`.
+- Static SQL, OpenAPI, typecheck, 88 sequential workspace tests, builds, and formatting PASS. Web ESLint repeatedly crashed at the Windows process level without lint diagnostics; draft delivery relies on CI to confirm lint before any merge.
+- Production impact: **none**. PROD-DB-08 remains closed.
+
 ## 2026-07-20 — PROD-DB-07 applied and verified
 
 - Explicit owner production approval received for Batch 07 only (`sjmtiwzddztxfrncwkpx`, CLI `2.109.1`, SHA `10BA80E828CDB39AB60B1816F8EC6D263169CC6DFA6EC7821D979AE2EDA63118`, baseline `8d62af2`).
