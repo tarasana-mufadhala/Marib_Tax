@@ -10,24 +10,38 @@ import type {
   CreateUploadIntentDto,
   RegisterUploadedObjectDto,
 } from '@marib-tax/contracts';
+import type {
+  AttachmentAuthorizationActor,
+  AttachmentAuthorizationResource,
+} from './attachment-authorization.policy.js';
+
+/** Resolved by trusted server infrastructure and never constructed from DTO input. */
+export type ServerResolvedAttachmentActorContext =
+  Readonly<AttachmentAuthorizationActor>;
 
 export interface CreateUploadIntentCommand extends CreateUploadIntentDto {
-  actorId: string;
+  readonly actorContext: ServerResolvedAttachmentActorContext;
 }
 export interface RegisterUploadedObjectCommand extends RegisterUploadedObjectDto {
-  actorId: string;
+  readonly actorContext: ServerResolvedAttachmentActorContext;
 }
 export interface CreateNewVersionCommand extends CreateNewAttachmentVersionDto {
-  actorId: string;
+  readonly actorContext: ServerResolvedAttachmentActorContext;
 }
-export type ArchiveAttachmentCommand = ArchiveAttachmentDto;
+export interface ArchiveAttachmentCommand extends ArchiveAttachmentDto {
+  readonly actorContext: ServerResolvedAttachmentActorContext;
+  readonly resource: Readonly<AttachmentAuthorizationResource>;
+}
 
 export interface ListAttachmentVersionsQuery {
   attachmentId: string;
-  actorId: string;
+  readonly actorContext: ServerResolvedAttachmentActorContext;
   owner: AttachmentOwnerReference;
 }
-export type AuthorizedDownloadIntentQuery = AttachmentAccessQueryDto;
+export interface AuthorizedDownloadIntentQuery extends AttachmentAccessQueryDto {
+  readonly actorContext: ServerResolvedAttachmentActorContext;
+  readonly resource: Readonly<AttachmentAuthorizationResource>;
+}
 
 export interface UploadIntentResult {
   uploadIntentId: string;

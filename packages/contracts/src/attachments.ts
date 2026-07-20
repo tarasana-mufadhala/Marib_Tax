@@ -93,13 +93,6 @@ export type AttachmentFileDescriptor = z.infer<
   typeof attachmentFileDescriptorSchema
 >;
 
-const actorContextSchema = z
-  .object({
-    actorId: z.uuid(),
-    permissions: z.array(z.string().trim().min(1)).max(100),
-  })
-  .strict();
-
 export const createUploadIntentSchema = z
   .object({
     owner: attachmentOwnerReferenceSchema,
@@ -136,9 +129,6 @@ export type CreateNewAttachmentVersionDto = z.infer<
 export const attachmentAccessQuerySchema = z
   .object({
     attachmentId: z.uuid(),
-    actor: actorContextSchema,
-    owner: attachmentOwnerReferenceSchema,
-    classification: attachmentClassificationSchema,
   })
   .strict();
 export type AttachmentAccessQueryDto = z.infer<
@@ -148,7 +138,6 @@ export type AttachmentAccessQueryDto = z.infer<
 export const archiveAttachmentSchema = z
   .object({
     attachmentId: z.uuid(),
-    actor: actorContextSchema,
     retentionState: z.enum([
       'active',
       'archived',
