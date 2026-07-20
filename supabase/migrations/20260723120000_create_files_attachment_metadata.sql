@@ -32,6 +32,9 @@ CREATE TABLE files.attachments (
   CONSTRAINT attachments_original_filename_not_blank_check CHECK (btrim(original_filename) <> ''),
   CONSTRAINT attachments_mime_type_not_blank_check CHECK (btrim(mime_type) <> ''),
   CONSTRAINT attachments_checksum_sha256_check CHECK (checksum_sha256 IS NULL OR checksum_sha256 ~ '^[0-9A-Fa-f]{64}$'),
+  CONSTRAINT attachments_available_checksum_required_check CHECK (
+    storage_status_code <> 'available' OR checksum_sha256 IS NOT NULL
+  ),
   CONSTRAINT attachments_document_category_not_blank_check CHECK (btrim(document_category_code) <> ''),
   CONSTRAINT attachments_accounting_category_not_blank_check CHECK (btrim(storage_accounting_category_code) <> ''),
   CONSTRAINT attachments_storage_status_not_blank_check CHECK (btrim(storage_status_code) <> ''),

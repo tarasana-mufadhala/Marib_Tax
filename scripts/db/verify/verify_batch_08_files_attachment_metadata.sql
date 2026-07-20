@@ -40,6 +40,7 @@ WITH expected(table_name) AS (
 ), required_checks AS (
   SELECT
     count(*) FILTER (WHERE x.conname = 'attachments_checksum_sha256_check') = 1 AS checksum_format_check,
+    count(*) FILTER (WHERE x.conname = 'attachments_available_checksum_required_check') = 1 AS available_checksum_required_check,
     count(*) FILTER (WHERE x.conname = 'attachments_document_category_not_blank_check') = 1 AS document_category_nonblank_check,
     count(*) FILTER (WHERE x.conname = 'attachments_accounting_category_not_blank_check') = 1 AS accounting_category_nonblank_check
   FROM pg_catalog.pg_constraint x
@@ -69,7 +70,8 @@ WITH expected(table_name) AS (
 )
 SELECT s.*, mc.filename_required, mc.mime_required, mc.checksum_conditionally_nullable,
   mc.document_category_required, mc.accounting_category_required,
-  rc.checksum_format_check, rc.document_category_nonblank_check, rc.accounting_category_nonblank_check,
+  rc.checksum_format_check, rc.available_checksum_required_check,
+  rc.document_category_nonblank_check, rc.accounting_category_nonblank_check,
   ri.one_active_owner_link,
   r.attachments, r.links, r.versions,
   COALESCE((SELECT jsonb_agg(to_jsonb(t)) FROM table_checks t WHERE status <> 'OK'), '[]'::jsonb) AS table_mismatches,
@@ -79,7 +81,8 @@ SELECT s.*, mc.filename_required, mc.mime_required, mc.checksum_conditionally_nu
       AND s.storage_fk_count = 0
       AND mc.filename_required AND mc.mime_required AND mc.checksum_conditionally_nullable
       AND mc.document_category_required AND mc.accounting_category_required
-      AND rc.checksum_format_check AND rc.document_category_nonblank_check AND rc.accounting_category_nonblank_check
+      AND rc.checksum_format_check AND rc.available_checksum_required_check
+      AND rc.document_category_nonblank_check AND rc.accounting_category_nonblank_check
       AND ri.one_active_owner_link
       AND r.attachments = 0 AND r.links = 0 AND r.versions = 0
     THEN 'PASS' ELSE 'FAIL' END AS final_status
