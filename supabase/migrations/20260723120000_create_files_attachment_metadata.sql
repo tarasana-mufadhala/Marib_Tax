@@ -11,6 +11,7 @@ CREATE TABLE files.attachments (
   original_filename text NOT NULL,
   mime_type text NOT NULL,
   checksum_sha256 text NULL,
+  document_category_code text NOT NULL,
   storage_accounting_category_code text NOT NULL,
   storage_object_path text NULL,
   storage_object_id text NULL,
@@ -31,6 +32,7 @@ CREATE TABLE files.attachments (
   CONSTRAINT attachments_original_filename_not_blank_check CHECK (btrim(original_filename) <> ''),
   CONSTRAINT attachments_mime_type_not_blank_check CHECK (btrim(mime_type) <> ''),
   CONSTRAINT attachments_checksum_sha256_check CHECK (checksum_sha256 IS NULL OR checksum_sha256 ~ '^[0-9A-Fa-f]{64}$'),
+  CONSTRAINT attachments_document_category_not_blank_check CHECK (btrim(document_category_code) <> ''),
   CONSTRAINT attachments_accounting_category_not_blank_check CHECK (btrim(storage_accounting_category_code) <> ''),
   CONSTRAINT attachments_storage_status_not_blank_check CHECK (btrim(storage_status_code) <> ''),
   CONSTRAINT attachments_retention_status_not_blank_check CHECK (btrim(deletion_retention_status_code) <> ''),
@@ -40,6 +42,9 @@ CREATE TABLE files.attachments (
     REFERENCES identity.user_profiles (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE
 );
 COMMENT ON TABLE files.attachments IS 'TABLE-063 attachment metadata only; object bytes remain outside Postgres. Version archive is retained; no storage.objects FK.';
+COMMENT ON COLUMN files.attachments.document_category_code IS 'Business/legal document category supplied by the application; distinct from server-owned storage accounting classification.';
+COMMENT ON COLUMN files.attachments.storage_accounting_category_code IS 'Internal technical/accounting category assigned by the server; not client supplied.';
+COMMENT ON COLUMN files.attachments.checksum_sha256 IS 'May be NULL while upload is incomplete; application transition policy must require a valid SHA-256 before storage_status_code becomes available.';
 
 CREATE TABLE files.attachment_links (
   id uuid NOT NULL,

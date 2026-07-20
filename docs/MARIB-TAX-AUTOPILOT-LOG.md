@@ -1,5 +1,14 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-20 — Attachments Integration Wave 02 / Track A
+
+- Corrected PR #61 in place by adding required non-blank business/legal `document_category_code` while retaining server-owned `storage_accounting_category_code`.
+- Documented conditional checksum lifecycle: nullable during incomplete upload, valid SHA-256 required before `available`.
+- Updated the read-only verifier for both categories, checksum nullability/format constraints, three-table scope, RLS, empty tables, forbidden grants, policies, and Storage FKs.
+- New migration SHA is `71B17156E347582000B2F54E24A8E18EBB0BE45B3E2919F2C4CF17C6F2E845BA`; the Wave 01 SHA is superseded.
+- Local gates: static SQL scope PASS; typecheck PASS; 88 tests PASS (5 web, 5 worker, 22 contracts, 56 API); build PASS; lint PASS; `git diff --check` PASS. A combined recursive test invocation hit a transient contracts runner exit without diagnostics after web/worker passed; the contracts suite passed immediately in isolated execution.
+- Production impact: **none**. `PROD-DB-08 = CLOSED`; no linked preflight, dry-run, SQL, Storage operation, or apply occurred.
+
 ## 2026-07-20 — Batch 08 files metadata source
 
 - Confirmed PROD-DB-07 apply/verifier PASS and merged post-verify evidence at PR #60 / `8087d74`; no production command was repeated.

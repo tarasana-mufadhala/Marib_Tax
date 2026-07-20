@@ -36,6 +36,8 @@ Source-only authoring of the next dependency-ordered batch does not authorize it
 
 Files metadata source must not create Storage buckets, object policies, public ACLs, or database foreign keys to managed `storage.objects`; those remain later separately gated operations.
 
+For Batch 08, `document_category_code` is business/legal metadata and `storage_accounting_category_code` is distinct server-owned technical metadata. SHA-256 may be absent while upload is incomplete, but an attachment must not become `available` without a valid observed checksum. These source rules do not authorize Storage operations or production access.
+
 ## Cycle loop
 
 Every scheduled run and every Run now is an **extended work cycle**, not a single-task invocation.
