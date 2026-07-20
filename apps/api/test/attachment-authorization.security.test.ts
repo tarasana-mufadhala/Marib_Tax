@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { attachmentAccessQuerySchema } from '@marib-tax/contracts';
 import {
   AttachmentAuthorizationPolicy,
   type AttachmentAuthorizationActor,
@@ -8,6 +9,7 @@ import {
   appendAttachmentVersion,
   type AttachmentMetadata,
 } from '../src/attachments/attachment.domain.js';
+import type { ServerResolvedAttachmentActorContext } from '../src/attachments/attachment.application.contracts.js';
 
 const owner = Object.freeze({
   ownerType: 'service_request' as const,
@@ -54,7 +56,9 @@ function safeFailure(): { status: number; code: string; message: string } {
 }
 
 /** A service entry point must enforce the policy even when no controller runs. */
-function directDownloadService(requestActor: AttachmentAuthorizationActor): {
+function directDownloadService(
+  requestActor: ServerResolvedAttachmentActorContext,
+): {
   authorized: true;
 } {
   if (!policy.canAccess(request(requestActor))) {
@@ -143,6 +147,32 @@ describe('attachment authorization integration security', () => {
     );
     expect(directDownloadService(actor())).toEqual({ authorized: true });
   });
+
+  it.each([
+    { actorId: '00000000-0000-4000-8000-000000000099' },
+    { permissions: ['attachment.binary.download'] },
+    {
+      actor: {
+        actorId: '00000000-0000-4000-8000-000000000099',
+        permissions: ['attachment.binary.download'],
+      },
+    },
+  ])(
+    'rejects transport attempts to self-assert authorization context %j',
+    (untrusted) => {
+      expect(() =>
+        attachmentAccessQuerySchema.parse({
+          attachmentId: attachment.id,
+          ...untrusted,
+        }),
+      ).toThrow();
+
+      const serverContext: ServerResolvedAttachmentActorContext = actor({
+        permissions: [],
+      });
+      expect(policy.canAccess(request(serverContext))).toBe(false);
+    },
+  );
 
   it('appends an immutable version without mutating historical evidence', () => {
     const before = structuredClone(attachment);
