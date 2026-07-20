@@ -28,8 +28,17 @@ export const attachmentDocumentCategoryLabels: Record<
   license: 'ترخيص',
   supporting_document: 'وثيقة مؤيدة',
 };
-export type AttachmentArchiveState = 'نشط' | 'مؤرشف' | 'قيد الحفظ الدائم';
+export type AttachmentArchiveState = 'active' | 'archived' | 'legal_hold';
 export type AttachmentAvailability = 'متاح' | 'غير مصرح' | 'ملف مفقود';
+
+export const attachmentArchiveStateLabels: Record<
+  AttachmentArchiveState,
+  string
+> = {
+  active: 'نشط',
+  archived: 'مؤرشف',
+  legal_hold: 'قيد الحفظ القانوني',
+};
 
 export interface MockAttachmentVersion {
   version: number;
@@ -63,7 +72,7 @@ export const mockAttachments: readonly MockAttachment[] = [
     ownerLabel: 'طلب تعديل بيانات · REQ-MOCK-214',
     documentCategoryCode: 'license',
     classification: 'internal',
-    archiveState: 'نشط',
+    archiveState: 'active',
     availability: 'متاح',
     mimeType: 'application/pdf',
     sizeLabel: '1.8 م.ب',
@@ -92,7 +101,7 @@ export const mockAttachments: readonly MockAttachment[] = [
     ownerLabel: 'شركة مأرب التجريبية · TAX-MOCK-031',
     documentCategoryCode: 'financial_evidence',
     classification: 'highly_sensitive',
-    archiveState: 'قيد الحفظ الدائم',
+    archiveState: 'legal_hold',
     availability: 'غير مصرح',
     mimeType:
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
@@ -115,7 +124,7 @@ export const mockAttachments: readonly MockAttachment[] = [
     ownerLabel: 'بلاغ ميداني · BAL-MOCK-088',
     documentCategoryCode: 'correspondence',
     classification: 'confidential',
-    archiveState: 'مؤرشف',
+    archiveState: 'archived',
     availability: 'ملف مفقود',
     mimeType: 'application/pdf',
     sizeLabel: '—',

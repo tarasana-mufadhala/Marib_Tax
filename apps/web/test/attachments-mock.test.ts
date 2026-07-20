@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   attachmentFilterOptions,
+  attachmentArchiveStateLabels,
   filterMockAttachments,
   mockAttachments,
 } from '../src/lib/attachments-mock';
@@ -51,6 +52,10 @@ describe('attachment admin mock', () => {
     expect(
       mockAttachments[0]?.versions.map((version) => version.version),
     ).toEqual([2, 1]);
+    expect(mockAttachments.map((item) => item.archiveState)).toEqual(
+      expect.arrayContaining(['active', 'archived', 'legal_hold']),
+    );
+    expect(attachmentArchiveStateLabels.legal_hold).toBe('قيد الحفظ القانوني');
     expect(JSON.stringify(mockAttachments)).not.toMatch(
       /https?:|storage[_ -]?path|service_role/i,
     );

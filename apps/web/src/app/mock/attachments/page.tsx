@@ -1,5 +1,6 @@
 import {
   attachmentClassificationLabels,
+  attachmentArchiveStateLabels,
   attachmentDocumentCategoryLabels,
   attachmentFilterOptions,
   filterMockAttachments,
@@ -42,7 +43,10 @@ export default async function AttachmentsMockPage({
         </div>
         <div>
           <strong>
-            {attachments.filter((item) => item.archiveState === 'مؤرشف').length}
+            {
+              attachments.filter((item) => item.archiveState === 'archived')
+                .length
+            }
           </strong>
           <span>مؤرشفة</span>
         </div>
@@ -129,7 +133,9 @@ export default async function AttachmentsMockPage({
                 </td>
                 <td>{item.updatedAt}</td>
                 <td>
-                  <span className="archive-state">{item.archiveState}</span>
+                  <span className="archive-state">
+                    {attachmentArchiveStateLabels[item.archiveState]}
+                  </span>
                   {item.availability !== 'متاح' && (
                     <small className="availability-warning">
                       {item.availability}
