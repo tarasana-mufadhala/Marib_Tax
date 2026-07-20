@@ -56,14 +56,10 @@ Only decisions that require an authorized human are listed here. Source work mus
 - **Evidence:** `docs/post-apply/MARIB-TAX-DB-FOUNDATION-BATCH-07-PRODUCTION-APPLY-POST-VERIFY-01-REPORT.md`
 - **Still forbidden without a new approval:** any later migration (including Batch 08), `--include-all`, migration repair, `db reset --linked`, dashboard SQL, direct `psql`, or blind retry.
 
-### PROD-DB-08 — Apply Batch 08 (next foundation batch)
-
-- **State:** NOT_STARTED (source authoring may begin; production apply closed)
-- **Until approved:** do not run `db push` for Batch 08 or any later batch.
-
 ### PROD-DB-08 — Apply Batch 08 files metadata
 
-- **State:** REQUIRES_USER_APPROVAL after source review; production preflight/apply closed
+- **Source state:** MERGED through ordered PRs #61/#63/#65/#64/#62/#66; not applied.
+- **Production state:** REQUIRES_USER_APPROVAL; preflight/apply closed.
 - **Source migration:** `supabase/migrations/20260723120000_create_files_attachment_metadata.sql`
 - **Candidate SHA-256:** `1BEFCACAD87C0A3813F7335FAFC42BEB8066C70ECFE5191D9609C9759E9A4496` (checksum-invariant correction; supersedes `BDEDBD040F2EA53D8AAA1BB4A9FB8307FC64A2513283D841632749C2D21E6C60` and `C5BC82DFFC0D159FF19389398FF926820E71EDD8065EFDDA6894AACC6654D81C`)
 - **Verifier:** `scripts/db/verify/verify_batch_08_files_attachment_metadata.sql`

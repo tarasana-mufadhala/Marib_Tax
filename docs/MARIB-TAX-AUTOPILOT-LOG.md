@@ -1,5 +1,15 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-20 — Attachments Integration Captain Wave 02 merged
+
+- Canonicalized classification, document-category, checksum, retention, sanitized-response, and below-UI authorization contracts across DB/API/security/Flutter/web.
+- Independent review found and corrected caller-supplied authorization context in the API, added executable available-state checksum enforcement, and completed the permanent operational archive vocabulary.
+- Final decision: **PASS — ATTACHMENTS_WAVE_01_INTEGRATION_READY_FOR_ORDERED_MERGE**.
+- Ordered merges completed only after updating each next PR on current `main` and rerunning CI: #61 `0415db6`, #63 `828b91f`, #65 `61c5111`, #64 `6ba0bb2`, #62 `01e7bf8`, #66 `c2e37bc`.
+- Final migration SHA: `1BEFCACAD87C0A3813F7335FAFC42BEB8066C70ECFE5191D9609C9759E9A4496`; verifier SHA: `97ADD70F0E0F4A821FC77ACAA95A2272DBF06533E07BEAD995104EC08254DBCE`.
+- `BATCH_08_SOURCE = MERGED / NOT APPLIED`; `PROD-DB-08 = CLOSED`.
+- Production impact: **none**. No preflight, dry-run, SQL, Storage, deploy, real file, taxpayer-data, secret, or notification operation occurred.
+
 ## 2026-07-20 — Attachments Integration Wave 02 / Track A
 
 - Corrected PR #61 in place by adding required non-blank business/legal `document_category_code` while retaining server-owned `storage_accounting_category_code`.
