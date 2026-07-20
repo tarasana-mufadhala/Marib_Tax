@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'features/activity_address_change/presentation/activity_address_change_page.dart';
+import 'features/attachments/presentation/attachments_page.dart';
 
 void main() => runApp(const MaribTaxApp());
 
@@ -20,7 +20,7 @@ class MaribTaxApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF176B52)),
         useMaterial3: true,
       ),
-      home: const ActivityAddressChangePage(),
+      home: const AttachmentsPage(),
     );
   }
 }
