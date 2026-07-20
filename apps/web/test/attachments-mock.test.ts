@@ -7,6 +7,15 @@ import {
 } from '../src/lib/attachments-mock';
 
 describe('attachment admin mock', () => {
+  it('covers the complete canonical retention vocabulary', () => {
+    expect(Object.keys(attachmentArchiveStateLabels)).toEqual([
+      'active',
+      'archived',
+      'legal_hold',
+      'permanent_operational_archive',
+    ]);
+  });
+
   it('filters by owner, category, classification and date', () => {
     expect(
       filterMockAttachments({

@@ -28,7 +28,8 @@ export const attachmentDocumentCategoryLabels: Record<
   license: 'ترخيص',
   supporting_document: 'وثيقة مؤيدة',
 };
-export type AttachmentArchiveState = 'active' | 'archived' | 'legal_hold';
+export type AttachmentArchiveState =
+  'active' | 'archived' | 'legal_hold' | 'permanent_operational_archive';
 export type AttachmentAvailability = 'متاح' | 'غير مصرح' | 'ملف مفقود';
 
 export const attachmentArchiveStateLabels: Record<
@@ -38,6 +39,7 @@ export const attachmentArchiveStateLabels: Record<
   active: 'نشط',
   archived: 'مؤرشف',
   legal_hold: 'قيد الحفظ القانوني',
+  permanent_operational_archive: 'أرشيف تشغيلي دائم',
 };
 
 export interface MockAttachmentVersion {
