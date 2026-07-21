@@ -1,5 +1,17 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-21 — PROD-DB-09 controlled production apply + post-verify
+
+- Fresh explicit production approval executed for Batch 09 only against `sjmtiwzddztxfrncwkpx`.
+- Fresh preflight PASS: clean HEAD=`origin/main` `da3796b` (PR #71 MERGED); migration/verifier SHA exact match; linked ref match; history 01A–08 once each; Batch 09 absent; six tables/partial objects absent; backup COMPLETED `2026-07-20T22:04:12.315Z`; WALG yes; PITR no; dry-run listed only Batch 09.
+- Applied once: `npx --yes supabase@2.109.1 db push --linked --yes` → `20260724120000_create_field_visits_family.sql`.
+- Post-verify: remote history contains Batch 09 once; verifier `final_status=PASS` via `db query --linked --file`; all mismatch counts 0; six tables empty; RLS enabled; no policies/forbidden grants/seed; XOR parent + active-team + schedule-revision uniqueness present; evidence FK to `files.attachments`; no `cases`/Storage FK/triggers; dry-run `Remote database is up to date.`
+- Open decisions remain unencoded: OD-08; OD-15; DM-08 masking; `cancelVisit`.
+- Deliverables: post-apply report + execution/decisions/approval-packet updates.
+- Final state: `PROD-DB-09 = APPLIED / VERIFIED PASS`; Batch 10 may begin as **source only** after this report merges.
+- Non-blocking CLI warning: pg-delta catalog cache certificate miss (same class as Batch 08); apply and verifier gates passed.
+- Production impact: Batch 09 visit-family tables only. No Storage, seed, repair, reset, Batch 10, deploy, or real-data operation.
+
 ## 2026-07-21 — PROD-DB-09 fresh production preflight
 
 - Fresh independent preflight-only approval executed for Batch 09; no migration apply and no real `db push`.
