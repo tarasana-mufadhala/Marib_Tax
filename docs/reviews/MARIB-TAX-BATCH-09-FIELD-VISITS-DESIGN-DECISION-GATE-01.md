@@ -113,5 +113,6 @@ Static scope: 6 CREATE TABLE; 6 ENABLE RLS; 0 CREATE POLICY; 0 INSERT/seed; XOR 
 
 ## Follow-on
 
-- Design gate PASS authorizes Batch 09 **source authoring and review PR only**
-- `PROD-DB-09` remains **CLOSED** until a separate explicit production approval
+- Design gate PASS authorized Batch 09 **source authoring and review PR only** (PR #70 MERGED).
+- A later fresh preflight recorded `PROD-DB-09 = REQUIRES_USER_APPROVAL` with apply still closed; see `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-09-PRODUCTION-APPLY-PREFLIGHT-01-REPORT.md`.
+- This design PASS still does not authorize apply, Storage operations, Batch 10, or deployment.
