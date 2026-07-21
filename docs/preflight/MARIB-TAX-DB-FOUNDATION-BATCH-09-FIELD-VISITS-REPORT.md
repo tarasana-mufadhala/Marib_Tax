@@ -4,8 +4,8 @@
 
 Source only for this report. Production apply remains closed. Fresh linked preflight evidence (no apply) is recorded in `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-09-PRODUCTION-APPLY-PREFLIGHT-01-REPORT.md`.
 
-- `BATCH_09_SOURCE = MERGED / NOT APPLIED`
-- `PROD-DB-09 = REQUIRES_USER_APPROVAL`
+- `BATCH_09_SOURCE = MERGED / APPLIED`
+- `PROD-DB-09 = APPLIED / VERIFIED PASS`
 
 ## Artifacts
 
