@@ -1,5 +1,14 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-21 — Batch 09 field visits design gate + source
+
+- Baseline `origin/main` `7fe71ea`; clean branch `batch-09-field-visits-source-01`; no prior Batch 09 work.
+- Design gate **PASS — BATCH_09_FIELD_VISITS_DESIGN_APPROVED_FOR_SOURCE**: XOR parent per IR-29/CK-T01; staff-only initiation; additive corrections; Batch 08 evidence links; RLS default-deny.
+- Deferred open: OD-08 triggers; OD-15 correction authority; DM-08 masking/result catalogue; cancelVisit authority — not encoded as silent defaults.
+- Authored migration `20260724120000_create_field_visits_family.sql` (SHA `5F6964D3116A77D1744CDB6B4A7D504339E5A64FA3DA25742170C903F624B33D`) and verifier (SHA `81151A673FD794F383094DA6A86FEB38CCFB6ED58F046178FD89CB9FA6F57C77`).
+- Final state: `BATCH_09_SOURCE = READY_FOR_REVIEW / NOT APPLIED`; `PROD-DB-09 = CLOSED`.
+- Production impact: **none**. No preflight, dry-run, `db push`, Storage, deploy, or real-data operation.
+
 ## 2026-07-21 — PROD-DB-08 controlled production apply + post-verify
 
 - Fresh explicit production approval executed for Batch 08 only against `sjmtiwzddztxfrncwkpx`.
