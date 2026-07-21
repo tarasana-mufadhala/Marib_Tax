@@ -1,6 +1,6 @@
 # MARIB-TAX-DB-FOUNDATION-BATCH-08 — Production Approval Packet
 
-**Status:** `REQUIRES_USER_APPROVAL` — preflight complete; apply remains closed until a new explicit owner authorization for Batch 08 only.
+**Status:** `APPLIED / VERIFIED PASS` on 2026-07-21 — see `docs/post-apply/MARIB-TAX-DB-FOUNDATION-BATCH-08-PRODUCTION-APPLY-POST-VERIFY-01-REPORT.md`. This packet is retained as authorizing evidence; it does not authorize Batch 09, Storage operations, or any other migration.
 
 ## Reviewed artifact
 

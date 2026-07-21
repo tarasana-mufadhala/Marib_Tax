@@ -1,5 +1,16 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-21 — PROD-DB-08 controlled production apply + post-verify
+
+- Fresh explicit production approval executed for Batch 08 only against `sjmtiwzddztxfrncwkpx`.
+- Fresh preflight PASS: clean HEAD=`origin/main` `5ce8c06`; migration/verifier SHA exact match; linked ref match; history 01A–07 once each; Batch 08 absent; three tables/indexes/constraints absent; backup COMPLETED `2026-07-20T22:04:12.315Z`; WALG yes; PITR no; dry-run listed only Batch 08.
+- Applied once: `npx --yes supabase@2.109.1 db push --linked --yes` → `20260723120000_create_files_attachment_metadata.sql`.
+- Post-verify: remote history contains Batch 08 once; verifier `final_status=PASS` via `db query --linked --file`; all mismatch counts 0; three tables empty; RLS enabled; no policies/forbidden grants/seed; active-link + version uniqueness present; dry-run `Remote database is up to date.`
+- Deliverables: post-apply report + execution/decisions/approval-packet updates.
+- Final state: `PROD-DB-08 = APPLIED / VERIFIED PASS`; Batch 09 may begin as **source only**.
+- Non-blocking CLI warning: pg-delta catalog cache certificate miss (same class as Batch 07); apply and verifier gates passed.
+- Production impact: Batch 08 metadata tables only. No Storage, seed, repair, reset, Batch 09, deploy, or real-data operation.
+
 ## 2026-07-21 — PROD-DB-08 stale reconciliation + fresh production preflight
 
 - Fresh independent preflight-only approval executed; no migration apply and no real `db push`.
