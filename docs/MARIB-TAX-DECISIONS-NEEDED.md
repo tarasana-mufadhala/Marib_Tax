@@ -54,21 +54,21 @@ Only decisions that require an authorized human are listed here. Source work mus
 - **Preflight:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-07-PRODUCTION-APPLY-PREFLIGHT-01-REPORT.md`
 - **Approval packet:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-07-PRODUCTION-APPROVAL-PACKET.md`
 - **Evidence:** `docs/post-apply/MARIB-TAX-DB-FOUNDATION-BATCH-07-PRODUCTION-APPLY-POST-VERIFY-01-REPORT.md`
-- **Still forbidden without a new approval:** any later migration (including Batch 08), `--include-all`, migration repair, `db reset --linked`, dashboard SQL, direct `psql`, or blind retry.
+- **Still forbidden without a new approval:** any later migration (including Batch 09), `--include-all`, migration repair, `db reset --linked`, dashboard SQL, direct `psql`, or blind retry.
 
 ### PROD-DB-08 — Apply Batch 08 files metadata
 
-- **Source state:** `BATCH_08_SOURCE = MERGED / NOT APPLIED` (ordered PRs #61–#67; baseline `3955c1f`).
-- **Production state:** `REQUIRES_USER_APPROVAL` — fresh production preflight PASS; apply remains closed.
+- **State:** COMPLETE — APPLIED / VERIFIED PASS on 2026-07-21
 - **Source migration:** `supabase/migrations/20260723120000_create_files_attachment_metadata.sql`
-- **Candidate SHA-256:** `1BEFCACAD87C0A3813F7335FAFC42BEB8066C70ECFE5191D9609C9759E9A4496` (checksum-invariant correction; supersedes `BDEDBD040F2EA53D8AAA1BB4A9FB8307FC64A2513283D841632749C2D21E6C60` and `C5BC82DFFC0D159FF19389398FF926820E71EDD8065EFDDA6894AACC6654D81C`)
+- **SHA-256:** `1BEFCACAD87C0A3813F7335FAFC42BEB8066C70ECFE5191D9609C9759E9A4496` (checksum-invariant correction; supersedes `BDEDBD040F2EA53D8AAA1BB4A9FB8307FC64A2513283D841632749C2D21E6C60` and `C5BC82DFFC0D159FF19389398FF926820E71EDD8065EFDDA6894AACC6654D81C`)
 - **Verifier:** `scripts/db/verify/verify_batch_08_files_attachment_metadata.sql`
 - **Verifier SHA-256:** `97ADD70F0E0F4A821FC77ACAA95A2272DBF06533E07BEAD995104EC08254DBCE`
 - **Design gate:** `docs/reviews/MARIB-TAX-BATCH-08-DESIGN-DECISION-GATE-01.md` — **PASS — BATCH_08_SOURCE_READY_FOR_INTEGRATION_REVIEW**
-- **Preflight:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-08-PRODUCTION-APPLY-PREFLIGHT-01-REPORT.md` — **PASS_WITH_NOTES — READY_FOR_INDEPENDENT_REVIEW_NOT_AUTHORIZED_FOR_APPLY**
+- **Preflight:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-08-PRODUCTION-APPLY-PREFLIGHT-01-REPORT.md`
 - **Approval packet:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-08-PRODUCTION-APPROVAL-PACKET.md`
+- **Evidence:** `docs/post-apply/MARIB-TAX-DB-FOUNDATION-BATCH-08-PRODUCTION-APPLY-POST-VERIFY-01-REPORT.md`
 - **Excluded:** bytes, buckets, Storage policies, `storage.objects` FK, seeds, retention periods, legal-hold destruction rules
-- **Until separately approved:** do not run real `db push` (without `--dry-run`), Storage operations, Batch 09, or any later migration.
+- **Still forbidden without a new approval:** any later migration (including Batch 09), Storage bucket/policy operations, `--include-all`, migration repair, `db reset --linked`, dashboard SQL, direct `psql`, or blind retry.
 
 ### Balaghat filer / targets / property selection
 
