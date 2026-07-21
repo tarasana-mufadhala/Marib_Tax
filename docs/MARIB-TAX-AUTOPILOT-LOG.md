@@ -1,12 +1,24 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-21 — PROD-DB-09 fresh production preflight
+
+- Fresh independent preflight-only approval executed for Batch 09; no migration apply and no real `db push`.
+- G0: `HEAD`=`origin/main` `08841ba`; PR #70 MERGED; migration SHA `5F6964D3116A77D1744CDB6B4A7D504339E5A64FA3DA25742170C903F624B33D` and verifier SHA `81151A673FD794F383094DA6A86FEB38CCFB6ED58F046178FD89CB9FA6F57C77` matched; six-table source integrity PASS; open decisions OD-08/OD-15/DM-08/`cancelVisit` remain unencoded.
+- G1: linked ref `sjmtiwzddztxfrncwkpx`; remote history 01A–08 once each; Batch 09 remote absent; no later pending migration; no history mismatch; no repair.
+- G2: six tables absent; partial objects `tables=0|indexes=0|constraints=0|foreign_keys=0|policies=0|grants=0|triggers=0|functions=0|sequences=0`; `cases_any=false`; `visits` schema present from prior batches.
+- G3: backup COMPLETED `2026-07-20T22:04:12.315Z`; WALG yes; PITR no; no create/restore.
+- G4: `npx --yes supabase@2.109.1 db push --linked --dry-run` listed only `20260724120000_create_field_visits_family.sql`.
+- Deliverables: production preflight report + approval packet; execution state, decisions register, and autopilot log updated.
+- Final state: `PROD-DB-09 = REQUIRES_USER_APPROVAL`; `BATCH_09_SOURCE = MERGED / NOT APPLIED`.
+- Production impact: **none**. No apply, Storage, seed, repair, reset, deploy, Batch 10, or real-data operation occurred.
+
 ## 2026-07-21 — Batch 09 field visits design gate + source
 
 - Baseline `origin/main` `7fe71ea`; clean branch `batch-09-field-visits-source-01`; no prior Batch 09 work.
 - Design gate **PASS — BATCH_09_FIELD_VISITS_DESIGN_APPROVED_FOR_SOURCE**: XOR parent per IR-29/CK-T01; staff-only initiation; additive corrections; Batch 08 evidence links; RLS default-deny.
 - Deferred open: OD-08 triggers; OD-15 correction authority; DM-08 masking/result catalogue; cancelVisit authority — not encoded as silent defaults.
 - Authored migration `20260724120000_create_field_visits_family.sql` (SHA `5F6964D3116A77D1744CDB6B4A7D504339E5A64FA3DA25742170C903F624B33D`) and verifier (SHA `81151A673FD794F383094DA6A86FEB38CCFB6ED58F046178FD89CB9FA6F57C77`).
-- Final state: `BATCH_09_SOURCE = READY_FOR_REVIEW / NOT APPLIED`; `PROD-DB-09 = CLOSED`.
+- Final state at source merge: `BATCH_09_SOURCE = READY_FOR_REVIEW / NOT APPLIED`; `PROD-DB-09 = CLOSED` (later preflight moved state to REQUIRES_USER_APPROVAL / MERGED).
 - Production impact: **none**. No preflight, dry-run, `db push`, Storage, deploy, or real-data operation.
 
 ## 2026-07-21 — PROD-DB-08 controlled production apply + post-verify
