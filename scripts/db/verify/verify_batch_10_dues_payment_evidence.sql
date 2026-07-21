@@ -64,16 +64,63 @@ cases_relation AS (
       AND c.relname = 'cases'
   ) AS present
 ),
-due_receipt_link_absent AS (
+due_receipt_structure AS (
   SELECT
     to_regclass('dues.due_receipt_links') IS NULL AS due_receipt_links_absent,
-    NOT EXISTS (
+    EXISTS (
       SELECT 1
       FROM information_schema.columns
       WHERE table_schema = 'dues'
         AND table_name = 'payment_receipts'
         AND column_name = 'payment_due_id'
-    ) AS receipt_due_fk_column_absent
+        AND is_nullable = 'NO'
+        AND data_type = 'uuid'
+    ) AS receipt_due_id_required,
+    EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_constraint x
+      JOIN pg_catalog.pg_class c ON c.oid = x.conrelid
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      JOIN pg_catalog.pg_class rc ON rc.oid = x.confrelid
+      JOIN pg_catalog.pg_namespace rn ON rn.oid = rc.relnamespace
+      WHERE x.contype = 'f'
+        AND x.conname = 'payment_receipts_payment_due_fkey'
+        AND n.nspname = 'dues'
+        AND c.relname = 'payment_receipts'
+        AND rn.nspname = 'dues'
+        AND rc.relname = 'payment_dues'
+        AND x.confdeltype = 'r'
+        AND x.confupdtype = 'a'
+    ) AS receipt_due_fk_restrict,
+    EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_indexes
+      WHERE schemaname = 'dues'
+        AND tablename = 'payment_receipts'
+        AND indexname = 'payment_receipts_payment_due_received_at_idx'
+        AND indexdef ILIKE '%(payment_due_id%'
+        AND indexdef ILIKE '%received_at%'
+    ) AS receipt_due_history_index,
+    NOT EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_constraint x
+      JOIN pg_catalog.pg_class c ON c.oid = x.conrelid
+      JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+      WHERE x.contype = 'u'
+        AND n.nspname = 'dues'
+        AND c.relname = 'payment_receipts'
+        AND pg_catalog.pg_get_constraintdef(x.oid) ~* '\(payment_due_id\)'
+    )
+    AND NOT EXISTS (
+      SELECT 1
+      FROM pg_catalog.pg_indexes
+      WHERE schemaname = 'dues'
+        AND tablename = 'payment_receipts'
+        AND indexdef ILIKE 'CREATE UNIQUE INDEX%'
+        AND indexdef ~* '\(payment_due_id\)'
+        AND indexdef !~* 'received_at'
+        AND indexdef !~* ','
+    ) AS receipt_due_id_not_unique
 ),
 gateway_columns AS (
   SELECT count(*)::integer AS value
@@ -196,8 +243,11 @@ SELECT
   s.storage_fk_count,
   s.gateway_column_count,
   NOT cr.present AS cases_relation_absent,
-  dra.due_receipt_links_absent,
-  dra.receipt_due_fk_column_absent,
+  drs.due_receipt_links_absent,
+  drs.receipt_due_id_required,
+  drs.receipt_due_fk_restrict,
+  drs.receipt_due_history_index,
+  drs.receipt_due_id_not_unique,
   rc.case_xor_check,
   rc.due_amount_non_negative,
   rc.correction_reason_check,
@@ -236,8 +286,11 @@ SELECT
       AND s.storage_fk_count = 0
       AND s.gateway_column_count = 0
       AND NOT cr.present
-      AND dra.due_receipt_links_absent
-      AND dra.receipt_due_fk_column_absent
+      AND drs.due_receipt_links_absent
+      AND drs.receipt_due_id_required
+      AND drs.receipt_due_fk_restrict
+      AND drs.receipt_due_history_index
+      AND drs.receipt_due_id_not_unique
       AND rc.case_xor_check
       AND rc.due_amount_non_negative
       AND rc.correction_reason_check
@@ -264,7 +317,7 @@ SELECT
 FROM dependency_presence d
 CROSS JOIN summaries s
 CROSS JOIN cases_relation cr
-CROSS JOIN due_receipt_link_absent dra
+CROSS JOIN due_receipt_structure drs
 CROSS JOIN required_constraints rc
 CROSS JOIN required_columns col
 CROSS JOIN row_counts r;

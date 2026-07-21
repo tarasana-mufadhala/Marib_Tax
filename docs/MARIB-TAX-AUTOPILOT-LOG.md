@@ -1,11 +1,19 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-21 — Batch 10 REL-069 direct Due–Receipt FK remediation
+
+- Existing PR #73 on `batch-10-dues-payments-source-01`; no new PR; no merge; no production apply.
+- REL-069 **CLOSED**: every receipt belongs to exactly one due via mandatory `payment_receipts.payment_due_id` FK (`ON DELETE RESTRICT`); one due may have many receipts; `payment_due_id` not UNIQUE; no `due_receipt_links`.
+- Partial payment = multiple receipts under the same due; confirmation remains receipt-level and ≠ final request/balagh approval.
+- Updated migration SHA `C0B5AD447F810D6DCC8E931440F222E3ABE832E1E141E1E6FECAF17ADA5D1B42` and verifier SHA `9EB3D1B27A6AC3D2486D9F1EF083D1534089F5DFE1ECCFC0050D563B3C4CE182` (supersede prior NestJS-only candidates).
+- Deferred open remains: overpayment rules; CK-T02 vs exact-one; OD-15; DM-09 catalogues; PHY-35 formal acceptance.
+- Final state: `BATCH_10_SOURCE = READY_FOR_REVIEW / NOT APPLIED`; `PROD-DB-10 = CLOSED`.
+
 ## 2026-07-21 — Batch 10 dues/payments design gate + source
 
 - Baseline `origin/main` `5d267c3`; clean branch `batch-10-dues-payments-source-01`; PR #72 MERGED; no prior Batch 10 migration/open PR.
-- Design gate **PASS — BATCH_10_DUES_PAYMENTS_DESIGN_APPROVED_FOR_SOURCE**: manual dues; ADR-015 1 due : N receipts without inventing Due–Receipt FK/`due_receipt_links`; additive corrections/replacements; confirmation ≠ final approval; Batch 08 attachment refs only.
-- Deferred open: REL-069 join shape; overpayment rules; CK-T02 vs exact-one; OD-15; DM-09 catalogues; PHY-35 formal acceptance — not encoded as silent defaults.
-- Authored migration `20260725120000_create_dues_payment_evidence_family.sql` (SHA `F19835DA998891736F45073D9300DD1C565D26A5FA052E0ED4998E4B60391DF6`) and verifier (SHA `6D310C91DC1F128E983D44A36E3F7BB7974D23F119DBD64B3427A7DB704A56B1`).
+- Design gate **PASS — BATCH_10_DUES_PAYMENTS_DESIGN_APPROVED_FOR_SOURCE**: manual dues; ADR-015 1 due : N receipts; additive corrections/replacements; confirmation ≠ final approval; Batch 08 attachment refs only.
+- Initial source used NestJS-only Due–Receipt association; later remediated to direct FK under REL-069 CLOSED (see entry above).
 - Final state: `BATCH_10_SOURCE = READY_FOR_REVIEW / NOT APPLIED`; `PROD-DB-10 = CLOSED`.
 - Production impact: **none**. No preflight, dry-run, `db push`, Storage, notifications, deploy, or real-data operation.
 

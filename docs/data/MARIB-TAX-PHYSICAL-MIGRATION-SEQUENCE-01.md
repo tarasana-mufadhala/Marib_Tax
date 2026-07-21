@@ -188,16 +188,16 @@ This sequence document does **not** authorize production link or apply by itself
 | --- | --- |
 | **Dependencies** | Batches 6–9 (case + attachment basis docs) |
 | **Objects** | TABLE-056…062 (`payment_dues`, `due_basis_document_references`, `due_corrections`, `payment_notices`, `payment_receipts`, `receipt_correction_replacements`, `payment_confirmations`) |
-| **Source migration** | `supabase/migrations/20260725120000_create_dues_payment_evidence_family.sql` (SHA-256 `F19835DA998891736F45073D9300DD1C565D26A5FA052E0ED4998E4B60391DF6`) — source authored; not applied |
-| **Verifier** | `scripts/db/verify/verify_batch_10_dues_payment_evidence.sql` (SHA-256 `6D310C91DC1F128E983D44A36E3F7BB7974D23F119DBD64B3427A7DB704A56B1`) |
+| **Source migration** | `supabase/migrations/20260725120000_create_dues_payment_evidence_family.sql` (SHA-256 `C0B5AD447F810D6DCC8E931440F222E3ABE832E1E141E1E6FECAF17ADA5D1B42`) — source authored; not applied |
+| **Verifier** | `scripts/db/verify/verify_batch_10_dues_payment_evidence.sql` (SHA-256 `9EB3D1B27A6AC3D2486D9F1EF083D1534089F5DFE1ECCFC0050D563B3C4CE182`) |
 | **Design gate** | `docs/reviews/MARIB-TAX-BATCH-10-DUES-PAYMENTS-DESIGN-DECISION-GATE-01.md` — PASS for source |
-| **Constraints** | 1 due : N receipts (ADR-015 / DM-22) without physical Due–Receipt FK/`due_receipt_links` (REL-069 NestJS-only); partial payments via multiple receipts; no payment-gateway columns; admin confirmation requires accepted receipt (NestJS); confirmation ≠ final case approval; confirmed receipts never hard-deleted |
+| **Constraints** | REL-069 CLOSED: mandatory non-unique `payment_receipts.payment_due_id` FK → `payment_dues` (1 due : N receipts); no `due_receipt_links`; partial payments via multiple receipts; no payment-gateway columns; admin confirmation requires accepted receipt (NestJS); confirmation ≠ final case approval; confirmed receipts never hard-deleted |
 | **Backfill** | None |
 | **Later verification** | Manual model only; partial-payment / overpayment behavior not silently assumed; replacement lineage intact; no `cases` |
 | **Rollback** | Archive dues; retain correction/replacement evidence |
 | **Data-loss risks** | Financial evidence loss; false “paid/approved” if confirmation misused as final decision |
 | **Security gate** | Highly Sensitive amounts/receipts; NestJS-only |
-| **Stop conditions** | Adding checkout/provider settlement columns; encoding 1:1-only due–receipt contrary to ADR-015; inventing `due_receipt_links`/`cases`; hard-delete path for confirmed receipts; production apply without PROD-DB-10 approval |
+| **Stop conditions** | Adding checkout/provider settlement columns; encoding 1:1-only due–receipt (`UNIQUE(payment_due_id)`) contrary to ADR-015/REL-069; inventing `due_receipt_links`/`cases`; hard-delete path for confirmed receipts; production apply without PROD-DB-10 approval |
 
 ### Batch 11 — Notify and notification delivery outbox
 

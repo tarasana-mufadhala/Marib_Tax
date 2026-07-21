@@ -5,7 +5,8 @@
 -- No seed/backfill rows are introduced here.
 -- No table named cases. No payment gateway/provider/settlement columns.
 -- No Storage schema mutation, buckets, policies, or bytes.
--- REL-069 remains NestJS-only: no payment_due_id on receipts and no due_receipt_links table.
+-- REL-069 CLOSED: payment_receipts.payment_due_id NOT NULL FK → payment_dues (1 due : N receipts);
+-- no due_receipt_links table; payment_due_id is not UNIQUE.
 -- Confirmation is not final request/balagh approval (IR-65).
 -- Detailed grants and RLS policies remain deferred to Batch 17.
 -- Overpayment close rules and exact-one parent upgrade remain open (DM-09 / governance).
@@ -146,6 +147,7 @@ COMMENT ON TABLE dues.payment_notices IS 'TABLE-059 payment notice metadata only
 CREATE TABLE dues.payment_receipts (
   id uuid NOT NULL,
   public_ref text NULL,
+  payment_due_id uuid NOT NULL,
   amount numeric(18, 2) NOT NULL,
   currency_code text NOT NULL,
   acceptance_status_code text NOT NULL,
@@ -161,6 +163,8 @@ CREATE TABLE dues.payment_receipts (
   CONSTRAINT payment_receipts_amount_non_negative_check CHECK (amount >= 0),
   CONSTRAINT payment_receipts_currency_not_blank_check CHECK (btrim(currency_code) <> ''),
   CONSTRAINT payment_receipts_status_not_blank_check CHECK (btrim(acceptance_status_code) <> ''),
+  CONSTRAINT payment_receipts_payment_due_fkey FOREIGN KEY (payment_due_id)
+    REFERENCES dues.payment_dues (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE,
   CONSTRAINT payment_receipts_replaces_receipt_fkey FOREIGN KEY (replaces_receipt_id)
     REFERENCES dues.payment_receipts (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE,
   CONSTRAINT payment_receipts_created_by_fkey FOREIGN KEY (created_by_profile_id)
@@ -168,12 +172,15 @@ CREATE TABLE dues.payment_receipts (
   CONSTRAINT payment_receipts_updated_by_fkey FOREIGN KEY (updated_by_profile_id)
     REFERENCES identity.user_profiles (id) ON UPDATE NO ACTION ON DELETE RESTRICT NOT DEFERRABLE
 );
+CREATE INDEX payment_receipts_payment_due_received_at_idx
+  ON dues.payment_receipts (payment_due_id, received_at DESC);
 CREATE INDEX payment_receipts_acceptance_status_code_idx
   ON dues.payment_receipts (acceptance_status_code);
 CREATE INDEX payment_receipts_replaces_receipt_id_idx
   ON dues.payment_receipts (replaces_receipt_id)
   WHERE replaces_receipt_id IS NOT NULL;
-COMMENT ON TABLE dues.payment_receipts IS 'TABLE-060 payment receipt evidence root; no payment_due_id (REL-069 NestJS allocation); 1 due : N receipts cardinality closed by ADR-015 without physical join table; no gateway columns.';
+COMMENT ON TABLE dues.payment_receipts IS 'TABLE-060 payment receipt evidence; each receipt belongs to exactly one due; one due may have many receipts (REL-069 CLOSED); partial payment uses multiple receipts; no due_receipt_links; no gateway columns; confirmation is not final request/balagh approval.';
+COMMENT ON COLUMN dues.payment_receipts.payment_due_id IS 'Mandatory parent due; NOT UNIQUE so multiple receipts may attach to one due; a receipt cannot cover multiple dues.';
 COMMENT ON COLUMN dues.payment_receipts.replaces_receipt_id IS 'Optional self-lineage pointer; original receipt rows are retained.';
 
 CREATE TABLE dues.receipt_correction_replacements (
