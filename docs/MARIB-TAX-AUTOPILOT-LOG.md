@@ -1,5 +1,14 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-21 — Batch 10 dues/payments design gate + source
+
+- Baseline `origin/main` `5d267c3`; clean branch `batch-10-dues-payments-source-01`; PR #72 MERGED; no prior Batch 10 migration/open PR.
+- Design gate **PASS — BATCH_10_DUES_PAYMENTS_DESIGN_APPROVED_FOR_SOURCE**: manual dues; ADR-015 1 due : N receipts without inventing Due–Receipt FK/`due_receipt_links`; additive corrections/replacements; confirmation ≠ final approval; Batch 08 attachment refs only.
+- Deferred open: REL-069 join shape; overpayment rules; CK-T02 vs exact-one; OD-15; DM-09 catalogues; PHY-35 formal acceptance — not encoded as silent defaults.
+- Authored migration `20260725120000_create_dues_payment_evidence_family.sql` (SHA `F19835DA998891736F45073D9300DD1C565D26A5FA052E0ED4998E4B60391DF6`) and verifier (SHA `6D310C91DC1F128E983D44A36E3F7BB7974D23F119DBD64B3427A7DB704A56B1`).
+- Final state: `BATCH_10_SOURCE = READY_FOR_REVIEW / NOT APPLIED`; `PROD-DB-10 = CLOSED`.
+- Production impact: **none**. No preflight, dry-run, `db push`, Storage, notifications, deploy, or real-data operation.
+
 ## 2026-07-21 — PROD-DB-09 controlled production apply + post-verify
 
 - Fresh explicit production approval executed for Batch 09 only against `sjmtiwzddztxfrncwkpx`.

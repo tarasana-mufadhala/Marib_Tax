@@ -85,6 +85,20 @@ Only decisions that require an authorized human are listed here. Source work mus
 - **Deferred open:** OD-08 triggers; OD-15 correction authority; DM-08 masking/result catalogue; cancelVisit authority
 - **Still forbidden without a new approval:** any later migration (including Batch 10 apply), Storage bucket/policy operations, `--include-all`, migration repair, `db reset --linked`, dashboard SQL, direct `psql`, or blind retry.
 
+### PROD-DB-10 — Apply Batch 10 dues and manual payment evidence
+
+- **Source state:** `BATCH_10_SOURCE = READY_FOR_REVIEW / NOT APPLIED`
+- **Production state:** `PROD-DB-10 = CLOSED` — design gate PASS; source authored; apply remains closed.
+- **Source migration:** `supabase/migrations/20260725120000_create_dues_payment_evidence_family.sql`
+- **Candidate SHA-256:** `F19835DA998891736F45073D9300DD1C565D26A5FA052E0ED4998E4B60391DF6`
+- **Verifier:** `scripts/db/verify/verify_batch_10_dues_payment_evidence.sql`
+- **Verifier SHA-256:** `6D310C91DC1F128E983D44A36E3F7BB7974D23F119DBD64B3427A7DB704A56B1`
+- **Design gate:** `docs/reviews/MARIB-TAX-BATCH-10-DUES-PAYMENTS-DESIGN-DECISION-GATE-01.md` — **PASS — BATCH_10_DUES_PAYMENTS_DESIGN_APPROVED_FOR_SOURCE**
+- **Source report:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-10-DUES-PAYMENTS-REPORT.md`
+- **Baseline:** `5d267c3f28f011f2463f246f9b419cf74ac52e57`
+- **Deferred open:** REL-069 join shape; overpayment rules; CK-T02 vs exact-one; OD-15; DM-09 catalogues; PHY-35 formal acceptance
+- **Until separately approved:** do not run production preflight, `db push` (with or without `--dry-run`), Storage operations, notifications, Batch 11, or any later migration.
+
 ### Balaghat filer / targets / property selection
 
 - **State:** APPROVED on 2026-07-20
