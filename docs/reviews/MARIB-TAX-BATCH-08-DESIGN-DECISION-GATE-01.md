@@ -31,4 +31,4 @@
 
 ## Production gate
 
-`PROD-DB-08 = CLOSED`. This PASS authorizes source review only, not linked preflight, dry-run, apply, bucket creation, or deployment.
+Source acceptance remains PASS. A later fresh preflight recorded `PROD-DB-08 = REQUIRES_USER_APPROVAL` with apply still closed; see `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-08-PRODUCTION-APPLY-PREFLIGHT-01-REPORT.md`. This design PASS still does not authorize apply, bucket creation, or deployment.

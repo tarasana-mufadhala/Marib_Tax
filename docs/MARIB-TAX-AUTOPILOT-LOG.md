@@ -1,5 +1,16 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-21 — PROD-DB-08 stale reconciliation + fresh production preflight
+
+- Fresh independent preflight-only approval executed; no migration apply and no real `db push`.
+- G0: `HEAD`=`origin/main` `3955c1f`; PRs #61–#67 MERGED; intermediate SHA `BDEDBD04…` superseded; **PASS — STALE_PARALLEL_TASK_RECONCILED**.
+- G1: migration SHA `1BEFCACAD87C0A3813F7335FAFC42BEB8066C70ECFE5191D9609C9759E9A4496` and verifier SHA `97ADD70F0E0F4A821FC77ACAA95A2272DBF06533E07BEAD995104EC08254DBCE` matched; three-table source integrity PASS.
+- G2: linked ref `sjmtiwzddztxfrncwkpx`; remote history 01A–07 once each; Batch 08 remote absent; tables/indexes/constraints absent; backup COMPLETED `2026-07-20T22:04:12.315Z`; WALG yes; PITR no.
+- G3: `npx --yes supabase@2.109.1 db push --linked --dry-run` listed only `20260723120000_create_files_attachment_metadata.sql`.
+- Deliverables: production preflight report + approval packet; execution state and decisions register updated.
+- Final state: `PROD-DB-08 = REQUIRES_USER_APPROVAL`; `BATCH_08_SOURCE = MERGED / NOT APPLIED`.
+- Production impact: **none**. No apply, Storage, seed, repair, reset, deploy, or real-data operation occurred.
+
 ## 2026-07-20 — Attachments Integration Captain Wave 02 merged
 
 - Canonicalized classification, document-category, checksum, retention, sanitized-response, and below-UI authorization contracts across DB/API/security/Flutter/web.
