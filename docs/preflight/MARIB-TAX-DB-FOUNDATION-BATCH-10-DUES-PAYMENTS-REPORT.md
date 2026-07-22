@@ -2,10 +2,10 @@
 
 ## Status
 
-Source only for this report. Production apply remains closed.
+Source only for this report. Production apply remains closed. Fresh linked preflight evidence (no apply) is recorded in `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-10-PRODUCTION-APPLY-PREFLIGHT-01-REPORT.md`. `PROD-DB-10 = REQUIRES_USER_APPROVAL`; `BATCH_10_SOURCE = MERGED / NOT APPLIED`.
 
-- `BATCH_10_SOURCE = READY_FOR_REVIEW / NOT APPLIED`
-- `PROD-DB-10 = CLOSED`
+- `BATCH_10_SOURCE = MERGED / NOT APPLIED`
+- `PROD-DB-10 = REQUIRES_USER_APPROVAL`
 
 ## Artifacts
 
@@ -78,4 +78,4 @@ Approved governance model recorded in source:
 
 ## Non-actions
 
-This source report authorizes no production preflight, dry-run, `db push`, Storage operation, deploy, real data, notifications, or Batch 11 work.
+This source report authorizes no apply. The later production preflight used linked read-only checks and `--dry-run` only; it did not apply Batch 10, mutate Storage, seed, deploy, integrate a payment gateway, or use real taxpayer data.
