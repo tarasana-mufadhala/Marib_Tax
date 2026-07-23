@@ -1,5 +1,17 @@
 # Marib Tax Autopilot Log
 
+## 2026-07-22 — PROD-DB-10 fresh production preflight
+
+- Fresh independent preflight-only approval executed for Batch 10; no migration apply and no real `db push`.
+- G0: `HEAD`=`origin/main` `540403b`; PR #73 MERGED; migration SHA `C0B5AD447F810D6DCC8E931440F222E3ABE832E1E141E1E6FECAF17ADA5D1B42` and verifier SHA `9EB3D1B27A6AC3D2486D9F1EF083D1534089F5DFE1ECCFC0050D563B3C4CE182` matched; seven-table source integrity PASS; REL-069 CLOSED (non-unique `payment_due_id`); open decisions (overpayment / CK-T02 / OD-15 / DM-09 / PHY-35) remain unencoded.
+- G1: linked ref `sjmtiwzddztxfrncwkpx`; remote history 01A–09 once each; Batch 10 remote absent; no later pending migration; no history mismatch; no repair.
+- G2: seven tables absent; partial objects `tables=0|indexes=0|constraints=0|foreign_keys=0|policies=0|grants=0|triggers=0|functions=0|sequences=0`; specifically absent `payment_receipts_payment_due_fkey`, `payment_receipts_payment_due_received_at_idx`, `dues.due_receipt_links`; `cases_any=false`; `dues` schema present from prior batches.
+- G3: backup COMPLETED `2026-07-21T22:03:36.134Z`; WALG yes; PITR no; no create/restore.
+- G4: `npx --yes supabase@2.109.1 db push --linked --dry-run` listed only `20260725120000_create_dues_payment_evidence_family.sql`.
+- Deliverables: production preflight report + approval packet; execution state, decisions register, and autopilot log updated.
+- Final state: `PROD-DB-10 = REQUIRES_USER_APPROVAL`; `BATCH_10_SOURCE = MERGED / NOT APPLIED`.
+- Production impact: **none**. No apply, Storage, gateway, seed, repair, reset, deploy, Batch 11, or real-data operation occurred.
+
 ## 2026-07-21 — Batch 10 REL-069 direct Due–Receipt FK remediation
 
 - Existing PR #73 on `batch-10-dues-payments-source-01`; no new PR; no merge; no production apply.
