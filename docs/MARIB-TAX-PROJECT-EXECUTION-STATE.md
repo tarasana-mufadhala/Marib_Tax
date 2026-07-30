@@ -18,7 +18,21 @@
 | ------ | -------------------- | --------------------------------------- |
 | 01A–09 | COMPLETE             | APPLIED / VERIFIED PASS                 |
 | 10     | MERGED / NOT APPLIED | REQUIRES_USER_APPROVAL (preflight PASS) |
-| 11+    | NOT_STARTED          | NOT_STARTED                             |
+| 11     | AUTHORED / NOT MERGED / NOT APPLIED | NOT_STARTED                |
+| 12+    | NOT_STARTED          | NOT_STARTED                             |
+
+## Batch 11 source checkpoint (2026-07-29)
+
+- **Design gate:** `PASS — BATCH_11_NOTIFICATION_DELIVERY_DESIGN_APPROVED_FOR_SOURCE`
+- **Evidence:** `docs/reviews/MARIB-TAX-BATCH-11-NOTIFICATION-DELIVERY-DESIGN-DECISION-GATE-01.md`
+- **Migration:** `supabase/migrations/20260726120000_create_notify_notification_delivery.sql` (TABLE-066…072, schema `notify`, 7 tables)
+- **Migration SHA-256:** `1925A56DA66BC523605B780E4FCE52A7DB92A07822169FC99739AB9F8DDD5DC0`
+- **Verifier:** `scripts/db/verify/verify_batch_11_notification_delivery.sql`
+- **Verifier SHA-256:** `E4F03541B3EB25040B26BB2EBD248392CAFC8E3FC3865611D2663120BA6EA0C4`
+- **Source report:** `docs/preflight/MARIB-TAX-DB-FOUNDATION-BATCH-11-NOTIFICATION-DELIVERY-REPORT.md`
+- **Foundation validation:** `scripts/validate-foundation.sh` PASS (89/0)
+- **Naming:** physical catalog names binding (same precedent as Batches 08–10); `device_tokens`/`notification_preferences` excluded pending Change Request
+- **Forbidden now:** any apply, merge without PR/CI, seeds, Storage, real SMS/push, starting Batch 12 before Batch 11 closure.
 
 ## PROD-DB-10 preflight checkpoint
 
