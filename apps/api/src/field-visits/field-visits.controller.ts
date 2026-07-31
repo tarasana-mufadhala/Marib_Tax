@@ -7,7 +7,13 @@ import {
   ParseUUIDPipe,
   HttpCode,
   Inject,
+  UnprocessableEntityException,
 } from '@nestjs/common';
+import {
+  scheduleFieldVisitSchema,
+  recordFieldVisitResultSchema,
+  cancelFieldVisitSchema,
+} from '@marib-tax/contracts';
 import { RequirePermission } from '../authz/authorization.decorators.js';
 import { FieldVisitsService } from './field-visits.service.js';
 import { CURRENT_ACTOR } from '../authn/authentication.contracts.js';
@@ -30,26 +36,22 @@ export class FieldVisitsController {
   @RequirePermission('field_visit.schedule')
   schedule(
     @Body()
-    body: {
-      serviceRequestId?: string | null;
-      balaghId?: string | null;
-      scheduledStartAt: string;
-      scheduledEndAt: string;
-      teamMemberStaffIds: string[];
-      locationSnapshot?: string | null;
-      notes?: string | null;
-    },
+    body: unknown,
   ): Promise<StoredFieldVisit> {
+    const parsed = scheduleFieldVisitSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new UnprocessableEntityException();
+    }
     const actorId = this.actors.requireActorId();
     return this.visitsService.scheduleVisit(
       {
-        serviceRequestId: body.serviceRequestId ?? null,
-        balaghId: body.balaghId ?? null,
-        scheduledStartAt: new Date(body.scheduledStartAt),
-        scheduledEndAt: new Date(body.scheduledEndAt),
-        teamMemberStaffIds: body.teamMemberStaffIds,
-        locationSnapshot: body.locationSnapshot ?? null,
-        notes: body.notes ?? null,
+        serviceRequestId: parsed.data.serviceRequestId,
+        balaghId: parsed.data.balaghId,
+        scheduledStartAt: new Date(parsed.data.scheduledStartAt),
+        scheduledEndAt: new Date(parsed.data.scheduledEndAt),
+        teamMemberStaffIds: parsed.data.teamMemberStaffIds,
+        locationSnapshot: parsed.data.locationSnapshot ?? null,
+        notes: parsed.data.notes ?? null,
       },
       actorId, // Using actorId as staffProfileId for local mock testing
       actorId,
@@ -62,21 +64,20 @@ export class FieldVisitsController {
   recordResult(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body()
-    body: {
-      resultSummary: string;
-      resultCode?: string | null;
-      actualStartedAt: string;
-      actualEndedAt: string;
-    },
+    body: unknown,
   ): Promise<StoredVisitResult> {
+    const parsed = recordFieldVisitResultSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new UnprocessableEntityException();
+    }
     const actorId = this.actors.requireActorId();
     return this.visitsService.recordVisitResult(
       id,
       {
-        resultSummary: body.resultSummary,
-        resultCode: body.resultCode ?? null,
-        actualStartedAt: new Date(body.actualStartedAt),
-        actualEndedAt: new Date(body.actualEndedAt),
+        resultSummary: parsed.data.resultSummary,
+        resultCode: parsed.data.resultCode ?? null,
+        actualStartedAt: new Date(parsed.data.actualStartedAt),
+        actualEndedAt: new Date(parsed.data.actualEndedAt),
       },
       actorId,
       actorId,
@@ -88,10 +89,15 @@ export class FieldVisitsController {
   @RequirePermission('field_visit.schedule')
   cancel(
     @Param('id', new ParseUUIDPipe()) id: string,
-    @Body('reason') reason: string,
+    @Body()
+    body: unknown,
   ): Promise<StoredFieldVisit> {
+    const parsed = cancelFieldVisitSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new UnprocessableEntityException();
+    }
     const actorId = this.actors.requireActorId();
-    return this.visitsService.cancelVisit(id, reason, actorId);
+    return this.visitsService.cancelVisit(id, parsed.data.reason, actorId);
   }
 
   @Get(':id')

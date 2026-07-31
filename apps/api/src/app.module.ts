@@ -27,6 +27,12 @@ import { FieldVisitsModule } from './field-visits/field-visits.module.js';
 import { DecisionsModule } from './decisions/decisions.module.js';
 import { DuesAndPaymentsModule } from './dues-payments/dues-payments.module.js';
 import { NotificationsModule } from './notifications/notifications.module.js';
+import { DatabaseModule } from './database/database.module.js';
+import { TaxpayersModule } from './taxpayers/taxpayers.module.js';
+import { ActivitiesAndBranchesModule } from './activities-branches/activities-branches.module.js';
+import { PropertiesModule } from './properties/properties.module.js';
+import { LegalEntitiesModule } from './legal-entities/legal-entities.module.js';
+import { ServicesAndVersionsModule } from './services-versions/services-versions.module.js';
 
 @Module({
   imports: [
@@ -48,6 +54,12 @@ import { NotificationsModule } from './notifications/notifications.module.js';
     DecisionsModule,
     DuesAndPaymentsModule,
     NotificationsModule,
+    DatabaseModule,
+    TaxpayersModule,
+    ActivitiesAndBranchesModule,
+    PropertiesModule,
+    LegalEntitiesModule,
+    ServicesAndVersionsModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: ApiExceptionFilter },

@@ -24,6 +24,17 @@ export interface PageMetadata {
   totalPages: number;
 }
 
+export interface CursorPageInfo {
+  nextCursor: string | null;
+  hasMore: boolean;
+  pageSize: number;
+}
+
+export interface CursorPage<T> {
+  items: T[];
+  pageInfo: CursorPageInfo;
+}
+
 export interface HealthResponse {
   status: 'ok';
   service: 'marib-tax-api';
@@ -105,3 +116,10 @@ export * from './request-draft.js';
 export * from './taxpayer-registry.js';
 export * from './masterdata.js';
 export * from './attachments.js';
+export * from './auth.js';
+export * from './own-data.js';
+export * from './balaghs.js';
+export * from './field-visits.js';
+export * from './decisions.js';
+export * from './dues.js';
+

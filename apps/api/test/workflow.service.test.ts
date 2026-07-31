@@ -3,11 +3,90 @@ import { randomUUID } from 'node:crypto';
 import type { ActorAuthorizationContext } from '../src/authz/authorization.contracts.js';
 import { WorkflowMemoryRepository } from '../src/workflow/workflow.memory-repository.js';
 import { WorkflowService } from '../src/workflow/workflow.service.js';
+import {
+  type TaxpayerRepository,
+  type StoredTaxpayer,
+  type StoredTaxpayerAccountLink,
+} from '../src/taxpayers/taxpayer.repository.js';
+import {
+  type ActivitiesBranchesRepository,
+  type StoredCommercialActivity,
+  type StoredBranch,
+  type StoredActivityAddress,
+} from '../src/activities-branches/activities-branches.repository.js';
 
 describe('WorkflowService', () => {
   it('enforces transition matrices, permissions checks, and validation parameters', async () => {
     const repository = new WorkflowMemoryRepository();
-    const service = new WorkflowService(repository);
+    const taxpayerRepository: TaxpayerRepository = {
+      findById(id: string): Promise<StoredTaxpayer | null> {
+        return Promise.resolve({
+          id,
+          publicRef: 'TXP-123',
+          displayName: 'Test Taxpayer',
+          statusCode: 'active',
+          createdAt: new Date(),
+          createdByProfileId: null,
+        });
+      },
+      search(): Promise<StoredTaxpayer[]> {
+        return Promise.resolve([]);
+      },
+      findActiveLinkByProfileId(): Promise<StoredTaxpayerAccountLink | null> {
+        return Promise.resolve(null);
+      },
+      createLink(
+        l: StoredTaxpayerAccountLink,
+      ): Promise<StoredTaxpayerAccountLink> {
+        return Promise.resolve(l);
+      },
+      createTaxpayer(t: StoredTaxpayer): Promise<StoredTaxpayer> {
+        return Promise.resolve(t);
+      },
+    };
+    const activitiesRepository: ActivitiesBranchesRepository = {
+      findActivityById(id: string): Promise<StoredCommercialActivity | null> {
+        return Promise.resolve({
+          id,
+          publicRef: 'ACT-123',
+          taxpayerId: 'taxpayer-123',
+          name: 'Test Activity',
+          statusCode: 'active',
+          createdAt: new Date(),
+          createdByProfileId: null,
+        });
+      },
+      findBranchById(): Promise<StoredBranch | null> {
+        return Promise.resolve(null);
+      },
+      findActivitiesByTaxpayerId(): Promise<StoredCommercialActivity[]> {
+        return Promise.resolve([]);
+      },
+      findBranchesByActivityId(): Promise<StoredBranch[]> {
+        return Promise.resolve([]);
+      },
+      createActivity(
+        a: StoredCommercialActivity,
+      ): Promise<StoredCommercialActivity> {
+        return Promise.resolve(a);
+      },
+      createBranch(b: StoredBranch): Promise<StoredBranch> {
+        return Promise.resolve(b);
+      },
+      createAddress(
+        addr: StoredActivityAddress,
+      ): Promise<StoredActivityAddress> {
+        return Promise.resolve(addr);
+      },
+      findAddressByBranchId(): Promise<StoredActivityAddress | null> {
+        return Promise.resolve(null);
+      },
+    };
+    const service = new WorkflowService(
+      repository,
+      taxpayerRepository,
+      activitiesRepository,
+    );
 
     const requestId = randomUUID();
     const ownerActorId = randomUUID();

@@ -2,8 +2,11 @@ import { Module } from '@nestjs/common';
 import { WorkflowService } from './workflow.service.js';
 import { WORKFLOW_REPOSITORY } from './workflow.repository.js';
 import { WorkflowMemoryRepository } from './workflow.memory-repository.js';
+import { TaxpayersModule } from '../taxpayers/taxpayers.module.js';
+import { ActivitiesAndBranchesModule } from '../activities-branches/activities-branches.module.js';
 
 @Module({
+  imports: [TaxpayersModule, ActivitiesAndBranchesModule],
   providers: [
     WorkflowService,
     {

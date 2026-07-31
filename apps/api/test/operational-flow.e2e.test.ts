@@ -228,7 +228,7 @@ describe('operational modules E2E flows (visits, decisions, dues, payments, noti
 
     expect(dueRes.status).toBe(201);
     const dueBody = dueRes.body as StoredPaymentDue;
-    expect(dueBody.statusCode).toBe('pending');
+    expect(dueBody.statusCode).toBe('PENDING');
     expect(dueBody.amount).toBe(250000.0);
     const dueId = dueBody.id;
 
@@ -256,7 +256,7 @@ describe('operational modules E2E flows (visits, decisions, dues, payments, noti
 
     expect(receiptRes.status).toBe(201);
     const receiptBody = receiptRes.body as StoredPaymentReceipt;
-    expect(receiptBody.acceptanceStatusCode).toBe('pending');
+    expect(receiptBody.acceptanceStatusCode).toBe('UPLOADED');
     const receiptId = receiptBody.id;
 
     // 8. Confirm payment receipt

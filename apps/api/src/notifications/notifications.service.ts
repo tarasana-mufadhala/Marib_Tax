@@ -76,9 +76,7 @@ export class NotificationsService {
     return createdMessage;
   }
 
-  async listNotificationsForRecipient(
-    recipientProfileId: string,
-  ): Promise<
+  async listNotificationsForRecipient(recipientProfileId: string): Promise<
     Array<{
       message: StoredNotificationMessage;
       readState: StoredNotificationReadState | null;

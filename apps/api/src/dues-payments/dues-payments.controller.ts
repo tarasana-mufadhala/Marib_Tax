@@ -7,7 +7,14 @@ import {
   ParseUUIDPipe,
   HttpCode,
   Inject,
+  UnprocessableEntityException,
 } from '@nestjs/common';
+import {
+  assessDueSchema,
+  correctDueSchema,
+  uploadReceiptSchema,
+  confirmPaymentSchema,
+} from '@marib-tax/contracts';
 import { RequirePermission } from '../authz/authorization.decorators.js';
 import { DuesPaymentsService } from './dues-payments.service.js';
 import { CURRENT_ACTOR } from '../authn/authentication.contracts.js';
@@ -31,26 +38,22 @@ export class DuesPaymentsController {
   @RequirePermission('due.register')
   assess(
     @Body()
-    body: {
-      serviceRequestId?: string | null;
-      balaghId?: string | null;
-      amount: number;
-      currencyCode: string;
-      basisTypeCode: string;
-      documentReference?: string | null;
-      attachmentId?: string | null;
-    },
+    body: unknown,
   ): Promise<StoredPaymentDue> {
+    const parsed = assessDueSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new UnprocessableEntityException();
+    }
     const actorId = this.actors.requireActorId();
     return this.service.assessDue(
       {
-        serviceRequestId: body.serviceRequestId ?? null,
-        balaghId: body.balaghId ?? null,
-        amount: body.amount,
-        currencyCode: body.currencyCode,
-        basisTypeCode: body.basisTypeCode,
-        documentReference: body.documentReference ?? null,
-        attachmentId: body.attachmentId ?? null,
+        serviceRequestId: parsed.data.serviceRequestId,
+        balaghId: parsed.data.balaghId,
+        amount: parsed.data.amount,
+        currencyCode: parsed.data.currencyCode,
+        basisTypeCode: parsed.data.basisTypeCode,
+        documentReference: parsed.data.documentReference ?? null,
+        attachmentId: parsed.data.attachmentId,
       },
       actorId,
     );
@@ -62,17 +65,18 @@ export class DuesPaymentsController {
   correct(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body()
-    body: {
-      newAmount: number;
-      reason: string;
-    },
+    body: unknown,
   ): Promise<StoredPaymentDue> {
+    const parsed = correctDueSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new UnprocessableEntityException();
+    }
     const actorId = this.actors.requireActorId();
     return this.service.correctDue(
       id,
       {
-        newAmount: body.newAmount,
-        reason: body.reason,
+        newAmount: parsed.data.newAmount,
+        reason: parsed.data.reason,
       },
       actorId,
     );
@@ -84,19 +88,19 @@ export class DuesPaymentsController {
   uploadReceipt(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body()
-    body: {
-      amount: number;
-      currencyCode: string;
-      replacesReceiptId?: string | null;
-    },
+    body: unknown,
   ): Promise<StoredPaymentReceipt> {
+    const parsed = uploadReceiptSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new UnprocessableEntityException();
+    }
     const actorId = this.actors.requireActorId();
     return this.service.uploadReceipt(
       id,
       {
-        amount: body.amount,
-        currencyCode: body.currencyCode,
-        replacesReceiptId: body.replacesReceiptId ?? null,
+        amount: parsed.data.amount,
+        currencyCode: parsed.data.currencyCode,
+        replacesReceiptId: parsed.data.replacesReceiptId,
       },
       actorId,
     );
@@ -108,15 +112,17 @@ export class DuesPaymentsController {
   confirm(
     @Param('receiptId', new ParseUUIDPipe()) receiptId: string,
     @Body()
-    body: {
-      notes?: string | null;
-    },
+    body: unknown,
   ): Promise<StoredPaymentConfirmation> {
+    const parsed = confirmPaymentSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new UnprocessableEntityException();
+    }
     const actorId = this.actors.requireActorId();
     return this.service.confirmPayment(
       receiptId,
       {
-        notes: body.notes ?? null,
+        notes: parsed.data.notes ?? null,
       },
       actorId,
     );

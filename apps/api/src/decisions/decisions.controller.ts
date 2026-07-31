@@ -7,7 +7,12 @@ import {
   ParseUUIDPipe,
   HttpCode,
   Inject,
+  UnprocessableEntityException,
 } from '@nestjs/common';
+import {
+  recordDecisionSchema,
+  reviseDecisionSchema,
+} from '@marib-tax/contracts';
 import { RequirePermission } from '../authz/authorization.decorators.js';
 import { DecisionsService } from './decisions.service.js';
 import { CURRENT_ACTOR } from '../authn/authentication.contracts.js';
@@ -30,20 +35,19 @@ export class DecisionsController {
   @RequirePermission('request.decision.final')
   record(
     @Body()
-    body: {
-      serviceRequestId: string;
-      outcomeCode: string;
-      decisionSummary?: string | null;
-      basisText?: string | null;
-    },
+    body: unknown,
   ): Promise<StoredDecisionRecord> {
+    const parsed = recordDecisionSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new UnprocessableEntityException();
+    }
     const actorId = this.actors.requireActorId();
     return this.service.recordDecision(
       {
-        serviceRequestId: body.serviceRequestId,
-        outcomeCode: body.outcomeCode,
-        decisionSummary: body.decisionSummary ?? null,
-        basisText: body.basisText ?? null,
+        serviceRequestId: parsed.data.serviceRequestId,
+        outcomeCode: parsed.data.outcomeCode,
+        decisionSummary: parsed.data.decisionSummary ?? null,
+        basisText: parsed.data.basisText ?? null,
       },
       actorId,
       actorId,
@@ -56,19 +60,19 @@ export class DecisionsController {
   revise(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body()
-    body: {
-      revisedOutcomeCode?: string | null;
-      revisionSummary?: string | null;
-      reason: string;
-    },
+    body: unknown,
   ): Promise<StoredDecisionRevision> {
+    const parsed = reviseDecisionSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new UnprocessableEntityException();
+    }
     const actorId = this.actors.requireActorId();
     return this.service.reviseDecision(
       id,
       {
-        revisedOutcomeCode: body.revisedOutcomeCode ?? null,
-        revisionSummary: body.revisionSummary ?? null,
-        reason: body.reason,
+        revisedOutcomeCode: parsed.data.revisedOutcomeCode ?? null,
+        revisionSummary: parsed.data.revisionSummary ?? null,
+        reason: parsed.data.reason,
       },
       actorId,
     );

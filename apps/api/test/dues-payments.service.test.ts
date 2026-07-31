@@ -25,7 +25,7 @@ describe('DuesPaymentsService', () => {
       actorId,
     );
 
-    expect(due.statusCode).toBe('pending');
+    expect(due.statusCode).toBe('PENDING');
     expect(due.amount).toBe(150000.0);
     expect(due.currencyCode).toBe('YER');
 
@@ -63,7 +63,7 @@ describe('DuesPaymentsService', () => {
     );
 
     expect(receipt1.amount).toBe(80000.0);
-    expect(receipt1.acceptanceStatusCode).toBe('pending');
+    expect(receipt1.acceptanceStatusCode).toBe('UPLOADED');
 
     // Confirm receipt 1
     const conf1 = await service.confirmPayment(
@@ -73,8 +73,8 @@ describe('DuesPaymentsService', () => {
     );
     expect(conf1.paymentReceiptId).toBe(receipt1.id);
 
-    // Status of due should still be pending since total paid is 80k < 140k
-    expect((await service.getDue(due.id)).statusCode).toBe('pending');
+    // Status of due should still be PENDING since total paid is 80k < 140k
+    expect((await service.getDue(due.id)).statusCode).toBe('PENDING');
 
     // Upload receipt 2 (covers the remainder)
     const receipt2 = await service.uploadReceipt(
@@ -95,6 +95,6 @@ describe('DuesPaymentsService', () => {
     );
 
     // Due should now be fully paid!
-    expect((await service.getDue(due.id)).statusCode).toBe('paid');
+    expect((await service.getDue(due.id)).statusCode).toBe('PAID');
   });
 });

@@ -59,11 +59,11 @@
 
 ## 2) مهام Kimi — الأساس البياني والعقود
 
-### K0 — المرحلة صفر: إغلاق Batch 10 إنتاجياً 🔴
+### K0 — المرحلة صفر: إغلاق Batch 10 إنتاجياً ✅ (مُغلق 2026-07-31)
 - المرجع: `execution_plan.md` § المرحلة صفر
 - الخطوات: `db push` واحد → فحص migration history → Verifier → التأكد من الجداول السبعة → فحص RLS/القيود/الفهارس → Dry-run → توثيق Post-Apply → PR → CI → Merge → إغلاق `PROD-DB-10`
-- **موقوف على:** موافقة المستخدم الإنتاجية المستقلة (لا `db push` دونها)
-- معيار الإغلاق: `BATCH_10 = APPLIED / VERIFIED PASS`
+- **الحالة:** `BATCH_10 = APPLIED / VERIFIED PASS` (2026-07-31، تقرير Post-Apply في `docs/post-apply/`). المتبقي شكلياً: PR لتوثيق Post-Apply (يتطلب موافقة المستخدم على git)
+- **ملاحظة:** Batch 11 أيضاً `APPLIED / VERIFIED PASS` في نفس الجلسة (انظر سجل التنسيق)
 
 ### K1 — Batches 11–15 (Migrations)
 بالترتيب، وكل Batch بدورة الحوكمة الكاملة (Design Gate → Source → Local Validation → PR → CI → Review → Merge → Preflight → موافقة → Apply واحد → Verifier → Post-Apply → Closure):
@@ -226,4 +226,7 @@ Antigravity:   A0 ── A1 ── A2 ── A3 ── [ينتظر K1-14 + K3] �
 | 2026-07-31 | Antigravity | A6 (Operational) | مكتمل: FieldVisitsModule (جدولة النزول، المفتشين، تسجيل النتائج، الإلغاء)، DecisionsModule (قرارات المدير المسببة، سجل المراجعات)، DuesAndPaymentsModule (ربط المستحقات المالية بالمعاملات والبلاغات، رفع الإيصالات وتأكيد السداد وتحديث الحالة). الاختبارات E2E والـ Unit خضراء بالكامل (85/85) والـ Typecheck نظيف. |
 | 2026-07-31 | Antigravity | A7 (Notifications) | مكتمل جزئياً: NotificationsModule (إدارة قوالب التنبيهات، إعدادات القنوات، محاولات الإرسال، حالات القراءة والتأكيد، طابور Outbox للـ Worker). اختبارات الفحص خضراء بالكامل (86/86) والـ Typecheck نظيف. المتبقي: Worker وجدولة الإرسال التلقائي بعد استلام بقية الـ Migrations. |
 | 2026-07-31 | Kimi | K4 / K3-2 / B12 | تم إغلاق وتوثيق القرارات المالية المفتوحة (العملة YER، منع الدفع الزائد، صلاحية FINANCE_OFFICER، إجبارية الـ parent، الـ Enums المحددة). جاري إكمال عقود K3-2 وبدء Batch 12 للاستيراد. |
+| 2026-07-31 | Antigravity | A2 (Core Modules) + A6 (Dues General Orders) | مكتمل: بناء وحدات البيانات الأساسية الخمس (Taxpayers, ActivitiesAndBranches, Properties, LegalEntities, ServicesAndVersions) كاملة مع مستودعات Kysely والتحقق على مستودع الجداول من Batches 04-05. ربط WorkflowService بالتحقق من وجود المكلف والنشاط. حسم قرارات الأمر العام بالكامل (الدفع الزائد PAYMENT_OVERPAYMENT_NOT_ALLOWED، صلاحية FINANCE_OFFICER، شرط الأب CK-T02، عملة YER مع التقريب خانتين PHY-35، الحالات الكبيرة DM-09). اختبارات E2E خضراء (91/91). |
+| 2026-07-31 | Kimi | K0 — Batch 10 Apply | **APPLIED / VERIFIED PASS** على المشروع المرتبط `sjmtiwzddztxfrncwkpx` بموجب توجيه القائد: dry-run أظهر Batch 10 فقط → `db push --linked` واحد → Verifier `final_status=PASS` (7 جداول `dues` فارغة، RLS مفعّل، 0 grants/policies، XOR parent سليم، REL-069 إلزامي غير فريد). PROD-DB-10 مغلق. التقرير: `docs/post-apply/MARIB-TAX-DB-FOUNDATION-BATCH-10-PRODUCTION-APPLY-POST-VERIFY-01-REPORT.md`. |
+| 2026-07-31 | Kimi | K1 — Batch 11 Apply | **APPLIED / VERIFIED PASS** على نفس المشروع: dry-run أظهر Batch 11 فقط → `db push --linked` واحد → Verifier `final_status=PASS` (7 جداول `notify` فارغة، idempotency scoped-unique، فهارس outbox/inbox موجودة، 0 grants/policies/secrets). PROD-DB-11 مغلق. ملاحظة: `device_tokens`/`notification_preferences` ما زالت خارج الكتالوج ولم تُنشأ — Change Request معلّق. التقرير: `docs/post-apply/MARIB-TAX-DB-FOUNDATION-BATCH-11-PRODUCTION-APPLY-POST-VERIFY-01-REPORT.md`. الطريق مفتوح الآن لـ AG-1 لاختبار DuesAndPayments/Notifications على قاعدة حقيقية. التالي: Batch 12 (imports) — المصدر محلي غير مُودع، دورة الحوكمة لم تبدأ، والتطبيق مغلق حتى موافقة مستقلة. |
 

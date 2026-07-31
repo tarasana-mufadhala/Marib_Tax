@@ -13,12 +13,24 @@ import {
   type WorkflowRepository,
   type StoredWorkflowRequest,
 } from './workflow.repository.js';
+import {
+  TAXPAYER_REPOSITORY,
+  type TaxpayerRepository,
+} from '../taxpayers/taxpayer.repository.js';
+import {
+  ACTIVITIES_BRANCHES_REPOSITORY,
+  type ActivitiesBranchesRepository,
+} from '../activities-branches/activities-branches.repository.js';
 
 @Injectable()
 export class WorkflowService {
   constructor(
     @Inject(WORKFLOW_REPOSITORY)
     private readonly repository: WorkflowRepository,
+    @Inject(TAXPAYER_REPOSITORY)
+    private readonly taxpayerRepository: TaxpayerRepository,
+    @Inject(ACTIVITIES_BRANCHES_REPOSITORY)
+    private readonly activitiesRepository: ActivitiesBranchesRepository,
   ) {}
 
   async transition(
@@ -80,6 +92,30 @@ export class WorkflowService {
         throw new ForbiddenException(
           `Missing required permission "${requiredPermission}" to perform transition.`,
         );
+      }
+    }
+
+    // Validate taxpayer and activity existence when submitting or reopening
+    if (targetState === 'submitted' || targetState === 'reopened') {
+      const taxpayer = await this.taxpayerRepository.findById(
+        request.taxpayerId,
+      );
+      if (!taxpayer) {
+        throw new NotFoundException(
+          `Taxpayer associated with the request (ID: ${request.taxpayerId}) does not exist in the registry.`,
+        );
+      }
+
+      const activityId = (payload.commercialActivityId ||
+        payload.activityId) as string | undefined;
+      if (activityId) {
+        const activity =
+          await this.activitiesRepository.findActivityById(activityId);
+        if (!activity) {
+          throw new NotFoundException(
+            `Commercial activity (ID: ${activityId}) associated with the request does not exist.`,
+          );
+        }
       }
     }
 

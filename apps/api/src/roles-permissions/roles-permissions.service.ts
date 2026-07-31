@@ -198,6 +198,10 @@ export class RolesPermissionsService {
     return this.repository.findRoleByCode(code);
   }
 
+  async findRoleById(id: string): Promise<StoredRole | null> {
+    return this.repository.findRoleById(id);
+  }
+
   async listActiveAssignmentsForStaff(
     staffProfileId: string,
   ): Promise<StoredStaffRoleAssignment[]> {

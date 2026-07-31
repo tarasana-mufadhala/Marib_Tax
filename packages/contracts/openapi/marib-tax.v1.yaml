@@ -33,6 +33,10 @@ tags:
     description: Owned commercial-activity, branch, address, and property read models (mock/in-memory only).
   - name: Platform health
     description: Isolated non-data-bearing operational probes.
+  - name: Authentication
+    description: Phone-and-OTP registration, login, and session contracts. No email is used anywhere.
+  - name: Taxpayer own data
+    description: Authenticated taxpayer's own requests, balaghs, and notifications. Own-data only.
 paths:
   /api/v1/masterdata/me:
     get:
@@ -225,6 +229,661 @@ paths:
               },
           }
         '409': { $ref: '#/components/responses/Conflict' }
+  /api/v1/auth/otp/request:
+    post:
+      operationId: requestOtp
+      summary: Request a one-time sign-in code for a phone number
+      description: >-
+        PublicEndpoint. Always returns 202 whether or not the phone is
+        registered, so user enumeration is impossible. The OTP is delivered
+        out-of-band and never appears in any API response.
+      tags: [Authentication]
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/CorrelationId' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OtpRequestBody' }
+      responses:
+        '202':
+          description: >-
+            Request accepted. The response never reveals whether the phone
+            exists and never contains the OTP.
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/v1/auth/otp/verify:
+    post:
+      operationId: verifyOtp
+      summary: Verify a one-time code and issue a short-lived verification token
+      description: >-
+        PublicEndpoint. On success returns a short-lived, single-purpose
+        verification token usable once for registration. Failure returns 422
+        with a generic message that does not reveal whether the phone exists.
+      tags: [Authentication]
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/CorrelationId' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OtpVerifyBody' }
+      responses:
+        '200':
+          description: OTP verified; short-lived verification token issued.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OtpVerifyResponse' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/v1/auth/register:
+    post:
+      operationId: registerTaxpayer
+      summary: Register a taxpayer account with a verified phone
+      description: >-
+        PublicEndpoint. Consumes the OTP verification token and returns a
+        token pair on success. Validation failures return 422 with per-field
+        details. The access token is short-lived.
+      tags: [Authentication]
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/CorrelationId' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegisterBody' }
+      responses:
+        '201':
+          description: Account registered; token pair issued.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenPairResponse' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/v1/auth/login:
+    post:
+      operationId: loginWithPhonePassword
+      summary: Log in with phone and password
+      description: >-
+        PublicEndpoint. Failure always returns the same generic 401 message;
+        the response never distinguishes an unknown phone from a wrong
+        password. After 5 failed attempts the account is temporarily locked
+        for 15 minutes and the endpoint returns 429. The access token is
+        short-lived.
+      tags: [Authentication]
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/CorrelationId' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginBody' }
+      responses:
+        '200':
+          description: Login succeeded; token pair issued.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenPairResponse' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/v1/auth/password/reset/request:
+    post:
+      operationId: requestPasswordReset
+      summary: Request a password reset code for a phone number
+      description: >-
+        PublicEndpoint. Always returns 202 whether or not the phone is
+        registered, so user enumeration is impossible. The reset code is
+        delivered out-of-band and never appears in any API response.
+      tags: [Authentication]
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/CorrelationId' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PasswordResetRequestBody' }
+      responses:
+        '202':
+          description: >-
+            Request accepted. The response never reveals whether the phone
+            exists and never contains the reset code.
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/v1/auth/password/reset/confirm:
+    post:
+      operationId: confirmPasswordReset
+      summary: Confirm a password reset with the out-of-band code
+      description: >-
+        PublicEndpoint. Sets the new password when the reset code is valid.
+        Failure returns 422 with a generic message that does not reveal
+        whether the phone exists.
+      tags: [Authentication]
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/CorrelationId' }
+        - { $ref: '#/components/parameters/IdempotencyKey' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PasswordResetConfirmBody' }
+      responses:
+        '200':
+          description: Password updated. Previous sessions are invalidated.
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/v1/auth/refresh:
+    post:
+      operationId: refreshTokenPair
+      summary: Exchange a refresh token for a new token pair
+      description: >-
+        Session endpoint authenticated by the refresh-token credential in the
+        request body instead of a bearer header. Rotates the token pair; the
+        access token is short-lived and the previous refresh token is
+        invalidated.
+      tags: [Authentication]
+      security: []
+      parameters:
+        - { $ref: '#/components/parameters/CorrelationId' }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RefreshBody' }
+      responses:
+        '200':
+          description: Token pair rotated.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TokenPairResponse' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '429': { $ref: '#/components/responses/TooManyRequests' }
+  /api/v1/auth/logout:
+    post:
+      operationId: logoutCurrentSession
+      summary: Invalidate the current session and device
+      description: >-
+        Session endpoint authenticated with the bearer access token. It is
+        session management, not a permission-guarded business operation, so
+        it declares no x-permission. Invalidates the current session/device
+        and its refresh token.
+      tags: [Authentication]
+      parameters:
+        - { $ref: '#/components/parameters/CorrelationId' }
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '204':
+          description: Session invalidated. No response body.
+  /api/v1/me/requests:
+    get:
+      operationId: listOwnRequests
+      summary: List the authenticated taxpayer's own requests
+      description: Own-data only; the server scopes every item to the authenticated actor.
+      tags: [Taxpayer own data]
+      x-permission: request.read
+      x-authorization-predicates: [OWNERSHIP]
+      parameters:
+        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/CorrelationId' }
+        - name: status
+          in: query
+          description: Optional status filter applied within the actor's own requests only.
+          schema: { type: string, minLength: 1 }
+        - name: serviceType
+          in: query
+          description: Optional service type filter.
+          schema: { type: string, minLength: 1 }
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '200':
+          description: Cursor-paginated page of the actor's own request summaries.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RequestListPage' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /api/v1/me/balaghs:
+    get:
+      operationId: listOwnBalaghs
+      summary: List the authenticated taxpayer's own balaghs
+      description: Own-data only; the server scopes every item to the authenticated actor.
+      tags: [Taxpayer own data]
+      x-permission: balagh.read
+      x-authorization-predicates: [OWNERSHIP]
+      parameters:
+        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/CorrelationId' }
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '200':
+          description: Cursor-paginated page of the actor's own balagh summaries.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BalaghListPage' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /api/v1/me/notifications:
+    get:
+      operationId: listOwnNotifications
+      summary: List the authenticated taxpayer's own notification inbox
+      description: Own-data only; the server scopes every item to the authenticated actor.
+      tags: [Taxpayer own data]
+      x-permission: notification.read
+      x-authorization-predicates: [OWNERSHIP]
+      parameters:
+        - { $ref: '#/components/parameters/Cursor' }
+        - { $ref: '#/components/parameters/Limit' }
+        - { $ref: '#/components/parameters/CorrelationId' }
+        - name: readStatus
+          in: query
+          description: Optional read-status filter.
+          schema: { type: string, enum: [unread, read] }
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '200':
+          description: Cursor-paginated inbox page with an optional unread count.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationInboxPage' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /api/v1/me/notifications/{id}/read:
+    parameters: [{ $ref: '#/components/parameters/NotificationId' }]
+    post:
+      operationId: markOwnNotificationRead
+      summary: Mark an own notification as read
+      description: >-
+        Idempotent; returns 200 with the current read state whenever the
+        notification is owned by the actor, whether or not it was already
+        read.
+      tags: [Taxpayer own data]
+      x-permission: notification.mark_read
+      x-authorization-predicates: [OWNERSHIP]
+      parameters:
+        - { $ref: '#/components/parameters/CorrelationId' }
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '200':
+          description: Notification is read.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/NotificationReadResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/balaghs:
+    post:
+      operationId: createBalaghDraft
+      summary: Create a new balagh draft (FR-201 to FR-206)
+      tags: [Balaghs]
+      x-permission: balagh.create
+      x-authorization-predicates: [OWNERSHIP]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateBalaghDraft' }
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '201':
+          description: Draft created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BalaghResponse' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /api/v1/balaghs/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { $ref: '#/components/schemas/Uuid' }
+    get:
+      operationId: getBalagh
+      summary: Read a balagh
+      tags: [Balaghs]
+      x-permission: balagh.read
+      x-authorization-predicates: [OWNERSHIP]
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '200':
+          description: Balagh details
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BalaghResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      operationId: editBalaghDraft
+      summary: Update a balagh draft
+      tags: [Balaghs]
+      x-permission: balagh.draft.edit
+      x-authorization-predicates: [OWNERSHIP, RESOURCE_STATE]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EditBalaghDraft' }
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '200':
+          description: Draft updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BalaghResponse' }
+        '409': { $ref: '#/components/responses/Conflict' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+    delete:
+      operationId: deleteBalaghDraft
+      summary: Delete a balagh draft
+      tags: [Balaghs]
+      x-permission: balagh.draft.delete
+      x-authorization-predicates: [OWNERSHIP, RESOURCE_STATE]
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '204':
+          description: Draft deleted
+        '409': { $ref: '#/components/responses/Conflict' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/balaghs/{id}/submit:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { $ref: '#/components/schemas/Uuid' }
+    post:
+      operationId: submitBalaghDraft
+      summary: Submit a balagh draft
+      tags: [Balaghs]
+      x-permission: balagh.submit
+      x-authorization-predicates: [OWNERSHIP, RESOURCE_STATE]
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '200':
+          description: Draft submitted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BalaghResponse' }
+        '409': { $ref: '#/components/responses/Conflict' }
+  /api/v1/visits:
+    post:
+      operationId: scheduleFieldVisit
+      summary: Schedule a new field visit
+      tags: [Field visits]
+      x-permission: field_visit.schedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ScheduleFieldVisitInput' }
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '201':
+          description: Visit scheduled
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FieldVisitResponse' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /api/v1/visits/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { $ref: '#/components/schemas/Uuid' }
+    get:
+      operationId: getFieldVisit
+      summary: Get details of a field visit
+      tags: [Field visits]
+      x-permission: request.review
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '200':
+          description: Visit details
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FieldVisitResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/visits/{id}/results:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { $ref: '#/components/schemas/Uuid' }
+    post:
+      operationId: recordFieldVisitResult
+      summary: Record results of a field visit
+      tags: [Field visits]
+      x-permission: field_visit.result.record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecordFieldVisitResultInput' }
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '201':
+          description: Result recorded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FieldVisitResultResponse' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /api/v1/visits/{id}/cancel:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { $ref: '#/components/schemas/Uuid' }
+    post:
+      operationId: cancelFieldVisit
+      summary: Cancel a scheduled field visit
+      tags: [Field visits]
+      x-permission: field_visit.schedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CancelFieldVisitInput' }
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '200':
+          description: Visit cancelled
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FieldVisitResponse' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /api/v1/decisions:
+    post:
+      operationId: recordDecision
+      summary: Record a decision for a service request
+      tags: [Decisions]
+      x-permission: request.decision.final
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RecordDecisionInput' }
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '201':
+          description: Decision recorded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DecisionResponse' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /api/v1/decisions/{id}/revisions:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { $ref: '#/components/schemas/Uuid' }
+    post:
+      operationId: reviseDecision
+      summary: Revise an existing decision
+      tags: [Decisions]
+      x-permission: request.decision.final
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ReviseDecisionInput' }
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '201':
+          description: Decision revised
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DecisionRevisionResponse' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /api/v1/decisions/requests/{requestId}:
+    parameters:
+      - name: requestId
+        in: path
+        required: true
+        schema: { $ref: '#/components/schemas/Uuid' }
+    get:
+      operationId: getDecisionForRequest
+      summary: Get decision for a service request
+      tags: [Decisions]
+      x-permission: request.review
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '200':
+          description: Decision details
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DecisionResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/dues:
+    post:
+      operationId: assessDue
+      summary: Assess a new payment due
+      tags: [Dues and payments]
+      x-permission: due.register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AssessDueInput' }
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '201':
+          description: Due assessed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentDueResponse' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /api/v1/dues/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { $ref: '#/components/schemas/Uuid' }
+    get:
+      operationId: getDue
+      summary: Get details of a payment due
+      tags: [Dues and payments]
+      x-permission: request.read
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '200':
+          description: Due details
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentDueResponse' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /api/v1/dues/{id}/corrections:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { $ref: '#/components/schemas/Uuid' }
+    post:
+      operationId: correctDue
+      summary: Correct a payment due
+      tags: [Dues and payments]
+      x-permission: due.correct
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CorrectDueInput' }
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '201':
+          description: Due corrected
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentDueResponse' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /api/v1/dues/{id}/receipts:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema: { $ref: '#/components/schemas/Uuid' }
+    post:
+      operationId: uploadReceipt
+      summary: Upload a payment receipt
+      tags: [Dues and payments]
+      x-permission: payment.receipt.upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UploadReceiptInput' }
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '201':
+          description: Receipt uploaded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentReceiptResponse' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
+  /api/v1/dues/receipts/{receiptId}/confirm:
+    parameters:
+      - name: receiptId
+        in: path
+        required: true
+        schema: { $ref: '#/components/schemas/Uuid' }
+    post:
+      operationId: confirmPayment
+      summary: Confirm a payment receipt
+      tags: [Dues and payments]
+      x-permission: payment.confirm
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ConfirmPaymentInput' }
+      responses:
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '201':
+          description: Payment confirmed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentConfirmationResponse' }
+        '422': { $ref: '#/components/responses/ValidationFailed' }
   /health:
     get:
       operationId: getHealth
@@ -547,6 +1206,395 @@ components:
         pageSize: { type: integer, minimum: 1, maximum: 100 }
         totalItems: { type: integer, minimum: 0 }
         totalPages: { type: integer, minimum: 0 }
+    CursorPageInfo:
+      type: object
+      additionalProperties: false
+      required: [nextCursor, hasMore, pageSize]
+      properties:
+        nextCursor:
+          {
+            type: [string, 'null'],
+            minLength: 1,
+            description: Opaque cursor for the next page; null when hasMore is false.,
+          }
+        hasMore: { type: boolean }
+        pageSize: { type: integer, minimum: 1, maximum: 100 }
+    PhoneNumber:
+      type: string
+      pattern: '^\+[1-9][0-9]{7,14}$'
+      description: >-
+        E.164 international format. The phone number is the only sign-in
+        identifier; no email field exists anywhere in the authentication
+        contracts.
+    OtpCode:
+      type: string
+      pattern: '^[0-9]{4,6}$'
+      description: Four to six digits, delivered out-of-band only.
+    Password:
+      type: string
+      minLength: 10
+      maxLength: 128
+      description: >-
+        At least 10 characters including one lowercase letter, one uppercase
+        letter, one digit, and one symbol.
+    OtpRequestBody:
+      type: object
+      additionalProperties: false
+      required: [phone]
+      properties:
+        phone: { $ref: '#/components/schemas/PhoneNumber' }
+    OtpVerifyBody:
+      type: object
+      additionalProperties: false
+      required: [phone, code]
+      properties:
+        phone: { $ref: '#/components/schemas/PhoneNumber' }
+        code: { $ref: '#/components/schemas/OtpCode' }
+    OtpVerifyResponse:
+      type: object
+      additionalProperties: false
+      required: [verificationToken]
+      properties:
+        verificationToken:
+          type: string
+          minLength: 1
+          description: >-
+            Short-lived single-purpose token proving OTP verification,
+            consumed once by registration. Never the OTP itself.
+    RegisterBody:
+      type: object
+      additionalProperties: false
+      required: [phone, password, otpVerificationToken, fullName]
+      properties:
+        phone: { $ref: '#/components/schemas/PhoneNumber' }
+        password: { $ref: '#/components/schemas/Password' }
+        otpVerificationToken: { type: string, minLength: 1 }
+        fullName: { type: string, minLength: 1, maxLength: 200 }
+    LoginBody:
+      type: object
+      additionalProperties: false
+      required: [phone, password]
+      properties:
+        phone: { $ref: '#/components/schemas/PhoneNumber' }
+        password:
+          type: string
+          minLength: 1
+          description: >-
+            Password policy is not re-validated at login; any non-empty value
+            is checked against the stored credential.
+    TokenPairResponse:
+      type: object
+      additionalProperties: false
+      required: [accessToken, refreshToken, expiresInSeconds, tokenType]
+      properties:
+        accessToken:
+          type: string
+          minLength: 1
+          description: Short-lived bearer access token.
+        refreshToken: { type: string, minLength: 1 }
+        expiresInSeconds: { type: integer, minimum: 1 }
+        tokenType: { type: string, const: Bearer }
+    PasswordResetRequestBody:
+      type: object
+      additionalProperties: false
+      required: [phone]
+      properties:
+        phone: { $ref: '#/components/schemas/PhoneNumber' }
+    PasswordResetConfirmBody:
+      type: object
+      additionalProperties: false
+      required: [phone, code, newPassword]
+      properties:
+        phone: { $ref: '#/components/schemas/PhoneNumber' }
+        code: { $ref: '#/components/schemas/OtpCode' }
+        newPassword: { $ref: '#/components/schemas/Password' }
+    RefreshBody:
+      type: object
+      additionalProperties: false
+      required: [refreshToken]
+      properties:
+        refreshToken: { type: string, minLength: 1 }
+    RequestListItem:
+      type: object
+      additionalProperties: false
+      required: [id, publicRef, serviceType, status, createdAt, submittedAt]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        publicRef: { type: [string, 'null'], minLength: 1 }
+        serviceType: { type: string, minLength: 1 }
+        status: { type: string, minLength: 1 }
+        createdAt: { type: string, format: date-time }
+        submittedAt: { type: [string, 'null'], format: date-time }
+    BalaghListItem:
+      type: object
+      additionalProperties: false
+      required: [id, publicRef, balaghType, status, createdAt, submittedAt]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        publicRef: { type: [string, 'null'], minLength: 1 }
+        balaghType: { type: string, minLength: 1 }
+        status: { type: string, minLength: 1 }
+        createdAt: { type: string, format: date-time }
+        submittedAt: { type: [string, 'null'], format: date-time }
+    NotificationListItem:
+      type: object
+      additionalProperties: false
+      required: [id, type, readStatus, createdAt]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        type: { type: string, minLength: 1 }
+        readStatus: { type: string, enum: [unread, read] }
+        createdAt: { type: string, format: date-time }
+    RequestListPage:
+      type: object
+      additionalProperties: false
+      required: [items, pageInfo]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/RequestListItem' }
+        pageInfo: { $ref: '#/components/schemas/CursorPageInfo' }
+    BalaghListPage:
+      type: object
+      additionalProperties: false
+      required: [items, pageInfo]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/BalaghListItem' }
+        pageInfo: { $ref: '#/components/schemas/CursorPageInfo' }
+    NotificationInboxPage:
+      type: object
+      additionalProperties: false
+      required: [items, pageInfo]
+      properties:
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/NotificationListItem' }
+        pageInfo: { $ref: '#/components/schemas/CursorPageInfo' }
+        unreadCount: { type: integer, minimum: 0 }
+    NotificationReadResponse:
+      type: object
+      additionalProperties: false
+      required: [id, readAt]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        readAt: { type: string, format: date-time }
+    CreateBalaghDraft:
+      type: object
+      additionalProperties: false
+      required: [balaghType, schemaVersion, formData]
+      properties:
+        balaghType: { type: string, enum: [FR-201, FR-202, FR-203, FR-204, FR-205, FR-206] }
+        schemaVersion: { type: string, const: 1.0.0 }
+        formData: { type: object }
+    EditBalaghDraft:
+      type: object
+      additionalProperties: false
+      required: [formData]
+      properties:
+        formData: { type: object }
+    BalaghResponse:
+      type: object
+      additionalProperties: false
+      required: [id, publicRef, status, balaghType, schemaVersion, formData, ownerActorId, createdAt, updatedAt]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        publicRef: { type: [string, 'null'] }
+        status: { type: string, enum: [draft, submitted, under_review, field_visit_scheduled, field_visit_completed, approved, rejected, archived] }
+        balaghType: { type: string, enum: [FR-201, FR-202, FR-203, FR-204, FR-205, FR-206] }
+        schemaVersion: { type: string, const: 1.0.0 }
+        formData: { type: object }
+        ownerActorId: { $ref: '#/components/schemas/Uuid' }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        submittedAt: { type: [string, 'null'], format: date-time }
+    ScheduleFieldVisitInput:
+      type: object
+      additionalProperties: false
+      required: [scheduledStartAt, scheduledEndAt, teamMemberStaffIds]
+      properties:
+        serviceRequestId: { type: [string, 'null'], format: uuid }
+        balaghId: { type: [string, 'null'], format: uuid }
+        scheduledStartAt: { type: string, format: date-time }
+        scheduledEndAt: { type: string, format: date-time }
+        teamMemberStaffIds:
+          type: array
+          items: { $ref: '#/components/schemas/Uuid' }
+          minItems: 1
+        locationSnapshot: { type: [string, 'null'] }
+        notes: { type: [string, 'null'] }
+    RecordFieldVisitResultInput:
+      type: object
+      additionalProperties: false
+      required: [resultSummary, actualStartedAt, actualEndedAt]
+      properties:
+        resultSummary: { type: string, minLength: 1 }
+        resultCode: { type: [string, 'null'] }
+        actualStartedAt: { type: string, format: date-time }
+        actualEndedAt: { type: string, format: date-time }
+    CancelFieldVisitInput:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 1 }
+    FieldVisitResponse:
+      type: object
+      additionalProperties: false
+      required: [id, publicRef, serviceRequestId, balaghId, statusCode, actualStartedAt, actualEndedAt, locationSnapshot, notes, cancellationReason, createdByStaffProfileId, createdByProfileId, updatedAt, updatedByProfileId, archivedAt]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        publicRef: { type: [string, 'null'] }
+        serviceRequestId: { type: [string, 'null'], format: uuid }
+        balaghId: { type: [string, 'null'], format: uuid }
+        statusCode: { type: string, enum: [scheduled, completed, cancelled] }
+        actualStartedAt: { type: [string, 'null'], format: date-time }
+        actualEndedAt: { type: [string, 'null'], format: date-time }
+        locationSnapshot: { type: [string, 'null'] }
+        notes: { type: [string, 'null'] }
+        cancellationReason: { type: [string, 'null'] }
+        createdByStaffProfileId: { $ref: '#/components/schemas/Uuid' }
+        createdByProfileId: { type: [string, 'null'], format: uuid }
+        updatedAt: { type: [string, 'null'], format: date-time }
+        updatedByProfileId: { type: [string, 'null'], format: uuid }
+        archivedAt: { type: [string, 'null'], format: date-time }
+    FieldVisitResultResponse:
+      type: object
+      additionalProperties: false
+      required: [id, fieldVisitId, resultSummary, resultCode, recordedAt, recordedByStaffProfileId]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        fieldVisitId: { $ref: '#/components/schemas/Uuid' }
+        resultSummary: { type: [string, 'null'] }
+        resultCode: { type: [string, 'null'] }
+        recordedAt: { type: string, format: date-time }
+        recordedByStaffProfileId: { $ref: '#/components/schemas/Uuid' }
+    RecordDecisionInput:
+      type: object
+      additionalProperties: false
+      required: [serviceRequestId, outcomeCode]
+      properties:
+        serviceRequestId: { $ref: '#/components/schemas/Uuid' }
+        outcomeCode: { type: string, enum: [approved, rejected] }
+        decisionSummary: { type: [string, 'null'] }
+        basisText: { type: [string, 'null'] }
+    ReviseDecisionInput:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        revisedOutcomeCode: { type: [string, 'null'], enum: [approved, rejected] }
+        revisionSummary: { type: [string, 'null'] }
+        reason: { type: string, minLength: 1 }
+    DecisionResponse:
+      type: object
+      additionalProperties: false
+      required: [id, serviceRequestId, outcomeCode, decisionSummary, basisText, decidedAt, decidedByStaffProfileId, createdAt, createdByProfileId, correlationId]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        serviceRequestId: { $ref: '#/components/schemas/Uuid' }
+        outcomeCode: { type: string, enum: [approved, rejected] }
+        decisionSummary: { type: [string, 'null'] }
+        basisText: { type: [string, 'null'] }
+        decidedAt: { type: string, format: date-time }
+        decidedByStaffProfileId: { $ref: '#/components/schemas/Uuid' }
+        createdAt: { type: string, format: date-time }
+        createdByProfileId: { type: [string, 'null'], format: uuid }
+        correlationId: { type: [string, 'null'] }
+    DecisionRevisionResponse:
+      type: object
+      additionalProperties: false
+      required: [id, decisionRecordId, revisionNumber, revisedOutcomeCode, revisionSummary, revisedAt, revisedByStaffProfileId, reason, correlationId, createdAt]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        decisionRecordId: { $ref: '#/components/schemas/Uuid' }
+        revisionNumber: { type: integer, minimum: 1 }
+        revisedOutcomeCode: { type: [string, 'null'], enum: [approved, rejected] }
+        revisionSummary: { type: [string, 'null'] }
+        revisedAt: { type: string, format: date-time }
+        revisedByStaffProfileId: { $ref: '#/components/schemas/Uuid' }
+        reason: { type: [string, 'null'] }
+        correlationId: { type: [string, 'null'] }
+        createdAt: { type: string, format: date-time }
+    AssessDueInput:
+      type: object
+      additionalProperties: false
+      required: [amount, currencyCode, basisTypeCode]
+      properties:
+        serviceRequestId: { type: [string, 'null'], format: uuid }
+        balaghId: { type: [string, 'null'], format: uuid }
+        amount: { type: number, minimum: 0 }
+        currencyCode: { type: string, const: YER }
+        basisTypeCode: { type: string, minLength: 1 }
+        documentReference: { type: [string, 'null'] }
+        attachmentId: { type: [string, 'null'], format: uuid }
+    CorrectDueInput:
+      type: object
+      additionalProperties: false
+      required: [newAmount, reason]
+      properties:
+        newAmount: { type: number, minimum: 0 }
+        reason: { type: string, minLength: 1 }
+    UploadReceiptInput:
+      type: object
+      additionalProperties: false
+      required: [amount, currencyCode]
+      properties:
+        amount: { type: number, minimum: 0 }
+        currencyCode: { type: string, const: YER }
+        replacesReceiptId: { type: [string, 'null'], format: uuid }
+    ConfirmPaymentInput:
+      type: object
+      additionalProperties: false
+      properties:
+        notes: { type: [string, 'null'] }
+    PaymentDueResponse:
+      type: object
+      additionalProperties: false
+      required: [id, publicRef, serviceRequestId, balaghId, amount, currencyCode, statusCode, assessedAt, createdAt, createdByProfileId, updatedAt, updatedByProfileId, correlationId, archivedAt]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        publicRef: { type: [string, 'null'] }
+        serviceRequestId: { type: [string, 'null'], format: uuid }
+        balaghId: { type: [string, 'null'], format: uuid }
+        amount: { type: number }
+        currencyCode: { type: string, const: YER }
+        statusCode: { type: string, enum: [PENDING, PAID, CANCELLED, CORRECTED] }
+        assessedAt: { type: [string, 'null'], format: date-time }
+        createdAt: { type: string, format: date-time }
+        createdByProfileId: { type: [string, 'null'], format: uuid }
+        updatedAt: { type: [string, 'null'], format: date-time }
+        updatedByProfileId: { type: [string, 'null'], format: uuid }
+        correlationId: { type: [string, 'null'] }
+        archivedAt: { type: [string, 'null'], format: date-time }
+    PaymentReceiptResponse:
+      type: object
+      additionalProperties: false
+      required: [id, publicRef, paymentDueId, amount, currencyCode, acceptanceStatusCode, replacesReceiptId, createdAt, createdByProfileId, updatedAt, updatedByProfileId]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        publicRef: { type: [string, 'null'] }
+        paymentDueId: { $ref: '#/components/schemas/Uuid' }
+        amount: { type: number }
+        currencyCode: { type: string, const: YER }
+        acceptanceStatusCode: { type: string, enum: [UPLOADED, VERIFIED, REJECTED, REPLACED] }
+        receivedAt: { type: [string, 'null'], format: date-time }
+        replacesReceiptId: { type: [string, 'null'], format: uuid }
+        createdAt: { type: string, format: date-time }
+        createdByProfileId: { type: [string, 'null'], format: uuid }
+        updatedAt: { type: [string, 'null'], format: date-time }
+        updatedByProfileId: { type: [string, 'null'], format: uuid }
+    PaymentConfirmationResponse:
+      type: object
+      additionalProperties: false
+      required: [id, paymentReceiptId, confirmedAt, confirmedByStaffProfileId, notes]
+      properties:
+        id: { $ref: '#/components/schemas/Uuid' }
+        paymentReceiptId: { $ref: '#/components/schemas/Uuid' }
+        confirmedAt: { type: string, format: date-time }
+        confirmedByStaffProfileId: { $ref: '#/components/schemas/Uuid' }
+        notes: { type: [string, 'null'] }
   parameters:
     RequestId:
       name: id
@@ -571,6 +1619,36 @@ components:
       name: pageSize
       in: query
       schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    Cursor:
+      name: cursor
+      in: query
+      description: Opaque cursor from a previous pageInfo.nextCursor. Omit for the first page.
+      schema: { type: string, minLength: 1 }
+    Limit:
+      name: limit
+      in: query
+      description: Maximum number of items per page.
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      description: >-
+        Optional client-supplied key that makes a retried mutation safe to
+        replay; the server returns the first stored result for a repeated key.
+      schema: { type: string, minLength: 1, maxLength: 128 }
+    CorrelationId:
+      name: X-Correlation-ID
+      in: header
+      description: >-
+        Optional client-supplied correlation identifier. The server echoes it
+        back when present and always returns a traceId inside the error
+        envelope.
+      schema: { type: string, minLength: 1, maxLength: 128 }
+    NotificationId:
+      name: id
+      in: path
+      required: true
+      schema: { $ref: '#/components/schemas/Uuid' }
   responses:
     Unauthenticated:
       description: A valid server-verifiable bearer identity is required.

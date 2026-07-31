@@ -4,9 +4,11 @@ import { DuesPaymentsController } from './dues-payments.controller.js';
 import { DUES_PAYMENTS_REPOSITORY } from './dues-payments.repository.js';
 import { DuesPaymentsMemoryRepository } from './dues-payments.memory-repository.js';
 import { AuthnModule } from '../authn/authn.module.js';
+import { UsersModule } from '../users/users.module.js';
+import { RolesPermissionsModule } from '../roles-permissions/roles-permissions.module.js';
 
 @Module({
-  imports: [AuthnModule],
+  imports: [AuthnModule, UsersModule, RolesPermissionsModule],
   controllers: [DuesPaymentsController],
   providers: [
     DuesPaymentsService,
