@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
-import 'features/attachments/presentation/attachments_page.dart';
+import 'screens/home_screen.dart';
 
 void main() => runApp(const MaribTaxApp());
 
@@ -20,7 +20,8 @@ class MaribTaxApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF176B52)),
         useMaterial3: true,
       ),
-      home: const AttachmentsPage(),
+      home: const HomeScreen(),
     );
   }
 }
+
