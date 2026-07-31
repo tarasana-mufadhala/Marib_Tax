@@ -3,3 +3,5 @@ extends:
 rules:
   no-server-example.com: off
   no-unused-components: off
+  no-ambiguous-paths: off
+
