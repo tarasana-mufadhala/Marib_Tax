@@ -203,18 +203,18 @@ CREATE INDEX idx_notification_read_states_recipient
   ON notify.notification_read_states (recipient_profile_id, read_status_code, notification_message_id);
 
 -- imports
-CREATE INDEX idx_import_batches_status 
-  ON imports.import_batches (status_code, created_at DESC);
+-- CREATE INDEX idx_import_batches_status 
+--   ON imports.import_batches (status_code, created_at DESC);
 
-CREATE INDEX idx_import_errors_result 
-  ON imports.import_errors (import_row_result_id);
+-- CREATE INDEX idx_import_errors_result 
+--   ON imports.import_errors (import_row_result_id);
 
-CREATE INDEX idx_import_row_results_batch_outcome 
-  ON imports.import_row_results (import_batch_id, outcome_code);
+-- CREATE INDEX idx_import_row_results_batch_outcome 
+--   ON imports.import_row_results (import_batch_id, outcome_code);
 
-CREATE UNIQUE INDEX idx_import_batches_idempotency 
-  ON imports.import_batches (idempotency_key) 
-  WHERE idempotency_key IS NOT NULL;
+-- CREATE UNIQUE INDEX idx_import_batches_idempotency 
+--   ON imports.import_batches (idempotency_key) 
+--   WHERE idempotency_key IS NOT NULL;
 
 -- content
 CREATE INDEX idx_content_pages_status_updated 
@@ -225,14 +225,14 @@ CREATE INDEX idx_announcements_validity
   WHERE is_active = true;
 
 -- reporting
-CREATE INDEX idx_saved_report_filters_user 
-  ON reporting.saved_report_filters (user_profile_id, report_key) 
-  WHERE archived_at IS NULL;
+-- CREATE INDEX idx_saved_report_filters_user 
+--   ON reporting.saved_report_filters (user_profile_id, report_key) 
+--   WHERE archived_at IS NULL;
 
-CREATE INDEX idx_report_export_records_user 
-  ON reporting.report_export_records (requested_by_user_profile_id, requested_at DESC);
+-- CREATE INDEX idx_report_export_records_user 
+--   ON reporting.report_export_records (requested_by_user_profile_id, requested_at DESC);
 
-CREATE UNIQUE INDEX idx_reporting_projection_definitions_code 
-  ON reporting.reporting_projection_definitions (code);
+-- CREATE UNIQUE INDEX idx_reporting_projection_definitions_code 
+--   ON reporting.reporting_projection_definitions (code);
 
 COMMIT;

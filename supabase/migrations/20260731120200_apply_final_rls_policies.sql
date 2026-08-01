@@ -361,9 +361,19 @@ DROP POLICY IF EXISTS payment_dues_policy ON dues.payment_dues;
 CREATE POLICY payment_dues_policy ON dues.payment_dues
   FOR ALL TO authenticated
   USING (
-    taxpayer_id IN (
-      SELECT taxpayer_id FROM registry.taxpayer_account_links 
-      WHERE user_profile_id = identity.get_current_user_profile_id() AND active_state_code = 'active' AND effective_to IS NULL
+    service_request_id IN (
+      SELECT id FROM requests.service_requests
+      WHERE taxpayer_id IN (
+        SELECT taxpayer_id FROM registry.taxpayer_account_links 
+        WHERE user_profile_id = identity.get_current_user_profile_id() AND active_state_code = 'active' AND effective_to IS NULL
+      )
+    )
+    OR balagh_id IN (
+      SELECT id FROM balaghat.balaghs
+      WHERE taxpayer_id IN (
+        SELECT taxpayer_id FROM registry.taxpayer_account_links 
+        WHERE user_profile_id = identity.get_current_user_profile_id() AND active_state_code = 'active' AND effective_to IS NULL
+      )
     )
     -- Employees and Finance Officers can see dues
     OR identity.is_staff()
@@ -470,20 +480,20 @@ CREATE POLICY faqs_write_policy ON content.faqs FOR ALL TO authenticated USING (
 
 
 -- reporting
-DROP POLICY IF EXISTS saved_report_filters_policy ON reporting.saved_report_filters;
-CREATE POLICY saved_report_filters_policy ON reporting.saved_report_filters
-  FOR ALL TO authenticated
-  USING (user_profile_id = identity.get_current_user_profile_id() OR identity.is_manager());
+-- DROP POLICY IF EXISTS saved_report_filters_policy ON reporting.saved_report_filters;
+-- CREATE POLICY saved_report_filters_policy ON reporting.saved_report_filters
+--   FOR ALL TO authenticated
+--   USING (user_profile_id = identity.get_current_user_profile_id() OR identity.is_manager());
 
-DROP POLICY IF EXISTS report_export_records_policy ON reporting.report_export_records;
-CREATE POLICY report_export_records_policy ON reporting.report_export_records
-  FOR ALL TO authenticated
-  USING (requested_by_user_profile_id = identity.get_current_user_profile_id() OR identity.is_manager());
+-- DROP POLICY IF EXISTS report_export_records_policy ON reporting.report_export_records;
+-- CREATE POLICY report_export_records_policy ON reporting.report_export_records
+--   FOR ALL TO authenticated
+--   USING (requested_by_user_profile_id = identity.get_current_user_profile_id() OR identity.is_manager());
 
-DROP POLICY IF EXISTS reporting_projection_definitions_policy ON reporting.reporting_projection_definitions;
-CREATE POLICY reporting_projection_definitions_policy ON reporting.reporting_projection_definitions
-  FOR ALL TO authenticated
-  USING (identity.is_staff() OR identity.is_manager());
+-- DROP POLICY IF EXISTS reporting_projection_definitions_policy ON reporting.reporting_projection_definitions;
+-- CREATE POLICY reporting_projection_definitions_policy ON reporting.reporting_projection_definitions
+--   FOR ALL TO authenticated
+--   USING (identity.is_staff() OR identity.is_manager());
 
 
 -- audit (auditor and manager read access only)
