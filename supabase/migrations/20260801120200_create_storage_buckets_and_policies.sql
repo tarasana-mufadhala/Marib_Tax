@@ -43,13 +43,13 @@ SET
   allowed_mime_types = EXCLUDED.allowed_mime_types;
 
 -- 2. Ensure RLS is enabled on storage tables
-ALTER TABLE storage.buckets ENABLE ROW LEVEL SECURITY;
-ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE storage.buckets ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
 
 -- 3. Revoke default public privileges (REVOKE ALL) and grant specific access
-REVOKE ALL ON TABLE storage.buckets, storage.objects FROM PUBLIC, anon, authenticated, service_role;
-GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE storage.buckets, storage.objects TO authenticated;
-GRANT SELECT ON TABLE storage.buckets, storage.objects TO anon;
+-- REVOKE ALL ON TABLE storage.buckets, storage.objects FROM PUBLIC, anon, authenticated, service_role;
+-- GRANT SELECT, INSERT, UPDATE, DELETE ON TABLE storage.buckets, storage.objects TO authenticated;
+-- GRANT SELECT ON TABLE storage.buckets, storage.objects TO anon;
 
 --------------------------------------------------------------------------------
 -- 4. APPLY ROW LEVEL SECURITY POLICIES FOR STORAGE
