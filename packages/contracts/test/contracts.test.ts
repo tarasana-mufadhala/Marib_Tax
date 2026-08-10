@@ -37,6 +37,9 @@ describe('common API contracts', () => {
     expect(permissionCodes).toContain('request.submit');
     expect(permissionCodes).toContain('report.view');
     expect(permissionCodes).toContain('report.export');
+    expect(permissionCodes).toContain('user.manage');
+    expect(permissionCodes).toContain('role.read');
+    expect(permissionCodes).toContain('masterdata.manage');
     expect(permissionCodes).not.toContain('request.*');
     expect(permissionCodes).not.toContain('request.decision.revise');
     expect(isPermissionCode('request.submit')).toBe(true);

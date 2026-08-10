@@ -37,6 +37,11 @@ export class TaxpayerService {
     return this.repository.search(query.trim());
   }
 
+  async listTaxpayers(limit = 50): Promise<StoredTaxpayer[]> {
+    const safeLimit = Math.min(Math.max(limit, 1), 200);
+    return this.repository.list(safeLimit);
+  }
+
   async getAccountLink(
     userProfileId: string,
   ): Promise<StoredTaxpayerAccountLink | null> {

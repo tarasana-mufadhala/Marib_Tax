@@ -40,6 +40,13 @@ export class TaxpayerController {
     return this.service.createTaxpayer(body, actorId);
   }
 
+  @Get()
+  @HttpCode(200)
+  @RequirePermission('taxpayer.profile.read')
+  list(@Query('limit') limit?: string): Promise<StoredTaxpayer[]> {
+    return this.service.listTaxpayers(limit ? Number(limit) : undefined);
+  }
+
   @Get('search')
   @HttpCode(200)
   @RequirePermission('taxpayer.profile.read')

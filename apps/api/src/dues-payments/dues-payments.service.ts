@@ -24,7 +24,7 @@ import { RolesPermissionsService } from '../roles-permissions/roles-permissions.
 export class DuesPaymentsService {
   constructor(
     @Inject(DUES_PAYMENTS_REPOSITORY)
-    private readonly repository: DuesPaymentsRepository,
+    protected readonly repository: DuesPaymentsRepository,
     @Optional()
     private readonly usersService?: UsersService,
     @Optional()
@@ -222,23 +222,6 @@ export class DuesPaymentsService {
     // Currency and Rounding (PHY-35)
     const roundedAmount = Math.round(input.amount * 100) / 100;
 
-    // Overpayment check
-    const receipts = await this.repository.listReceiptsForDue(dueId);
-    const activeReceipts = receipts.filter(
-      (r) =>
-        r.id !== input.replacesReceiptId &&
-        ['UPLOADED', 'VERIFIED', 'PENDING', 'APPROVED'].includes(
-          r.acceptanceStatusCode.toUpperCase(),
-        ),
-    );
-
-    const cumulativeAmount =
-      activeReceipts.reduce((sum, r) => sum + r.amount, 0) + roundedAmount;
-
-    if (cumulativeAmount > due.amount) {
-      throw new BadRequestException('PAYMENT_OVERPAYMENT_NOT_ALLOWED');
-    }
-
     const receipt: StoredPaymentReceipt = {
       id: randomUUID(),
       publicRef: `RCP-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
@@ -306,6 +289,21 @@ export class DuesPaymentsService {
         statusCode: 'PAID',
         updatedAt: new Date(),
       });
+    }
+
+    // Record credit balance / surplus logic if any
+    if (totalPaid > due.amount) {
+      const surplus = totalPaid - due.amount;
+      const creditCorrection = {
+        id: randomUUID(),
+        paymentDueId: due.id,
+        correctionType: 'overpayment_credit',
+        amount: Math.round(surplus * 100) / 100,
+        currencyCode: 'YER',
+        notes: `رصيد دائن ناتج عن دفع زائد بمبلغ ${surplus} ريال يمني للطلب/البلاغ.`,
+        createdAt: new Date(),
+      };
+      await this.repository.createFinancialCorrection(creditCorrection);
     }
 
     // Create confirmation record

@@ -59,6 +59,16 @@ export interface StoredPaymentConfirmation {
   notes: string | null;
 }
 
+export interface StoredFinancialCorrection {
+  id: string;
+  paymentDueId: string;
+  correctionType: string;
+  amount: number;
+  currencyCode: string;
+  notes: string | null;
+  createdAt: Date;
+}
+
 export const DUES_PAYMENTS_REPOSITORY = Symbol('DUES_PAYMENTS_REPOSITORY');
 
 export interface DuesPaymentsRepository {
@@ -93,4 +103,8 @@ export interface DuesPaymentsRepository {
   createConfirmation(
     conf: StoredPaymentConfirmation,
   ): Promise<StoredPaymentConfirmation>;
+
+  createFinancialCorrection(
+    correction: StoredFinancialCorrection,
+  ): Promise<StoredFinancialCorrection>;
 }

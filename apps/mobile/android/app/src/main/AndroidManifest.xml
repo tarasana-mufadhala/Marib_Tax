@@ -1,6 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- التطبيق كله يعمل عبر الـ API؛ بلا هذا الإذن لا يصل أي نداء. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+
     <application
-        android:label="marib_tax_mobile"
+        android:label="مكتب الضرائب — مأرب"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

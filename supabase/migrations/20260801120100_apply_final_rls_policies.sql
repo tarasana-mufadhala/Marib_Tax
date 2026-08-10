@@ -89,10 +89,11 @@ AS $$
 $$;
 
 -- Returns true if the current user is the taxpayer linked to a given taxpayer_id.
+-- Returns true if the current user is the taxpayer linked to a given taxpayer_id.
 CREATE OR REPLACE FUNCTION identity.is_taxpayer_for(taxpayer_id uuid)
 RETURNS boolean
 LANGUAGE sql STABLE SECURITY DEFINER
-SET search_path = 'registry,identity'
+SET search_path = 'registry,identity,auth'
 AS $$
   SELECT EXISTS (
     SELECT 1
@@ -100,8 +101,7 @@ AS $$
     JOIN identity.user_profiles up ON up.id = tal.user_profile_id
     JOIN auth.users au ON au.id = up.auth_user_id
     WHERE tal.taxpayer_id = is_taxpayer_for.taxpayer_id
-      AND au.id = auth.uid()
-      AND tal.is_active = true
+      AND au.id = current_setting('request.jwt.claim.sub', true)::uuid
       AND (tal.effective_to IS NULL OR tal.effective_to > now())
   );
 $$;

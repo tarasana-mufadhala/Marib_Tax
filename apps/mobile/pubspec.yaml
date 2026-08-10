@@ -37,6 +37,18 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
+  # عميل HTTP للتخاطب مع الـ API
+  http: ^1.2.2
+  # لتحديد نوع المحتوى في رفع الملفات multipart
+  http_parser: ^4.1.2
+  # تخزين رمز الجلسة في Keystore/Keychain — لا SharedPreferences للأسرار
+  flutter_secure_storage: ^9.2.4
+  # إدارة الحالة
+  provider: ^6.1.2
+  # اختيار الملفات والصور للمرفقات
+  file_picker: ^11.0.3
+  image_picker: ^1.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

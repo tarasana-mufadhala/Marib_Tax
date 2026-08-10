@@ -22,6 +22,8 @@ import { AuthnModule } from './authn/authn.module.js';
 import { MasterdataModule } from './masterdata/masterdata.module.js';
 import { RegistryModule } from './registry/registry.module.js';
 import { RequestsModule } from './requests/requests.module.js';
+import { BalaghsModule } from './balaghs/balaghs.module.js';
+import { ServiceRequestsModule } from './service-requests/service-requests.module.js';
 import { WorkflowModule } from './workflow/workflow.module.js';
 import { FieldVisitsModule } from './field-visits/field-visits.module.js';
 import { DecisionsModule } from './decisions/decisions.module.js';
@@ -33,12 +35,14 @@ import { ActivitiesAndBranchesModule } from './activities-branches/activities-br
 import { PropertiesModule } from './properties/properties.module.js';
 import { LegalEntitiesModule } from './legal-entities/legal-entities.module.js';
 import { ServicesAndVersionsModule } from './services-versions/services-versions.module.js';
+import { AdminModule } from './admin/admin.module.js';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       cache: true,
       isGlobal: true,
+      envFilePath: ['../../.env', '.env', '.env.local'],
       validate: validateEnvironment,
     }),
     UsersModule,
@@ -49,6 +53,8 @@ import { ServicesAndVersionsModule } from './services-versions/services-versions
     MasterdataModule,
     RegistryModule,
     RequestsModule,
+    BalaghsModule,
+    ServiceRequestsModule,
     WorkflowModule,
     FieldVisitsModule,
     DecisionsModule,
@@ -60,6 +66,7 @@ import { ServicesAndVersionsModule } from './services-versions/services-versions
     PropertiesModule,
     LegalEntitiesModule,
     ServicesAndVersionsModule,
+    AdminModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: ApiExceptionFilter },

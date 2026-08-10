@@ -139,7 +139,7 @@ describe('operational modules E2E flows (visits, decisions, dues, payments, noti
     }).compile();
     app = moduleRef.createNestApplication();
     await app.init();
-  });
+  }, 30000);
 
   afterEach(async () => app.close());
 

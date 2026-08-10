@@ -49,6 +49,15 @@ export class AuthnController {
     return this.authnService.login(phoneNumber, password);
   }
 
+  @Post('login/email')
+  @HttpCode(200)
+  loginWithEmail(
+    @Body('email') email: string,
+    @Body('password') password: string,
+  ): Promise<{ accessToken: string; userProfileId: string }> {
+    return this.authnService.loginWithEmail(email, password);
+  }
+
   @Post('password/reset/request')
   @HttpCode(200)
   requestReset(

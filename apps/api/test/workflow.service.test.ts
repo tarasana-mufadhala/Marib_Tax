@@ -32,6 +32,9 @@ describe('WorkflowService', () => {
       search(): Promise<StoredTaxpayer[]> {
         return Promise.resolve([]);
       },
+      list(): Promise<StoredTaxpayer[]> {
+        return Promise.resolve([]);
+      },
       findActiveLinkByProfileId(): Promise<StoredTaxpayerAccountLink | null> {
         return Promise.resolve(null);
       },

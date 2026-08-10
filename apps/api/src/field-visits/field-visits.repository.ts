@@ -48,6 +48,7 @@ export const FIELD_VISITS_REPOSITORY = Symbol('FIELD_VISITS_REPOSITORY');
 
 export interface FieldVisitsRepository {
   findVisitById(id: string): Promise<StoredFieldVisit | null>;
+  listVisits(limit: number): Promise<StoredFieldVisit[]>;
   createVisit(visit: StoredFieldVisit): Promise<StoredFieldVisit>;
   updateVisit(
     id: string,

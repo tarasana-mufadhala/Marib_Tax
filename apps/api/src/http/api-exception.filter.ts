@@ -11,6 +11,8 @@ import type { Request, Response } from 'express';
 
 import type { ApiErrorEnvelope } from '@marib-tax/contracts';
 
+import { DomainException } from './domain-exception.js';
+
 const errorByStatus: Readonly<
   Record<number, { code: string; message: string }>
 > = {
@@ -56,15 +58,25 @@ export class ApiExceptionFilter implements ExceptionFilter {
     const response = context.getResponse<Response>();
     const status =
       exception instanceof HttpException ? exception.getStatus() : 500;
-    const safeError = errorByStatus[status] ?? {
-      code: 'INTERNAL_ERROR',
-      message: 'An unexpected error occurred.',
-    };
     const requestedTraceId = request.header('x-request-id');
     const traceId = isSafeTraceId(requestedTraceId)
       ? requestedTraceId
       : randomUUID();
-    const envelope: ApiErrorEnvelope = { error: { ...safeError, traceId } };
+
+    // الرسائل العامة هي الافتراض حتى لا تتسرب تفاصيل داخلية. الاستثناء
+    // الوحيد هو DomainException: رسالته مكتوبة عمداً ليقرأها المستخدم.
+    const envelope: ApiErrorEnvelope =
+      exception instanceof DomainException
+        ? { error: { ...exception.payload, traceId } }
+        : {
+            error: {
+              ...(errorByStatus[status] ?? {
+                code: 'INTERNAL_ERROR',
+                message: 'An unexpected error occurred.',
+              }),
+              traceId,
+            },
+          };
 
     response.setHeader('x-request-id', traceId);
     response.status(status).json(envelope);

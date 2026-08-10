@@ -9,7 +9,11 @@ export interface ApiFieldError {
 export interface ApiErrorBody {
   code: string;
   message: string;
-  details?: ApiFieldError[];
+  /**
+   * أخطاء حقول، أو بيانات مبنيّة يحتاجها العميل ليتصرف — مثل
+   * `{ missingDocuments: [{ code, label }] }` عند رفض تقديم طلب.
+   */
+  details?: ApiFieldError[] | Record<string, unknown>;
   traceId: string;
 }
 
@@ -92,6 +96,13 @@ export const permissionCodes = [
   'report.view',
   'report.export',
   'audit.sensitive.view',
+  'user.read',
+  'user.manage',
+  'role.read',
+  'role.assign',
+  'masterdata.manage',
+  'attachment.read',
+  'attachment.upload',
 ] as const;
 
 export type PermissionCode = (typeof permissionCodes)[number];
@@ -119,6 +130,7 @@ export * from './attachments.js';
 export * from './auth.js';
 export * from './own-data.js';
 export * from './balaghs.js';
+export * from './service-requests.js';
 export * from './field-visits.js';
 export * from './decisions.js';
 export * from './dues.js';

@@ -1,9 +1,11 @@
 packages:
-  - 'apps/web'
-  - 'apps/api'
-  - 'apps/worker'
-  - 'packages/*'
+  - "apps/*"
+  - "packages/*"
 
 allowBuilds:
-  sharp: true
-  unrs-resolver: true
+  sharp: false
+  unrs-resolver: false
+
+onlyBuiltDependencies:
+  - sharp
+  - unrs-resolver

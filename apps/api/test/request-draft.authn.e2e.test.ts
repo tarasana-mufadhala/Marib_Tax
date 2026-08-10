@@ -30,6 +30,7 @@ import {
   type StoredRequestDraft,
 } from '../src/requests/request-draft.repository.js';
 import { RequestDraftService } from '../src/requests/request-draft.service.js';
+import { RequestsQueryService } from '../src/requests/requests-query.service.js';
 
 class MemoryRepository implements RequestDraftRepository {
   values = new Map<string, StoredRequestDraft>();
@@ -79,6 +80,8 @@ describe('isolated authenticated request-draft runtime', () => {
       providers: [
         RequestDraftService,
         { provide: REQUEST_DRAFT_REPOSITORY, useClass: MemoryRepository },
+        // هذه المجموعة تختبر التفويض لا الاستعلامات: نكتفي ببديل لا يمس القاعدة.
+        { provide: RequestsQueryService, useValue: { listRequests: async () => [] } },
         { provide: CURRENT_ACTOR, useClass: CurrentActorService },
         { provide: ACTOR_CONTEXT_RESOLVER, useValue: actors },
         {

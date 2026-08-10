@@ -12,6 +12,10 @@
     "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
     "strict": true,
-    "target": "ES2023"
+    "target": "ES2023",
+    "paths": {
+      "@marib-tax/contracts": ["packages/contracts/dist/index.d.ts"],
+      "@marib-tax/web-ui": ["packages/web-ui/src/index.ts"]
+    }
   }
 }

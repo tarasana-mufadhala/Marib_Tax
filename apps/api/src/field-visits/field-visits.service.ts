@@ -184,4 +184,9 @@ export class FieldVisitsService {
     }
     return visit;
   }
+
+  async listVisits(limit = 50): Promise<StoredFieldVisit[]> {
+    const safeLimit = Math.min(Math.max(limit, 1), 200);
+    return this.repository.listVisits(safeLimit);
+  }
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { DuesPaymentsMemoryRepository } from '../src/dues-payments/dues-payments.memory-repository.js';
 import { DuesPaymentsService } from '../src/dues-payments/dues-payments.service.js';
+import type { StoredFinancialCorrection } from '../src/dues-payments/dues-payments.repository.js';
 
 describe('DuesPaymentsService', () => {
   it('manages dues assessment, corrections, receipt uploading, and approvals leading to due payment status updates', async () => {
@@ -96,5 +97,57 @@ describe('DuesPaymentsService', () => {
 
     // Due should now be fully paid!
     expect((await service.getDue(due.id)).statusCode).toBe('PAID');
+  });
+
+  it('allows overpayment and records credit balance surplus as financial corrections', async () => {
+    const repository = new DuesPaymentsMemoryRepository();
+    const service = new DuesPaymentsService(repository);
+
+    const serviceRequestId = randomUUID();
+    const actorId = randomUUID();
+
+    const due = await service.assessDue(
+      {
+        serviceRequestId,
+        balaghId: null,
+        amount: 10000.0,
+        currencyCode: 'YER',
+        basisTypeCode: 'tax_assessment',
+        documentReference: 'DOC-OVERPAY-1',
+        attachmentId: null,
+      },
+      actorId,
+    );
+
+    // Upload receipt with overpaid amount: 12,000 YER (for a 10,000 YER due)
+    const receipt = await service.uploadReceipt(
+      due.id,
+      {
+        amount: 12000.0,
+        currencyCode: 'YER',
+        replacesReceiptId: null,
+      },
+      actorId,
+    );
+
+    expect(receipt.amount).toBe(12000.0);
+
+    // Confirm receipt (which triggers PAID state and a financial correction for the 2,000 YER surplus)
+    await service.confirmPayment(
+      receipt.id,
+      { notes: 'دفع زائد مقبول' },
+      actorId,
+    );
+
+    expect((await service.getDue(due.id)).statusCode).toBe('PAID');
+
+    // Verify financial correction is created in repository
+    const allCorrections = (repository as unknown as { financialCorrections: StoredFinancialCorrection[] }).financialCorrections;
+    expect(allCorrections).toHaveLength(1);
+    const corr = allCorrections[0];
+    expect(corr).toBeDefined();
+    expect(corr?.paymentDueId).toBe(due.id);
+    expect(corr?.amount).toBe(2000.0);
+    expect(corr?.correctionType).toBe('overpayment_credit');
   });
 });

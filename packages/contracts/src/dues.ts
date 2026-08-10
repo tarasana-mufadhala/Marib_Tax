@@ -115,6 +115,8 @@ export const paymentConfirmationResponseSchema = z
     confirmedAt: z.string().datetime(),
     confirmedByStaffProfileId: z.uuid(),
     notes: z.string().trim().min(1).nullable(),
+    overpayment_amount: z.union([z.string(), z.number()]).optional(),
+    credit_balance_after: z.string().optional(),
   })
   .strict();
 
