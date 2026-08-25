@@ -65,8 +65,9 @@ export class AuthnService {
     if (/^7\d{8}$/.test(cleaned)) return `+967${cleaned}`;
     if (/^9677\d{8}$/.test(cleaned)) return `+${cleaned}`;
     if (/^009677\d{8}$/.test(cleaned)) return `+${cleaned.slice(2)}`;
-    throw new BadRequestException(
-      'Phone number must be in valid E.164 format.',
+    throw DomainException.badRequest(
+      'أدخل رقم هاتف يمني صحيح يبدأ بـ 7 ويتكوّن من 9 أرقام',
+      'INVALID_PHONE_NUMBER',
     );
   }
 
@@ -98,7 +99,12 @@ export class AuthnService {
       }
       const data = (await res.json()) as { users?: GoTrueUser[] } | GoTrueUser[];
       const users = Array.isArray(data) ? data : (data.users ?? []);
-      const found = users.find((u) => u.phone === phoneNumber);
+      // GoTrue يخزّن الهاتف بلا علامة + بينما نبحث بصيغة E.164، فلا تتطابق
+      // المقارنة النصية المباشرة أبداً: كانت استعادة كلمة المرور تقول
+      // «لا يوجد حساب» لأرقام مسجَّلة، والتسجيل يمضي على رقم موجود ثم يفشل
+      // متأخراً. نوحّد الصيغتين قبل المقارنة.
+      const wanted = digitsOf(phoneNumber);
+      const found = users.find((u) => digitsOf(u.phone) === wanted);
       if (found) return found;
       if (users.length < 50) return null;
     }
@@ -121,7 +127,10 @@ export class AuthnService {
       }),
     });
     if (res.status === 422) {
-      throw new ConflictException('Phone number is already registered.');
+      throw DomainException.conflict(
+        'هذا الرقم مسجَّل مسبقاً',
+        'PHONE_ALREADY_REGISTERED',
+      );
     }
     if (!res.ok) {
       const errText = await res.text();
@@ -159,7 +168,10 @@ export class AuthnService {
     const phone = this.normalizePhoneNumber(phoneNumber);
     const existing = await this.findAuthUserByPhone(phone);
     if (existing) {
-      throw new ConflictException('Phone number is already registered.');
+      throw DomainException.conflict(
+        'هذا الرقم مسجَّل مسبقاً. استعمل «تسجيل الدخول» أو «نسيت كلمة المرور»',
+        'PHONE_ALREADY_REGISTERED',
+      );
     }
     return this.otpService.requestOtp(phone);
   }
@@ -171,7 +183,10 @@ export class AuthnService {
     const phone = this.normalizePhoneNumber(phoneNumber);
     const verified = await this.otpService.verifyOtp(phone, code);
     if (!verified) {
-      throw new BadRequestException('Invalid or expired OTP code.');
+      throw DomainException.badRequest(
+        'رمز التحقق غير صحيح أو انتهت صلاحيته. اطلب رمزاً جديداً',
+        'INVALID_OTP_CODE',
+      );
     }
     return {
       verificationToken: Buffer.from(`verified:${phone}`).toString('base64'),
@@ -189,12 +204,16 @@ export class AuthnService {
       'utf-8',
     );
     if (decodedToken !== `verified:${phone}`) {
-      throw new BadRequestException('Invalid verification token.');
+      throw DomainException.badRequest(
+        'انتهت صلاحية التحقق من الرقم. ابدأ التسجيل من جديد',
+        'INVALID_VERIFICATION_TOKEN',
+      );
     }
 
     if (!this.securityService.validatePasswordStrength(password)) {
-      throw new BadRequestException(
-        'Password must be at least 8 characters long and contain uppercase, lowercase, digits, and special characters.',
+      throw DomainException.badRequest(
+        'كلمة المرور يجب ألا تقل عن 8 خانات وتحتوي على حرف كبير وحرف صغير ورقم ورمز خاص',
+        'WEAK_PASSWORD',
       );
     }
 
@@ -404,7 +423,10 @@ export class AuthnService {
     const phone = this.normalizePhoneNumber(phoneNumber);
     const existing = await this.findAuthUserByPhone(phone);
     if (!existing) {
-      throw new NotFoundException('Phone number not found.');
+      throw DomainException.notFound(
+        'لا يوجد حساب مسجَّل بهذا الرقم',
+        'PHONE_NOT_REGISTERED',
+      );
     }
     return this.otpService.requestOtp(phone);
   }
@@ -422,7 +444,10 @@ export class AuthnService {
 
     const authUser = await this.findAuthUserByPhone(phone);
     if (!authUser) {
-      throw new NotFoundException('Phone number not found.');
+      throw DomainException.notFound(
+        'لا يوجد حساب مسجَّل بهذا الرقم',
+        'PHONE_NOT_REGISTERED',
+      );
     }
 
     if (!this.securityService.validatePasswordStrength(newPassword)) {
@@ -436,4 +461,9 @@ export class AuthnService {
 
     return { success: true };
   }
+}
+
+/** أرقام الهاتف فقط، لتوحيد صيغة E.164 مع ما يخزّنه GoTrue بلا علامة +. */
+function digitsOf(phone: string | undefined): string {
+  return (phone ?? '').replace(/\D/g, '');
 }

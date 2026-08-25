@@ -260,10 +260,13 @@ export default function HomePage() {
               <span className="truncate">الجمهورية اليمنية • مصلحة الضرائب بمحافظة مأرب</span>
             </div>
 
-            <h1 className="text-2xl sm:text-4xl lg:text-5xl xl:text-6xl font-black font-display leading-[1.2] text-white tracking-tight">
-              بوابة الخدمات الرقمية <br />
-              <span className="text-[var(--usr-gold)] drop-shadow-sm">والامتثال الضريبي الموحد</span>
+            <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-black font-display leading-[1.2] text-white tracking-tight">
+              بوابة الخدمات الرقمية <br className="hidden sm:inline" />{' '}
+              <span className="text-[var(--usr-gold)] drop-shadow-sm whitespace-nowrap inline-block">
+                والامتثال الضريبي الموحد
+              </span>
             </h1>
+
 
             <p className="text-sm sm:text-base lg:text-lg text-slate-200 leading-relaxed max-w-2xl font-light">
               نقدم للمكلفين في محافظة مأرب منظومة متطورة تتيح متابعة المعاملات، استخراج البطاقات والشهادات الضريبية، والاطلاع على القوانين واللوائح الرسمية بكل يسر وشفافية.

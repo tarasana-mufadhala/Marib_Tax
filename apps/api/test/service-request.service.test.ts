@@ -166,6 +166,17 @@ describe('ServiceRequestService — إتاحة الخدمات', () => {
     expect((await service.catalogFor(OWNER)).map((s) => s.code)).not.toContain('FR-102');
   });
 
+  it('الرقم الضريبي يُقاس بجهة اتصال رسمية لا بالمرجع الداخلي', async () => {
+    // كل مكلف يُعطى `taxpayers.public_ref` عند تسجيله. لو قيس عليه امتلاك
+    // الرقم الضريبي لظهر أن الجميع يملكونه، فتُحجب FR-102 عمّن وُجدت لهم.
+    const { repository, service } = build();
+
+    repository.taxNumber = false; // لا جهة اتصال من نوع tax_number
+    const available = (await service.catalogFor(OWNER)).map((s) => s.code);
+    expect(available).toContain('FR-102');
+    await expect(service.create(OWNER, FR102)).resolves.toBeDefined();
+  });
+
   it('إنشاء FR-102 يُرفض على الخادم لمن يملك رقماً ضريبياً', async () => {
     const { repository, service } = build();
     repository.taxNumber = true;

@@ -9,11 +9,14 @@ import '../features/auth/presentation/auth_controller.dart';
 import '../features/auth/presentation/forgot_password_page.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/auth/presentation/register_details_page.dart';
+import '../features/auth/presentation/request_credentials_page.dart';
 import '../features/auth/presentation/register_otp_page.dart';
 import '../features/auth/presentation/register_phone_page.dart';
 import '../features/auth/presentation/register_tax_number_page.dart';
 import '../features/auth/presentation/welcome_page.dart';
 import '../features/home/data/home_repository.dart';
+import '../features/balaghs/data/balagh_repository.dart';
+import '../features/content/data/content_repository.dart';
 import '../features/services/data/service_repository.dart';
 import '../features/home/presentation/home_page.dart';
 import 'theme.dart';
@@ -35,6 +38,8 @@ class _MaribTaxAppState extends State<MaribTaxApp> {
   late final AuthController _auth;
   late final HomeRepository _home;
   late final ServiceRepository _services;
+  late final ContentRepository _content;
+  late final BalaghRepository _balaghs;
 
   @override
   void initState() {
@@ -46,6 +51,8 @@ class _MaribTaxAppState extends State<MaribTaxApp> {
     );
     _home = HomeRepository(api: _api);
     _services = ServiceRepository(api: _api);
+    _content = ContentRepository(api: _api);
+    _balaghs = BalaghRepository(api: _api);
     // انتهاء الجلسة من أي نداء يُعيد التطبيق لشاشة الدخول فوراً.
     _api.onUnauthenticated = _auth.onSessionExpired;
     _auth.restoreSession();
@@ -64,6 +71,8 @@ class _MaribTaxAppState extends State<MaribTaxApp> {
         ChangeNotifierProvider<AuthController>.value(value: _auth),
         Provider<HomeRepository>.value(value: _home),
         Provider<ServiceRepository>.value(value: _services),
+        Provider<ContentRepository>.value(value: _content),
+        Provider<BalaghRepository>.value(value: _balaghs),
       ],
       child: MaterialApp(
         title: 'مكتب الضرائب بمحافظة مأرب',
@@ -80,6 +89,7 @@ class _MaribTaxAppState extends State<MaribTaxApp> {
         routes: {
           LoginPage.routeName: (_) => const LoginPage(),
           ForgotPasswordPage.routeName: (_) => const ForgotPasswordPage(),
+          RequestCredentialsPage.routeName: (_) => const RequestCredentialsPage(),
           RegisterPhonePage.routeName: (_) => const RegisterPhonePage(),
           RegisterOtpPage.routeName: (_) => const RegisterOtpPage(),
           RegisterTaxNumberPage.routeName: (_) => const RegisterTaxNumberPage(),

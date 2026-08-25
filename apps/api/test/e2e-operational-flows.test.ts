@@ -32,6 +32,11 @@ import { TAXPAYER_REPOSITORY, type TaxpayerRepository, type StoredTaxpayer, type
 import { ActivitiesBranchesController } from '../src/activities-branches/activities-branches.controller.js';
 import { ActivitiesBranchesService } from '../src/activities-branches/activities-branches.service.js';
 import {
+  ACTIVITY_OWNERSHIP_LOOKUP,
+  ActivityOwnershipService,
+  type ActivityOwnershipLookup,
+} from '../src/activities-branches/activity-ownership.service.js';
+import {
   ACTIVITIES_BRANCHES_REPOSITORY,
   type ActivitiesBranchesRepository,
   type StoredCommercialActivity,
@@ -295,6 +300,22 @@ class TaxpayerMemoryRepository implements TaxpayerRepository {
   }
 }
 
+/**
+ * فاعل هذا السيناريو موظفٌ يملك `request.review`، فتقييد الملكية يمرّ به بلا
+ * استعلام. الرمي هنا يكشف أي انحراف عن ذلك بدل أن يمرّ صامتاً.
+ */
+const OWNERSHIP_LOOKUP_STUB: ActivityOwnershipLookup = {
+  linkedTaxpayerIds: () => {
+    throw new Error('لا يُتوقع استعلام ملكية لفاعل موظف');
+  },
+  taxpayerIdOfActivity: () => {
+    throw new Error('لا يُتوقع استعلام ملكية لفاعل موظف');
+  },
+  activityIdOfBranch: () => {
+    throw new Error('لا يُتوقع استعلام ملكية لفاعل موظف');
+  },
+};
+
 class ActivitiesBranchesMemoryRepository implements ActivitiesBranchesRepository {
   private activities = new Map<string, StoredCommercialActivity>();
   private branches = new Map<string, StoredBranch>();
@@ -468,6 +489,8 @@ describe('AG-3 Backend E2E Operational Flows (FR-101, FR-102, FR-201, Overpaymen
         TaxpayerService,
         { provide: TAXPAYER_REPOSITORY, useClass: TaxpayerMemoryRepository },
         ActivitiesBranchesService,
+        ActivityOwnershipService,
+        { provide: ACTIVITY_OWNERSHIP_LOOKUP, useValue: OWNERSHIP_LOOKUP_STUB },
         { provide: ACTIVITIES_BRANCHES_REPOSITORY, useClass: ActivitiesBranchesMemoryRepository },
         PropertiesService,
         { provide: PROPERTIES_REPOSITORY, useClass: PropertiesMemoryRepository },

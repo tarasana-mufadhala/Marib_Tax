@@ -33,7 +33,9 @@ function stubGoTrue() {
       }
       const user: MockAuthUser = {
         id: `auth-${users.length + 1}`,
-        phone: body.phone,
+        // GoTrue يخزّن الهاتف بلا علامة + — نحاكي ذلك حتى تكشف الاختبارات
+        // أي اعتماد على المطابقة النصية المباشرة.
+        phone: String(body.phone).replace(/^\+/, ''),
         password: body.password,
       };
       users.push(user);
@@ -58,7 +60,10 @@ function stubGoTrue() {
     }
 
     if (method === 'POST' && url.includes('/auth/v1/token?grant_type=password')) {
-      const user = users.find((u) => u.phone === body.phone && u.password === body.password);
+      const digits = (value: string) => String(value ?? '').replace(/\D/g, '');
+      const user = users.find(
+        (u) => digits(u.phone) === digits(body.phone) && u.password === body.password,
+      );
       if (!user) {
         return new Response(JSON.stringify({ error_code: 'invalid_credentials' }), { status: 400 });
       }
@@ -297,6 +302,36 @@ describe('AuthnService & OtpService & SecurityService', () => {
     await expect(
       authnService.login('+967771234567', 'Passw0rd1'),
     ).rejects.toThrow(/غير مُفعّل/);
+  });
+
+  it('يجد الحساب رغم اختلاف صيغة الهاتف بين E.164 وما يخزّنه GoTrue', async () => {
+    stubGoTrue();
+    const usersService = new UsersService(new UsersMemoryRepository());
+    const authnService = new AuthnService(
+      usersService,
+      new SecurityService(new SecurityMemoryRepository()),
+      new OtpService(),
+      configService,
+    );
+
+    const phone = '+967773334444';
+    const otp = new OtpService();
+    await authnService.requestRegistrationOtp(phone);
+    const code = (authnService as unknown as { otpService: TestOtpService })
+      .otpService.store.get(phone)!.code;
+    const { verificationToken } = await authnService.verifyRegistrationOtp(phone, code);
+    await authnService.register(phone, verificationToken, 'StrongPassword123!', 'مكلف');
+    expect(otp).toBeDefined();
+
+    // الرقم صار مسجَّلاً: طلب تسجيل جديد يجب أن يُرفض لا أن يمضي.
+    await expect(
+      authnService.requestRegistrationOtp(phone),
+    ).rejects.toThrow(/مسجَّل مسبقاً/);
+
+    // واستعادة كلمة المرور يجب أن تجده لا أن تقول «لا يوجد حساب».
+    await expect(
+      authnService.requestPasswordResetOtp(phone),
+    ).resolves.toMatchObject({ verificationId: phone });
   });
 
   it('does not throw when no database is wired (auth events are best-effort)', async () => {

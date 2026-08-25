@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../app/theme.dart';
+import '../../../core/widgets/office_logo.dart';
 import 'login_page.dart';
 import 'register_phone_page.dart';
 
@@ -34,23 +35,7 @@ class WelcomePage extends StatelessWidget {
                     child: Column(
                       children: [
                         const Spacer(),
-                        Container(
-                          height: 96,
-                          width: 96,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          alignment: Alignment.center,
-                          child: const Text(
-                            'مـ',
-                            style: TextStyle(
-                              fontSize: 44,
-                              fontWeight: FontWeight.bold,
-                              color: AppTheme.primaryDark,
-                            ),
-                          ),
-                        ),
+                        const OfficeLogo(size: 112, padding: 10),
                         const SizedBox(height: 24),
                         const Text(
                           'مكتب الضرائب\nبمحافظة مأرب',

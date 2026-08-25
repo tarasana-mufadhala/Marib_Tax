@@ -24,6 +24,11 @@ import { TAXPAYER_REPOSITORY } from '../src/taxpayers/taxpayer.repository.js';
 import { TaxpayerKyselyRepository } from '../src/taxpayers/taxpayer.kysely-repository.js';
 import { ActivitiesBranchesController } from '../src/activities-branches/activities-branches.controller.js';
 import { ActivitiesBranchesService } from '../src/activities-branches/activities-branches.service.js';
+import {
+  ACTIVITY_OWNERSHIP_LOOKUP,
+  ActivityOwnershipKyselyLookup,
+  ActivityOwnershipService,
+} from '../src/activities-branches/activity-ownership.service.js';
 import { ACTIVITIES_BRANCHES_REPOSITORY } from '../src/activities-branches/activities-branches.repository.js';
 import { ActivitiesBranchesKyselyRepository } from '../src/activities-branches/activities-branches.kysely-repository.js';
 import { PropertiesController } from '../src/properties/properties.controller.js';
@@ -96,6 +101,11 @@ describe('A2 Core Modules E2E flows (Taxpayers, Activities, Properties, LegalEnt
           useClass: TaxpayerKyselyRepository,
         },
         ActivitiesBranchesService,
+        ActivityOwnershipService,
+        {
+          provide: ACTIVITY_OWNERSHIP_LOOKUP,
+          useClass: ActivityOwnershipKyselyLookup,
+        },
         {
           provide: ACTIVITIES_BRANCHES_REPOSITORY,
           useClass: ActivitiesBranchesKyselyRepository,

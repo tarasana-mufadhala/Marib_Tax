@@ -23,6 +23,7 @@ import { MasterdataModule } from './masterdata/masterdata.module.js';
 import { RegistryModule } from './registry/registry.module.js';
 import { RequestsModule } from './requests/requests.module.js';
 import { BalaghsModule } from './balaghs/balaghs.module.js';
+import { MessagingModule } from './messaging/messaging.module.js';
 import { ServiceRequestsModule } from './service-requests/service-requests.module.js';
 import { WorkflowModule } from './workflow/workflow.module.js';
 import { FieldVisitsModule } from './field-visits/field-visits.module.js';
@@ -54,6 +55,7 @@ import { AdminModule } from './admin/admin.module.js';
     RegistryModule,
     RequestsModule,
     BalaghsModule,
+    MessagingModule,
     ServiceRequestsModule,
     WorkflowModule,
     FieldVisitsModule,

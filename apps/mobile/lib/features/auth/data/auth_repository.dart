@@ -112,6 +112,15 @@ class AuthRepository {
     return TaxpayerProfile.fromJson(json);
   }
 
+  /// للمكلف الذي أُنشئ حسابه من استيراد بيانات المكتب ولم تصله كلمته بعد.
+  Future<void> requestImportedCredentials(YemeniPhone phone) async {
+    await _api.post(
+      '/auth/credentials/request',
+      body: {'phoneNumber': phone.e164},
+      authenticated: false,
+    );
+  }
+
   /// FR-001 بند 8: الكيانات القانونية التي أنشأها الأدمن.
   Future<List<LegalEntityOption>> legalEntities() async {
     final rows = await _api.getList('/public/legal-entities');

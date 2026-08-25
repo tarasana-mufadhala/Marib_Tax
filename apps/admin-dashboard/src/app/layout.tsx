@@ -1,23 +1,31 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { Cairo, Tajawal } from 'next/font/google';
+import { Almarai, Tajawal, Cairo } from 'next/font/google';
 import './globals.css';
 import { AdminSidebar } from '@/components/layout/AdminSidebar';
 import { AdminHeader } from '@/components/layout/AdminHeader';
 
-const cairo = Cairo({
+const almarai = Almarai({
   subsets: ['arabic'],
-  weight: ['400', '600', '700'],
-  variable: '--font-sans',
+  weight: ['300', '400', '700', '800'],
+  variable: '--font-almarai',
   display: 'swap',
   preload: false,
 });
 
 const tajawal = Tajawal({
   subsets: ['arabic'],
-  weight: ['500', '700'],
-  variable: '--font-display',
+  weight: ['400', '500', '700', '800', '900'],
+  variable: '--font-tajawal',
+  display: 'swap',
+  preload: false,
+});
+
+const cairo = Cairo({
+  subsets: ['arabic'],
+  weight: ['400', '600', '700', '800'],
+  variable: '--font-cairo',
   display: 'swap',
   preload: false,
 });
@@ -31,8 +39,8 @@ export default function RootLayout({
   const isLoginPage = pathname === '/login';
 
   return (
-    <html lang="ar" dir="rtl" className={`${cairo.variable} ${tajawal.variable}`}>
-      <body className="min-h-screen bg-[var(--usr-bg)] text-[var(--usr-text)] font-sans antialiased flex flex-col selection:bg-[var(--usr-gold)] selection:text-white">
+    <html lang="ar" dir="rtl" className={`${almarai.variable} ${tajawal.variable} ${cairo.variable}`}>
+      <body className="min-h-screen bg-[var(--usr-bg)] text-[#102333] font-sans antialiased flex flex-col selection:bg-[var(--usr-gold)] selection:text-white">
         {isLoginPage ? (
           children
         ) : (

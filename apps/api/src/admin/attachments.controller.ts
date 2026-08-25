@@ -205,9 +205,47 @@ export class AttachmentsController {
     }
   }
 
+  /**
+   * إسناد نوع الضريبة لمجموعة مستندات دفعةً واحدة.
+   *
+   * الموقع العام يعرض المستندات بنوع الضريبة (دخل/مبيعات) كما كان موقع
+   * المصلحة القديم، وهو المحور الذي يبحث به المكلف.
+   */
+  @RequirePermission('content.publish')
+  @Patch('library-documents/topics')
+  async assignLibraryTopics(
+    @Body() body: { assignments?: { id?: string; topicCode?: string }[] },
+  ) {
+    if (!this.db.isInitialized) {
+      return { error: 'قاعدة البيانات غير متاحة' };
+    }
+    const allowed = new Set(['income_tax', 'sales_tax', 'general']);
+    const assignments = (body?.assignments ?? []).filter(
+      (a) => typeof a.id === 'string' && allowed.has(a.topicCode ?? ''),
+    );
+    if (assignments.length === 0) {
+      return { error: 'لا توجد إسنادات صالحة' };
+    }
+
+    let updated = 0;
+    for (const assignment of assignments) {
+      const result = await this.db.db
+        .updateTable('content.library_documents' as any)
+        .set({ topic_code: assignment.topicCode, updated_at: new Date() } as any)
+        .where('id' as any, '=', assignment.id)
+        .executeTakeFirst()
+        .catch(() => null);
+      if (result) updated += Number(result.numUpdatedRows ?? 0);
+    }
+
+    return { success: true, updated };
+  }
+
   @RequirePermission('content.publish')
   @Post('library-documents')
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
+  // 50 ميغابايت مطابقةً لحد السلة: مستندات المصلحة الرسمية فيها مسوحات
+  // ضوئية كبيرة، وحدٌّ أدنى منها كان يستبعدها بصمت.
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 50 * 1024 * 1024 } }))
   async uploadLibraryDocument(
     @UploadedFile() file: { originalname?: string; mimetype?: string; size?: number; buffer?: Buffer },
     @Body() body: { title?: string; category?: string; version?: string },

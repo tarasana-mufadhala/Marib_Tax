@@ -23,7 +23,7 @@ const ADMIN_PHONE = process.env.SEED_ADMIN_PHONE || '+967777123456';
 // دخول الموظفين يتم بالبريد: مزود الهاتف معطّل على المشروع (phone_provider_disabled).
 const ADMIN_EMAIL = process.env.SEED_ADMIN_EMAIL || 'admin@marib-tax.gov.ye';
 const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || 'Marib@2026';
-const ADMIN_NAME = process.env.SEED_ADMIN_NAME || 'مدير المكتب';
+const ADMIN_NAME = process.env.SEED_ADMIN_NAME || 'مدير النظام';
 
 const PERMISSION_CODES = [
   'taxpayer.profile.read','taxpayer.profile.update','request.read','request.draft.create',
@@ -129,7 +129,7 @@ async function main() {
      values ($1, $2, $3, $4, true, now())
      on conflict (user_profile_id) do update set title = excluded.title
      returning id`,
-    [uuid(), userProfileId, 'ADMIN-001', 'مدير مكتب الضرائب'],
+    [uuid(), userProfileId, 'ADMIN-001', 'مدير النظام'],
   );
   const staffProfileId = sp.rows[0].id;
   console.log('staff profile:', staffProfileId);
@@ -158,8 +158,9 @@ async function main() {
   // office_manager role (system role with all permissions)
   const roleRes = await client.query(
     `insert into identity.roles (id, code, name_ar, description, is_system, is_active)
-     values ($1, 'office_manager', 'مدير المكتب', 'صلاحيات كاملة لإدارة مكتب الضرائب', true, true)
-     on conflict (code) do nothing
+     values ($1, 'office_manager', 'مدير النظام', 'صلاحيات كاملة على النظام', true, true)
+     on conflict (code) do update set name_ar = excluded.name_ar,
+                                      description = excluded.description
      returning id`,
     [uuid()],
   );

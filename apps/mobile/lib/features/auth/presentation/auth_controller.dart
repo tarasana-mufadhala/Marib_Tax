@@ -147,6 +147,16 @@ class AuthController extends ChangeNotifier {
     });
   }
 
+  /// طلب بيانات الدخول لحساب أنشأه المكتب من الاستيراد.
+  Future<bool> requestImportedCredentials(String rawPhone) async {
+    final phone = YemeniPhone.tryParse(rawPhone);
+    if (phone == null) {
+      _fail('أدخل رقم هاتف يمني صحيح يبدأ بـ 7');
+      return false;
+    }
+    return _run(() => _repository.requestImportedCredentials(phone));
+  }
+
   Future<List<LegalEntityOption>> legalEntities() => _repository.legalEntities();
 
   Future<void> logout() async {

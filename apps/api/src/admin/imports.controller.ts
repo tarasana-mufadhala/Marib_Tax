@@ -15,6 +15,7 @@ import * as XLSX from 'xlsx';
 import { RequirePermission } from '../authz/authorization.decorators.js';
 import { DatabaseService } from '../database/database.service.js';
 import { StorageService } from './storage.service.js';
+import { TaxpayerCredentialsService } from '../messaging/taxpayer-credentials.service.js';
 
 type ImportType = 'taxpayers' | 'activities' | 'dues';
 
@@ -69,6 +70,7 @@ export class ImportsController {
   constructor(
     private readonly db: DatabaseService,
     private readonly storage: StorageService,
+    private readonly credentials: TaxpayerCredentialsService,
   ) {}
 
   @RequirePermission('import.preview')
@@ -282,14 +284,26 @@ export class ImportsController {
       const importType = validRows[0]?.normalized_data?.import_type as ImportType;
       let inserted = 0;
       let skipped = 0;
+      // تُجمع هنا ليُنشأ لها حسابات **بعد** نجاح المعاملة: إنشاء الهوية
+      // نداء خارجي لا يتراجع مع تراجع المعاملة.
+      const provisioned: { taxpayerId: string; phone: string; name: string }[] = [];
 
       await this.db.db.transaction().execute(async (trx) => {
         for (const row of validRows) {
           const data = row.normalized_data ?? {};
           try {
             if (importType === 'taxpayers') {
-              const done = await this.commitTaxpayerRow(trx, data);
-              done ? inserted++ : skipped++;
+              const taxpayerId = await this.commitTaxpayerRow(trx, data);
+              if (taxpayerId !== null) {
+                inserted++;
+                provisioned.push({
+                  taxpayerId,
+                  phone: String(data.phone ?? ''),
+                  name: String(data.name ?? 'مكلف'),
+                });
+              } else {
+                skipped++;
+              }
             } else if (importType === 'activities') {
               const done = await this.commitActivityRow(trx, data);
               done ? inserted++ : skipped++;
@@ -309,9 +323,30 @@ export class ImportsController {
           .execute();
       });
 
-      await this.audit('import.approved', id, { inserted, skipped });
+      // إنشاء حسابات المكلفين المستورَدين. الفشل هنا لا يُبطل الاستيراد:
+      // بيانات المكلف مُرحَّلة، والحساب يمكن استكماله لاحقاً.
+      let accountsCreated = 0;
+      const accountIssues: string[] = [];
+      for (const entry of provisioned) {
+        const result = await this.credentials.provisionImportedTaxpayer({
+          taxpayerId: entry.taxpayerId,
+          phone: entry.phone,
+          displayName: entry.name,
+        });
+        if (result.created) accountsCreated++;
+        else if (result.reason) accountIssues.push(`${entry.name}: ${result.reason}`);
+      }
 
-      return { success: true, inserted, skipped };
+      await this.audit('import.approved', id, { inserted, skipped, accountsCreated });
+
+      return {
+        success: true,
+        inserted,
+        skipped,
+        ...(provisioned.length > 0
+          ? { accountsCreated, accountIssues: accountIssues.slice(0, 10) }
+          : {}),
+      };
     } catch (e) {
       console.error('approveImport failed:', e);
       return { error: 'تعذر اعتماد وترحيل البيانات' };
@@ -552,7 +587,11 @@ export class ImportsController {
     return validated;
   }
 
-  private async commitTaxpayerRow(trx: any, data: Record<string, any>): Promise<boolean> {
+  /** يعيد معرّف المكلف المُنشأ، أو null إن تُخطّي الصف. */
+  private async commitTaxpayerRow(
+    trx: any,
+    data: Record<string, any>,
+  ): Promise<string | null> {
     // فحص التكرار لحظة الترحيل (قد يكون سُجل بعد المعاينة)
     const values = [data.phone, data.taxNumber].filter(Boolean);
     if (values.length > 0) {
@@ -563,7 +602,7 @@ export class ImportsController {
         .where('is_active', '=', true)
         .executeTakeFirst()
         .catch(() => null);
-      if (dup) return false;
+      if (dup) return null;
     }
 
     const taxpayerId = crypto.randomUUID();
@@ -604,7 +643,7 @@ export class ImportsController {
         })
         .execute();
     }
-    return true;
+    return taxpayerId;
   }
 
   private async commitActivityRow(trx: any, data: Record<string, any>): Promise<boolean> {

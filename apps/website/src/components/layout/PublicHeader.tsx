@@ -20,6 +20,7 @@ import {
   MapPinIcon,
   ExternalLinkIcon,
 } from '@marib-tax/web-ui';
+import { OfficeLogo } from '@/components/OfficeLogo';
 
 export function PublicHeader() {
   const pathname = usePathname();
@@ -29,6 +30,10 @@ export function PublicHeader() {
     { href: '/', label: 'الرئيسية', icon: BuildingIcon },
     { href: '/about', label: 'عن المكتب', icon: ShieldCheckIcon },
     { href: '/services', label: 'الخدمات الضريبية', icon: FileTextIcon },
+    // محورا المصلحة الرئيسيان — كما كان تنظيم الموقع القديم، وهو ما يبحث
+    // به المكلف قبل أن يبحث بنوع المستند.
+    { href: '/income-tax', label: 'ضرائب الدخل', icon: ScaleIcon },
+    { href: '/sales-tax', label: 'ضريبة المبيعات', icon: ScrollTextIcon },
     { href: '/forms', label: 'النماذج والإقرارات', icon: FileTextIcon },
     { href: '/laws', label: 'القوانين واللوائح', icon: ScaleIcon },
     { href: '/decisions', label: 'القرارات والتعليمات', icon: ScrollTextIcon },
@@ -63,9 +68,11 @@ export function PublicHeader() {
       <div className="max-w-7xl mx-auto flex items-center justify-between py-2.5 sm:py-3.5 px-3 sm:px-8">
         {/* Brand / Crest Logo */}
         <Link href="/" className="flex items-center gap-2.5 sm:gap-3.5 group min-h-[44px]">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-br from-[var(--usr-primary-deeper)] via-[var(--usr-primary-dark)] to-[var(--usr-primary)] border-2 border-[var(--usr-gold)] flex items-center justify-center text-white shadow-md group-hover:scale-105 transition-transform shrink-0">
-            <ShieldCheckIcon size={24} className="text-[var(--usr-gold)]" />
-          </div>
+          <OfficeLogo
+            size={48}
+            priority
+            className="border-2 border-[var(--usr-gold)] rounded-2xl shadow-md group-hover:scale-105 transition-transform"
+          />
           <div className="usr-nav-brand-text">
             <div className="flex items-center gap-2">
               <h1 className="usr-nav-university text-sm sm:text-base lg:text-lg font-bold font-display text-[var(--usr-primary-dark)] leading-tight">

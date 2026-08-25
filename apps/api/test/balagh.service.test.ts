@@ -42,11 +42,55 @@ class MemoryBalaghRepository implements BalaghRepository {
 const OWNER = 'owner-profile-1';
 const OTHER = 'other-profile-2';
 
+const ACTIVITY_ID = '11111111-1111-4111-8111-111111111111';
+
+/** حمولة صحيحة لكل نوع — لكل نوع مخططه، ولا تُقبل حمولة نوع مكان آخر. */
+const FORM_DATA_BY_TYPE: Record<BalaghType, Record<string, unknown>> = {
+  'FR-201': {
+    activityIds: [ACTIVITY_ID],
+    stopType: 'temporary',
+    stoppedAt: '2026-01-01T00:00:00.000Z',
+    reason: 'إيقاف مؤقت للصيانة',
+    declarationConfirmed: true,
+  },
+  'FR-202': {
+    propertyType: 'محل تجاري',
+    district: 'مأرب',
+    street: 'شارع السلام',
+    tenantCount: 1,
+    ownershipDeclarationConfirmed: true,
+  },
+  'FR-203': { activityId: ACTIVITY_ID, workerCount: 1 },
+  'FR-204': {
+    activityId: ACTIVITY_ID,
+    newAddress: { district: 'مأرب', street: 'شارع الوحدة' },
+    occupancyType: 'rented',
+    startedAt: '2026-01-01T00:00:00.000Z',
+  },
+  'FR-205': {
+    propertyType: 'شقة',
+    district: 'مأرب',
+    rentalStatus: 'شاغر',
+    priorOwnerName: 'المالك السابق',
+    newOwnerName: 'المالك الجديد',
+    newOwnerPhone: '+967770000000',
+    newOwnerAddress: 'مأرب',
+    transferType: 'بيع',
+    transferDate: '2026-01-01T00:00:00.000Z',
+    relationshipCode: 'seller',
+  },
+  'FR-206': {
+    activityIds: [ACTIVITY_ID],
+    startedAt: '2026-01-01T00:00:00.000Z',
+    infoConfirmed: true,
+  },
+};
+
 function draftOf(balaghType: BalaghType): CreateBalaghDraft {
   return {
     balaghType,
     schemaVersion: '1.0.0',
-    formData: { activityId: '11111111-1111-4111-8111-111111111111', workerCount: 1 },
+    formData: FORM_DATA_BY_TYPE[balaghType],
   } as CreateBalaghDraft;
 }
 
@@ -142,6 +186,64 @@ describe('BalaghService', () => {
     expect(mine).toHaveLength(2);
     expect(mine.every((b) => b.balaghType !== 'FR-206')).toBe(true);
     expect(all).toHaveLength(3);
+  });
+
+  // ---- حالات الرفض: مطابقة الحمولة لنوع البلاغ ----
+
+  it('يرفض حمولة نوع آخر تحت نوع مُعلن', async () => {
+    const { service } = build();
+
+    // FR-206 يُعالَج داخل المكتب، وFR-201 يستوجب نزولاً ميدانياً: قبول حمولة
+    // أحدهما تحت اسم الآخر يوجّه البلاغ إلى مسار لا يخصّه.
+    await expect(
+      service.create(OWNER, {
+        balaghType: 'FR-206',
+        schemaVersion: '1.0.0',
+        formData: FORM_DATA_BY_TYPE['FR-201'],
+      } as CreateBalaghDraft),
+    ).rejects.toMatchObject({ status: 422 });
+  });
+
+  it('يرفض حمولة ناقصة الحقول الإلزامية', async () => {
+    const { service } = build();
+
+    await expect(
+      service.create(OWNER, {
+        balaghType: 'FR-203',
+        schemaVersion: '1.0.0',
+        formData: { activityId: ACTIVITY_ID },
+      } as CreateBalaghDraft),
+    ).rejects.toMatchObject({ status: 422 });
+  });
+
+  it('يرفض تعديل مسودة بحمولة نوع آخر', async () => {
+    const { service } = build();
+    const created = await service.create(OWNER, draftOf('FR-203'));
+
+    await expect(
+      service.edit(OWNER, created.id, {
+        formData: FORM_DATA_BY_TYPE['FR-202'],
+      } as never),
+    ).rejects.toMatchObject({ status: 422 });
+  });
+
+  it('يقبل تعديل المسودة بحمولة نوعها نفسه', async () => {
+    const { service } = build();
+    const created = await service.create(OWNER, draftOf('FR-203'));
+
+    const edited = await service.edit(OWNER, created.id, {
+      formData: { activityId: ACTIVITY_ID, workerCount: 7 },
+    } as never);
+
+    expect(edited.formData).toMatchObject({ workerCount: 7 });
+  });
+
+  it('ينشئ كل نوع من الأنواع الستة بحمولته الصحيحة', async () => {
+    const { service } = build();
+    for (const type of Object.keys(FORM_DATA_BY_TYPE) as BalaghType[]) {
+      const created = await service.create(OWNER, draftOf(type));
+      expect(created.balaghType).toBe(type);
+    }
   });
 });
 

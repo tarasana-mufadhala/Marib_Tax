@@ -88,7 +88,10 @@ export class PublicContentController {
   }
 
   @Get('library-documents')
-  async getLibraryDocuments(@Query('category') category?: string) {
+  async getLibraryDocuments(
+    @Query('category') category?: string,
+    @Query('topic') topic?: string,
+  ) {
     if (!this.db.isInitialized) return [];
     try {
       let query = this.db.db
@@ -101,12 +104,16 @@ export class PublicContentController {
           'file_size_bytes',
           'mime_type',
           'published_at',
+          'topic_code',
         ] as any)
         .where('status' as any, '=', 'published')
         .orderBy('published_at' as any, 'desc')
         .limit(100);
       if (category) {
         query = (query as any).where('category_code' as any, '=', category);
+      }
+      if (topic) {
+        query = (query as any).where('topic_code' as any, '=', topic);
       }
       return await query.execute();
     } catch {

@@ -3,6 +3,11 @@ import 'package:provider/provider.dart';
 
 import '../../../app/theme.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../content/presentation/contact_page.dart';
+import '../../content/presentation/content_page_view.dart';
+import '../../content/presentation/document_list_page.dart';
+import '../../balaghs/domain/balagh_forms.dart';
+import '../../balaghs/presentation/balagh_form_page.dart';
 import '../../services/presentation/services_page.dart';
 import '../data/home_repository.dart';
 import '../domain/home_models.dart';
@@ -194,7 +199,7 @@ class _BannerShell extends StatelessWidget {
 ///
 /// الطلبات تفتح كتالوج الخادم الحقيقي — لا قائمة ثابتة هنا، لأن ما يُتاح
 /// للمكلف يعتمد على حالته (FR-102 مثلاً تُخفى عمّن يملك رقماً ضريبياً).
-/// البلاغات ما زالت بطاقات معروضة تُوصَّل تالياً، ويُعلَن ذلك صراحةً.
+/// البلاغات الستة تفتح نموذجاً يُبنى من وصف حقول مطابق لمخطط الخادم.
 class _ServicesGrid extends StatelessWidget {
   const _ServicesGrid();
 
@@ -329,9 +334,15 @@ class _ServiceCard extends StatelessWidget {
     return Card(
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خدمة «$title» ($code) قيد الإنشاء')),
-        ),
+        onTap: () {
+          final type = balaghTypeOf(code);
+          if (type == null) return;
+          Navigator.of(context).push(
+            MaterialPageRoute<void>(
+              builder: (_) => BalaghFormPage(type: type),
+            ),
+          );
+        },
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
@@ -435,31 +446,112 @@ class _StatusChip extends StatelessWidget {
   }
 }
 
+/// أقسام المحتوى (4.2 بنود 5–11).
+///
+/// كلها تقرأ من نقاط الموقع العام نفسها، فما ينشره المكتب يظهر في الموقع
+/// والتطبيق معاً بلا ازدواج في المصدر.
 class _InfoLinks extends StatelessWidget {
   const _InfoLinks();
 
   @override
   Widget build(BuildContext context) {
-    const entries = [
-      (Icons.info_outline, 'عن المكتب'),
-      (Icons.menu_book_outlined, 'مركز المعلومات'),
-      (Icons.help_outline, 'الإرشادات'),
-      (Icons.description_outlined, 'النماذج'),
-      (Icons.gavel_outlined, 'القوانين واللوائح'),
-      (Icons.article_outlined, 'القرارات والتعليمات'),
-      (Icons.call_outlined, 'عناوين الاتصال'),
+    final entries = <({IconData icon, String label, Widget Function() page})>[
+      (
+        icon: Icons.info_outline,
+        label: 'عن المكتب',
+        page: () => const ContentPageView(
+              pageKey: 'about',
+              title: 'عن المكتب',
+              fallback:
+                  'مكتب الضرائب بمحافظة مأرب — الجهة المسؤولة عن تحصيل الضرائب '
+                  'وتقديم الخدمات الضريبية في المحافظة.',
+            ),
+      ),
+      (
+        icon: Icons.menu_book_outlined,
+        label: 'مركز المعلومات',
+        page: () => const ContentPageView(
+              pageKey: 'info-center',
+              title: 'مركز المعلومات',
+            ),
+      ),
+      (
+        icon: Icons.help_outline,
+        label: 'الإرشادات',
+        page: () => const DocumentListPage(
+              introPageKey: 'guidelines',
+              title: 'الإرشادات والأدلة',
+              subtitle:
+                  'أدلة المصلحة الإرشادية تشرح إجراءات التسجيل والإقرارات '
+                  'والتحصيل والمنازعات خطوةً بخطوة.',
+              category: 'guide',
+            ),
+      ),
+      (
+        icon: Icons.description_outlined,
+        label: 'النماذج',
+        page: () => const DocumentListPage(
+              title: 'النماذج والإقرارات',
+              subtitle: 'الاستمارات المعتمدة للتعبئة والتقديم لدى المكتب.',
+              category: 'form',
+            ),
+      ),
+      (
+        icon: Icons.gavel_outlined,
+        label: 'القوانين واللوائح',
+        page: () => const DocumentListPage(
+              title: 'القوانين واللوائح',
+              subtitle: 'النصوص القانونية الحاكمة للعمل الضريبي.',
+              category: 'law',
+            ),
+      ),
+      (
+        icon: Icons.article_outlined,
+        label: 'القرارات والتعليمات',
+        page: () => const DocumentListPage(
+              title: 'القرارات والتعليمات',
+              subtitle: 'القرارات والتعاميم الصادرة عن مصلحة الضرائب.',
+              category: 'decision',
+            ),
+      ),
+      (
+        icon: Icons.receipt_long_outlined,
+        label: 'ضرائب الدخل',
+        page: () => const DocumentListPage(
+              title: 'ضرائب الدخل',
+              subtitle:
+                  'كل ما يخص ضريبة الدخل: القوانين والقرارات والإقرارات والأدلة.',
+              topic: 'income_tax',
+            ),
+      ),
+      (
+        icon: Icons.point_of_sale_outlined,
+        label: 'ضريبة المبيعات',
+        page: () => const DocumentListPage(
+              title: 'ضريبة المبيعات',
+              subtitle:
+                  'كل ما يخص الضريبة العامة على المبيعات: القوانين والقرارات '
+                  'والنماذج والأدلة.',
+              topic: 'sales_tax',
+            ),
+      ),
+      (
+        icon: Icons.call_outlined,
+        label: 'عناوين الاتصال',
+        page: () => const ContactPage(),
+      ),
     ];
 
     return Card(
       child: Column(
         children: [
-          for (final (icon, label) in entries)
+          for (final entry in entries)
             ListTile(
-              leading: Icon(icon, color: AppTheme.primary),
-              title: Text(label),
+              leading: Icon(entry.icon, color: AppTheme.primary),
+              title: Text(entry.label),
               trailing: const Icon(Icons.chevron_left, size: 20),
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('قسم «$label» قيد الإنشاء')),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => entry.page()),
               ),
             ),
         ],

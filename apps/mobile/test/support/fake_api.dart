@@ -33,6 +33,10 @@ MockClient fakeHttpClient({
       'POST /api/v1/auth/password/reset/request' =>
         _json({'verificationId': '+967771234567'}),
       'POST /api/v1/auth/password/reset/confirm' => _json({'success': true}),
+      'POST /api/v1/auth/credentials/request' => _json({
+          'success': true,
+          'message': 'أُرسلت بيانات الدخول إلى رقم هاتفك المسجَّل لدى المكتب',
+        }),
       'GET /api/v1/public/legal-entities' => _json([
           {'id': 'le-1', 'legalName': 'مؤسسة فردية'},
           {'id': 'le-2', 'legalName': 'شركة ذات مسؤولية محدودة'},
@@ -82,6 +86,23 @@ MockClient fakeHttpClient({
           'status': 'submitted',
           'form': <String, dynamic>{},
         }),
+      'GET /api/v1/activities/taxpayers/taxpayer-1' => _json([
+          {'id': 'aaaaaaaa-1111-4111-8111-111111111111', 'name': 'تجارة تجزئة', 'statusCode': 'active'},
+          {'id': 'bbbbbbbb-2222-4222-8222-222222222222', 'name': 'مخبز آلي', 'statusCode': 'active'},
+        ]),
+      'POST /api/v1/balaghs' => _json({
+          'id': 'balagh-1',
+          'publicRef': null,
+          'balaghType': 'FR-201',
+          'status': 'draft',
+        }, 201),
+      'POST /api/v1/balaghs/balagh-1/submit' => _json({
+          'id': 'balagh-1',
+          'publicRef': 'BLG-TEST01',
+          'balaghType': 'FR-201',
+          'status': 'submitted',
+        }),
+      'GET /api/v1/balaghs' => _json([]),
       'GET /api/v1/public/announcements' => _json([]),
       'GET /api/v1/requests' => _json([]),
       'GET /api/v1/notifications' => _json([]),

@@ -1,7 +1,10 @@
 import { Controller, Get, Param, Patch, Post, Delete, Body, Req } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { sql } from 'kysely';
-import { RequirePermission } from '../authz/authorization.decorators.js';
+import {
+  AuthenticatedEndpoint,
+  RequirePermission,
+} from '../authz/authorization.decorators.js';
 import {
   VERIFIED_ACTOR,
   type AuthenticatedRequest,
@@ -233,7 +236,7 @@ export class AdminController {
    * هوية المستخدم الحالي وصلاحياته الفعلية — تستعملها اللوحة بدل أي بيانات
    * مثبّتة في الواجهة. لا تتطلب صلاحية بعينها: مجرد جلسة صالحة (يتكفّل الحارس بذلك).
    */
-  @RequirePermission('notification.read')
+  @AuthenticatedEndpoint()
   @Get('me')
   async getCurrentUser(@Req() request: AuthenticatedRequest) {
     const actor = request[VERIFIED_ACTOR];

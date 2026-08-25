@@ -7,6 +7,7 @@ import type {
   CreateBalaghDraft,
   EditBalaghDraft,
 } from '@marib-tax/contracts';
+import { balaghFormMatchesType } from '@marib-tax/contracts';
 import {
   BALAGH_REPOSITORY,
   type BalaghListItem,
@@ -37,10 +38,29 @@ export class BalaghService {
     private readonly repository: BalaghRepository,
   ) {}
 
+  /**
+   * حمولة البلاغ يجب أن تطابق مخطط نوعه المُعلن.
+   *
+   * مخطط `formData` اتحادٌ يقبل أي نوع، فلولا هذا التحقق أمكن تقديم بلاغ
+   * مُعلَن أنه FR-206 — الذي يُعالَج داخل المكتب — بحمولة FR-201 التي
+   * تستوجب نزولاً ميدانياً، فيسلك مساراً لا يخصّه.
+   */
+  private assertFormMatchesType(
+    balaghType: BalaghType,
+    formData: unknown,
+  ): void {
+    if (!balaghFormMatchesType(balaghType, formData)) {
+      throw DomainException.unprocessable(
+        'بيانات البلاغ لا تطابق نوع البلاغ المحدد',
+      );
+    }
+  }
+
   async create(
     ownerActorId: string,
     input: CreateBalaghDraft,
   ): Promise<BalaghResponse> {
+    this.assertFormMatchesType(input.balaghType, input.formData);
     const now = new Date().toISOString();
     const balagh: StoredBalagh = {
       id: randomUUID(),
@@ -76,6 +96,7 @@ export class BalaghService {
     if (balagh.status !== 'draft') {
       throw DomainException.conflict('لا يمكن تعديل بلاغ بعد تقديمه');
     }
+    this.assertFormMatchesType(balagh.balaghType, input.formData);
     balagh.formData = structuredClone(input.formData);
     balagh.updatedAt = new Date().toISOString();
     await this.repository.save(balagh);

@@ -29,7 +29,10 @@ const STAFF_PERMISSIONS: PermissionCode[] = [
 
 /** يسجّل وسيط الملكية الذي وصل إلى طبقة الاستعلام. */
 function buildController(permissions: PermissionCode[], actorId: string) {
-  const calls: Array<{ limit?: number; ownerProfileId?: string }> = [];
+  const calls: Array<{
+    limit: number | undefined;
+    ownerProfileId: string | undefined;
+  }> = [];
 
   const queryService = {
     listRequests: async (limit?: number, ownerProfileId?: string) => {

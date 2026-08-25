@@ -121,6 +121,52 @@ export const logout = () => {
   }
 };
 
+const ERROR_MESSAGES_AR: Record<string, string> = {
+  AUTHENTICATION_REQUIRED: 'بيانات الدخول غير صحيحة',
+  PERMISSION_DENIED: 'لا تملك صلاحية تنفيذ هذه العملية',
+  ACCESS_DENIED: 'لا تملك صلاحية تنفيذ هذه العملية',
+  BAD_REQUEST: 'البيانات المُدخلة غير صحيحة',
+  VALIDATION_FAILED: 'البيانات المُدخلة غير مطابقة للمطلوب',
+  RESOURCE_NOT_FOUND: 'العنصر المطلوب غير موجود',
+  RESOURCE_CONFLICT: 'العملية تتعارض مع بيانات موجودة مسبقاً',
+  RATE_LIMITED: 'محاولات كثيرة، يرجى الانتظار قليلاً',
+  SERVICE_UNAVAILABLE: 'الخدمة غير متاحة حالياً',
+  INTERNAL_ERROR: 'حدث خطأ في الخادم، يرجى المحاولة لاحقاً',
+};
+
+const hasArabic = (text: string) => /[؀-ۿ]/.test(text);
+
+/**
+ * الـ API يغلّف الخطأ في `{ error: { code, message } }`.
+ *
+ * كانت هذه الدالة تقرأ `message` من جذر الجسم فتجده دائماً undefined،
+ * فيظهر للمستخدم «خطأ في الاتصال بالسيرفر (400)» بدل السبب الحقيقي.
+ */
+async function readApiError(res: Response): Promise<string> {
+  try {
+    const body = await res.json();
+    const error = body?.error;
+
+    if (typeof error === 'string' && error.trim() !== '') return error;
+
+    if (error && typeof error === 'object') {
+      const message = typeof error.message === 'string' ? error.message : '';
+      // الرسائل العربية من الخادم مكتوبة للمستخدم أصلاً، فلا تُستبدل.
+      if (message && hasArabic(message)) return message;
+      const mapped = ERROR_MESSAGES_AR[error.code as string];
+      if (mapped) return mapped;
+      if (message) return message;
+    }
+
+    if (typeof body?.message === 'string' && body.message.trim() !== '') {
+      return body.message;
+    }
+  } catch {
+    // رد غير JSON — نكمل للرسالة الافتراضية.
+  }
+  return `تعذّر تنفيذ العملية (${res.status})`;
+}
+
 async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const baseUrl = getBaseUrl();
   const token = getToken();
@@ -151,8 +197,7 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
   }
 
   if (!res.ok) {
-    const errData = await res.json().catch(() => ({ message: res.statusText }));
-    throw new Error(errData.message || `خطأ في الاتصال بالسيرفر (${res.status})`);
+    throw new Error(await readApiError(res));
   }
 
   return await res.json();
@@ -591,12 +636,66 @@ export const api = {
       return (rows ?? []).map((r) => ({ id: String(r.id), code: r.code, name: r.name_ar ?? r.code }));
     },
 
-    createStaffUser: async (data: { displayName: string; phone: string; password: string; title?: string; roleCode?: string }) => {
-      return await apiRequest<any>('/admin/users', {
+    /** كتالوج الصلاحيات مبوّباً بالمورد. */
+    getPermissionCatalog: async () =>
+      apiRequest<
+        {
+          resource: string;
+          resourceLabel: string;
+          permissions: { code: string; label: string; action: string }[];
+        }[]
+      >('/admin/permissions'),
+
+    /** الأدوار مع صلاحيات كل دور وعدد حامليه. */
+    getRolesDetailed: async () =>
+      apiRequest<
+        {
+          id: string;
+          code: string;
+          nameAr: string | null;
+          description: string | null;
+          isSystem: boolean;
+          permissionCodes: string[];
+          holders: number;
+        }[]
+      >('/admin/roles/detailed'),
+
+    createRole: async (data: {
+      code: string;
+      nameAr: string;
+      description?: string;
+      permissionCodes: string[];
+    }) =>
+      apiRequest<{ id: string }>('/admin/roles', {
         method: 'POST',
         body: JSON.stringify(data),
-      });
-    },
+      }),
+
+    updateRolePermissions: async (roleId: string, permissionCodes: string[]) =>
+      apiRequest<{ id: string }>(`/admin/roles/${roleId}/permissions`, {
+        method: 'PATCH',
+        body: JSON.stringify({ permissionCodes }),
+      }),
+
+    /** إنشاء موظف بالبريد وإسناد أدوار له. */
+    createStaffUser: async (data: {
+      displayName: string;
+      email: string;
+      password: string;
+      phone?: string;
+      title?: string;
+      roleCodes: string[];
+    }) =>
+      apiRequest<{ userProfileId: string }>('/admin/staff-users', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+
+    updateUserRoles: async (userProfileId: string, roleCodes: string[]) =>
+      apiRequest<{ userProfileId: string }>(
+        `/admin/staff-users/${userProfileId}/roles`,
+        { method: 'PATCH', body: JSON.stringify({ roleCodes }) },
+      ),
 
     getContentPages: async () => {
       const rows = await apiRequest<any[]>('/admin/content-pages');

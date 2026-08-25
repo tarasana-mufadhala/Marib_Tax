@@ -31,7 +31,13 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
         connectionString: databaseUrl,
         max: 10,
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 5000,
+        // الوصلة إلى القاعدة السحابية بطيئة في بيئة التشغيل الحالية، وخمس
+        // ثوانٍ كانت تُسقط الطلبات تحت أي ضغط (ظهر أثناء استيراد دفعة
+        // مستندات: عشرات الطلبات فشلت بـ «انتهت مهلة الاتصال» لا لخلل فيها).
+        connectionTimeoutMillis: 30000,
+        // مهلة استعلام أوسع للسبب نفسه، مع بقاء حدٍّ يقطع ما علِق فعلاً.
+        statement_timeout: 60000,
+        query_timeout: 60000,
       });
 
       this.dbInstance = new Kysely<DatabaseSchemas>({

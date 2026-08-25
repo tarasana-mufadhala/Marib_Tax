@@ -6,6 +6,7 @@ import '../../../core/widgets/app_scaffold.dart';
 import '../domain/yemeni_phone.dart';
 import 'auth_controller.dart';
 import 'forgot_password_page.dart';
+import 'request_credentials_page.dart';
 
 /// FR-002: الدخول برقم الهاتف وكلمة المرور. لا يُرسل OTP في كل دخول —
 /// الرمز محجوز لإنشاء الحساب واستعادة كلمة المرور فقط.
@@ -95,6 +96,15 @@ class _LoginPageState extends State<LoginPage> {
             ),
             const SizedBox(height: 8),
             BusyButton(label: 'دخول', busy: auth.busy, onPressed: _submit),
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 4),
+            OutlinedButton.icon(
+              onPressed: () => Navigator.of(context)
+                  .pushNamed(RequestCredentialsPage.routeName),
+              icon: const Icon(Icons.sms_outlined, size: 18),
+              label: const Text('لم تصلني بيانات الدخول'),
+            ),
           ],
         ),
       ),

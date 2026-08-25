@@ -254,6 +254,52 @@ void main() {
     });
   });
 
+  group('طلب بيانات الدخول لحساب أنشأه المكتب', () {
+    test('رقم صالح يُرسل الطلب', () async {
+      final controller = buildController(InMemoryTokenStore());
+      expect(await controller.requestImportedCredentials('771234567'), isTrue);
+      expect(controller.errorMessage, isNull);
+    });
+
+    test('رقم غير صالح يُرفض قبل أي نداء شبكي', () async {
+      final requests = <dynamic>[];
+      final store = InMemoryTokenStore();
+      final api = fakeApiClient(store, recorder: requests.cast());
+      final controller =
+          AuthController(repository: AuthRepository(api: api, tokenStore: store));
+
+      expect(await controller.requestImportedCredentials('12'), isFalse);
+      expect(controller.errorMessage, contains('يبدأ بـ 7'));
+      expect(requests, isEmpty, reason: 'لا يُستهلك نداء ولا رسالة');
+    });
+
+    test('خدمة الرسائل المعطّلة تصل كرسالة عربية واضحة', () async {
+      final controller = buildController(InMemoryTokenStore(), overrides: {
+        'POST /api/v1/auth/credentials/request': (_) => apiError(
+              503,
+              'MESSAGING_NOT_CONFIGURED',
+              'خدمة الرسائل غير مُفعّلة بعد. يرجى مراجعة المكتب لاستلام بيانات الدخول',
+            ),
+      });
+
+      expect(await controller.requestImportedCredentials('771234567'), isFalse);
+      expect(controller.errorMessage, contains('خدمة الرسائل غير مُفعّلة'));
+    });
+
+    test('رقم بلا حساب مستورَد يعطي رسالة الخادم بلا كشف', () async {
+      final controller = buildController(InMemoryTokenStore(), overrides: {
+        'POST /api/v1/auth/credentials/request': (_) => apiError(
+              404,
+              'NO_PENDING_CREDENTIALS',
+              'لا توجد بيانات دخول قابلة للإرسال لهذا الرقم',
+            ),
+      });
+
+      expect(await controller.requestImportedCredentials('779998877'), isFalse);
+      expect(controller.errorMessage, contains('لا توجد بيانات دخول'));
+    });
+  });
+
   group('الكيانات القانونية', () {
     test('تُقرأ من الـ API لا من قائمة ثابتة', () async {
       final controller = buildController(InMemoryTokenStore());

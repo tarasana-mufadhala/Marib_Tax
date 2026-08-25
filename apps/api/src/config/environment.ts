@@ -19,6 +19,10 @@ const environmentSchema = z.object({
    *
    * ضبطه في الإنتاج يُتجاهَل ويُسجَّل كخطأ (فشل مغلق).
    */
+  /** مزود رسائل ميتا — بلا هذين يبقى الإرسال معطّلاً ويُبلَّغ به صراحةً. */
+  META_WHATSAPP_PHONE_NUMBER_ID: z.string().min(1).optional(),
+  META_WHATSAPP_ACCESS_TOKEN: z.string().min(1).optional(),
+
   DEV_OTP_CODE: z
     .string()
     .regex(/^\d{6}$/, 'DEV_OTP_CODE must be exactly six digits')
@@ -40,6 +44,11 @@ export function validateEnvironment(
   // متغيّر فارغ في .env يعني «غير مضبوط»، لا قيمة فارغة تكسر التحقق.
   if (typeof sanitizedInput.DEV_OTP_CODE === 'string' && sanitizedInput.DEV_OTP_CODE.trim() === '') {
     delete sanitizedInput.DEV_OTP_CODE;
+  }
+  for (const key of ['META_WHATSAPP_PHONE_NUMBER_ID', 'META_WHATSAPP_ACCESS_TOKEN']) {
+    if (typeof sanitizedInput[key] === 'string' && (sanitizedInput[key] as string).trim() === '') {
+      delete sanitizedInput[key];
+    }
   }
   return environmentSchema.parse(sanitizedInput);
 }

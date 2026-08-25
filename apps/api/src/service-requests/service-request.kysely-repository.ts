@@ -190,17 +190,27 @@ export class ServiceRequestKyselyRepository implements ServiceRequestRepository 
     return code !== '' && code !== 'sole_proprietorship';
   }
 
+  /**
+   * هل يملك المكلف رقماً ضريبياً رسمياً؟
+   *
+   * المصدر هو جهة اتصال من نوع `tax_number` لا `taxpayers.public_ref`:
+   * الأخير مرجع داخلي يُولَّد لكل مكلف عند تسجيله، فلو قيس عليه لظهر أن
+   * الجميع يملكون رقماً ضريبياً، وحُجبت خدمة «استخراج رقم ضريبي» عمّن
+   * وُجدت أصلاً من أجلهم.
+   */
   async hasTaxNumber(ownerActorId: string): Promise<boolean> {
-    const result = await sql<{ public_ref: string | null }>`
-      select tp.public_ref
+    const result = await sql<{ count: number }>`
+      select count(*)::int as count
       from registry.taxpayer_account_links tal
-      join registry.taxpayers tp on tp.id = tal.taxpayer_id
+      join registry.taxpayer_contacts tc on tc.taxpayer_id = tal.taxpayer_id
       where tal.user_profile_id = ${ownerActorId}::uuid
         and tal.active_state_code = 'active'
-      limit 1
+        and tc.contact_type_code = 'tax_number'
+        and tc.is_active
+        and btrim(tc.contact_value) <> ''
     `.execute(this.db.db);
 
-    return (result.rows[0]?.public_ref ?? '').trim().length > 0;
+    return (result.rows[0]?.count ?? 0) > 0;
   }
 
   async serviceCodeOf(requestId: string): Promise<ServiceCode | null> {

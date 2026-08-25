@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+@layer theme {
+  :root {
+    --font-sans: var(--font-almarai, "Almarai"), "Cairo", system-ui, sans-serif;
+    --font-display: var(--font-tajawal, "Tajawal"), "Almarai", system-ui, sans-serif;
+  }
+}
+
 :root {
   --radius: 0.625rem;
 
@@ -55,12 +62,29 @@
   --shadow-elevated: 0 4px 16px rgb(16 35 51 / 0.1), 0 24px 48px rgb(16 35 51 / 0.12);
 }
 
-html { direction: rtl; }
-body {
-  background-color: var(--usr-bg);
-  color: var(--usr-text);
-  font-family: "Cairo", "Tajawal", system-ui, sans-serif;
-  -webkit-font-smoothing: antialiased;
+@layer base {
+  * { border-color: var(--border); }
+  html { direction: rtl; }
+  body {
+    background-color: var(--usr-bg);
+    color: var(--usr-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--usr-primary-dark);
+    font-family: var(--font-display);
+  }
+  input, select, textarea {
+    color: #102333 !important;
+    background-color: #ffffff !important;
+  }
+  table th {
+    color: var(--usr-primary-dark);
+  }
+  table td {
+    color: #1e293b;
+  }
 }
 
 .usr-topbar {
@@ -98,38 +122,31 @@ body {
   border-radius: var(--radius);
   border: 1px solid var(--usr-border);
   background: var(--usr-card);
-  transition: all 0.2s ease-in-out;
+  color: var(--usr-text);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.usr-feature-card-lite {
+  background: #ffffff;
+  border-radius: var(--radius);
+  border: 1px solid var(--usr-border);
+  box-shadow: var(--shadow-card);
+  transition: all 0.25s ease;
+}
+
+.usr-stat-card {
+  background: var(--usr-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--usr-border);
+  padding: 1.25rem 1.5rem;
   box-shadow: var(--shadow-card);
 }
 
-.usr-institutional-card:hover {
-  border-color: var(--usr-primary);
-  box-shadow: var(--shadow-elevated);
-  transform: translateY(-2px);
-}
-
-.usr-auth-card {
-  border-radius: var(--radius);
-  border: 1px solid var(--usr-border);
-  background: var(--usr-card);
-  box-shadow: var(--shadow-elevated);
-  overflow: hidden;
-}
-
-.usr-auth-card-header {
+.usr-page-header {
   background: var(--gradient-hero);
-  color: white;
-  padding: 2rem 1.5rem;
-  text-align: center;
-  border-bottom: 4px solid var(--usr-gold);
-}
-
-.usr-dashboard-header {
-  background: var(--usr-card);
-  border-bottom: 1px solid var(--usr-border);
-  padding: 1.25rem 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  color: #ffffff;
+  padding: 2.5rem 1.5rem 3rem;
+  position: relative;
+  overflow: hidden;
 }

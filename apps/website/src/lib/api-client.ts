@@ -32,6 +32,8 @@ export interface PublicLibraryDocument {
   id: string;
   title: string;
   category: string;
+  /** نوع الضريبة: income_tax | sales_tax | general */
+  topic?: string;
   version: string;
   sizeKb: number;
   mimeType: string;
@@ -92,13 +94,20 @@ export const publicApi = {
     return { key: row.key, title: row.title ?? '', body: row.body ?? '' };
   },
 
-  getLibraryDocuments: async (category?: string): Promise<PublicLibraryDocument[]> => {
-    const query = category ? `?category=${encodeURIComponent(category)}` : '';
+  getLibraryDocuments: async (
+    category?: string,
+    topic?: string,
+  ): Promise<PublicLibraryDocument[]> => {
+    const params = new URLSearchParams();
+    if (category) params.set('category', category);
+    if (topic) params.set('topic', topic);
+    const query = params.toString() ? `?${params}` : '';
     const rows = await safeFetch<any[]>(`/public/library-documents${query}`, []);
     return (rows ?? []).map((r) => ({
       id: String(r.id),
       title: r.title ?? '',
       category: r.category_code ?? 'form',
+      topic: r.topic_code ?? 'general',
       version: r.version_label ?? '',
       sizeKb: Math.max(1, Math.ceil(Number(r.file_size_bytes ?? 0) / 1024)),
       mimeType: r.mime_type ?? '',
