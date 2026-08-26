@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Almarai, Tajawal, Cairo } from 'next/font/google';
 import { PageViewTracker } from '@/components/PageViewTracker';
+import { AstryxThemeProvider } from '@/components/AstryxThemeProvider';
 import './globals.css';
 
 const almarai = Almarai({
@@ -27,8 +28,6 @@ const cairo = Cairo({
   preload: false,
 });
 
-
-
 export const metadata: Metadata = {
   title: {
     default: 'مكتب الضرائب بمحافظة مأرب | البوابة الإلكترونية الرسمية',
@@ -53,11 +52,14 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl" className={`${almarai.variable} ${tajawal.variable} ${cairo.variable}`}>
       <body className="min-h-screen bg-[var(--usr-bg)] text-[var(--usr-text)] font-sans antialiased flex flex-col selection:bg-[var(--usr-gold)] selection:text-white">
-        <PageViewTracker />
-        {children}
+        <AstryxThemeProvider>
+          <PageViewTracker />
+          {children}
+        </AstryxThemeProvider>
       </body>
     </html>
   );
 }
+
 
 

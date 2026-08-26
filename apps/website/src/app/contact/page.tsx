@@ -15,8 +15,12 @@ import {
 } from '@marib-tax/web-ui';
 import { publicApi } from '@/lib/api-client';
 
+import { parseContactInfo, getWhatsAppLink } from '@/lib/contact-utils';
+
 export default async function ContactPage() {
   const contactPage = await publicApi.getContentPage('contact');
+  const contactInfo = parseContactInfo(contactPage?.body);
+  const waUrl = getWhatsAppLink(contactInfo.whatsapp);
 
   return (
     <div className="min-h-screen flex flex-col bg-[var(--usr-bg)] selection:bg-[var(--usr-gold)] selection:text-white">
@@ -27,7 +31,7 @@ export default async function ContactPage() {
         <div className="max-w-4xl mx-auto px-6 space-y-3">
           <Badge variant="gold" className="px-3 py-1 font-bold">خدمة المكلفين</Badge>
           <h1 className="text-3xl sm:text-5xl font-bold font-display text-white">
-            التواصل والمقر والموقع الجغرافي
+            {contactPage?.title || 'التواصل والعنوان والموقع الجغرافي'}
           </h1>
           <p className="text-sm sm:text-base text-slate-200 font-light max-w-2xl mx-auto">
             يسعدنا استقبال استفساراتكم وملاحظاتكم وبلاغاتكم المحمية وتوفير الدعم المباشر لجميع المكلفين بمحافظة مأرب
@@ -76,7 +80,7 @@ export default async function ContactPage() {
                 <div>
                   <strong className="block text-slate-900 font-bold mb-0.5">المقر الرئيس:</strong>
                   <span className="text-slate-600 font-light">
-                    محافظة مأرب — مأرب المدينة — الشارع العام — المجمع الحكومي لمكاتب الوزارات والهيئات الحكومية
+                    {contactInfo.address}
                   </span>
                 </div>
               </li>
@@ -87,7 +91,7 @@ export default async function ContactPage() {
                 </div>
                 <div>
                   <strong className="block text-slate-900 font-bold mb-0.5">الهاتف الثابت والسنترال:</strong>
-                  <span dir="ltr" className="font-mono text-slate-800 font-bold">06-302155 / 06-302156</span>
+                  <span dir="ltr" className="font-mono text-slate-800 font-bold">{contactInfo.phone}</span>
                 </div>
               </li>
 
@@ -97,7 +101,16 @@ export default async function ContactPage() {
                 </div>
                 <div>
                   <strong className="block text-slate-900 font-bold mb-0.5">واتساب خدمة المكلفين والملاحظات:</strong>
-                  <span dir="ltr" className="font-mono text-slate-800 font-bold">+967 777 000 111</span>
+                  <a
+                    href={waUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-mono text-emerald-700 hover:text-emerald-900 font-bold inline-flex items-center gap-2 hover:underline transition-colors group/wa"
+                    title="فتح محادثة واتساب مباشرة"
+                  >
+                    <span dir="ltr">{contactInfo.whatsapp}</span>
+                    <span className="text-[10px] bg-emerald-600 text-white px-2 py-0.5 rounded-full font-sans group-hover/wa:bg-emerald-700 transition-colors">فتح محادثة واتساب</span>
+                  </a>
                 </div>
               </li>
 
@@ -107,7 +120,7 @@ export default async function ContactPage() {
                 </div>
                 <div>
                   <strong className="block text-slate-900 font-bold mb-0.5">ساعات العمل واستقبال المراجعين:</strong>
-                  <span className="text-slate-600 font-light">الأحد إلى الخميس — من 8:00 صباحاً حتى 2:00 ظهراً</span>
+                  <span className="text-slate-600 font-light">{contactInfo.hours}</span>
                 </div>
               </li>
             </ul>
@@ -118,16 +131,16 @@ export default async function ContactPage() {
             </div>
           </div>
 
-          {/* Dynamic Content Page if available */}
-          {contactPage?.body?.trim() && (
+          {/* Dynamic Content Notes if available */}
+          {contactInfo.notes?.trim() && (
             <Card className="usr-institutional-card p-6 bg-white border border-slate-200 rounded-3xl">
               <CardHeader className="p-0 pb-3">
                 <CardTitle className="text-base text-[var(--usr-primary-dark)]">
-                  {contactPage.title || 'توجيهات إضافية'}
+                  توجيهات وإرشادات إضافية
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-0 text-xs text-slate-600 space-y-2 font-light leading-relaxed">
-                {contactPage.body.split('\n').filter((line) => line.trim()).map((line, idx) => (
+                {contactInfo.notes.split('\n').filter((line) => line.trim()).map((line, idx) => (
                   <p key={idx}>{line}</p>
                 ))}
               </CardContent>

@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:marib_tax_mobile/app/theme.dart';
+import 'package:marib_tax_mobile/core/storage/draft_store.dart';
 import 'package:marib_tax_mobile/core/storage/token_store.dart';
 import 'package:marib_tax_mobile/features/balaghs/data/balagh_repository.dart';
 import 'package:marib_tax_mobile/features/balaghs/domain/balagh_forms.dart';
@@ -23,8 +24,12 @@ Widget wrap(
     api: fakeApiClient(store, overrides: overrides, recorder: recorder),
   );
 
-  return Provider<BalaghRepository>.value(
-    value: repository,
+  return MultiProvider(
+    providers: [
+      Provider<BalaghRepository>.value(value: repository),
+      // مسودة في الذاكرة: التخزين المشفّر يحتاج قنوات منصّة لا تعمل هنا.
+      Provider<DraftStore>.value(value: InMemoryDraftStore()),
+    ],
     child: MaterialApp(
       theme: AppTheme.build(),
       locale: const Locale('ar'),
@@ -66,6 +71,20 @@ Future<void> pickToday(WidgetTester tester, String label) async {
   await tester.pumpAndSettle();
 }
 
+/// النموذج صار خطوات؛ الانتقال بينها جزء من كل سيناريو إرسال.
+Future<void> next(WidgetTester tester) async {
+  await tapVisible(tester, find.text('التالي'));
+}
+
+/// يملأ خطوتي البيانات والتفاصيل في FR-201 ويقف عند خطوة التأكيد.
+Future<void> fillStopActivityForm(WidgetTester tester) async {
+  await tapVisible(tester, find.text('تجارة تجزئة'));
+  await pickToday(tester, 'تاريخ الإيقاف');
+  await next(tester);
+  await fill(tester, 'سبب الإيقاف', 'إيقاف للصيانة');
+  await next(tester);
+}
+
 void main() {
   testWidgets('يعرض أنشطة المكلف لاختيار ما يخص البلاغ', (tester) async {
     await tester.pumpWidget(wrap(BalaghFormPage(type: balaghTypeOf('FR-201')!)));
@@ -82,7 +101,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tapVisible(tester, find.text('إرسال البلاغ'));
+    // الخطوة الأولى تمنع التقدّم أصلاً، فلا تصل الحمولة للخادم.
+    await next(tester);
 
     expect(find.textContaining('اختر نشاطاً'), findsOneWidget);
     expect(sent.any((r) => r.url.path.endsWith('/balaghs')), isFalse);
@@ -95,8 +115,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tapVisible(tester, find.text('تجارة تجزئة'));
-    await fill(tester, 'سبب الإيقاف', 'إيقاف للصيانة');
+    await fillStopActivityForm(tester);
 
     await tapVisible(tester, find.text('إرسال البلاغ'));
 
@@ -113,12 +132,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tapVisible(tester, find.text('تجارة تجزئة'));
-    await fill(tester, 'سبب الإيقاف', 'إيقاف للصيانة');
+    await fillStopActivityForm(tester);
     await tapVisible(tester, find.textContaining('أقرّ بصحة البيانات'));
-
-    // تاريخ الإيقاف حقل إلزامي يُختار من التقويم.
-    await pickToday(tester, 'تاريخ الإيقاف');
 
     await tapVisible(tester, find.text('إرسال البلاغ'));
 
@@ -159,11 +174,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tapVisible(tester, find.text('تجارة تجزئة'));
-    await fill(tester, 'سبب الإيقاف', 'سبب');
+    await fillStopActivityForm(tester);
     await tapVisible(tester, find.textContaining('أقرّ بصحة البيانات'));
-
-    await pickToday(tester, 'تاريخ الإيقاف');
 
     await tapVisible(tester, find.text('إرسال البلاغ'));
 

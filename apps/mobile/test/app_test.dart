@@ -32,7 +32,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('الخدمات المقدَّمة'), findsOneWidget);
+    expect(find.text('الخدمات'), findsWidgets);
+
+    // شريط التنقل السفلي ثابت في كل الشاشات الرئيسية.
+    expect(find.text('طلباتي'), findsOneWidget);
+    expect(find.text('الملف الشخصي'), findsOneWidget);
 
     // «الاستعلامات» أسفل القائمة الكسولة. نحدد القائمة الخارجية صراحةً
     // لأن الصفحة تحوي شبكات قابلة للتمرير أيضاً.

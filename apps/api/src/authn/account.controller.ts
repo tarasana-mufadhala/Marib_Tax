@@ -15,6 +15,17 @@ interface ChangePasswordBody {
   newPassword?: string;
 }
 
+interface AddEmailBody {
+  email?: string;
+  currentPassword?: string;
+}
+
+interface PhoneChangeBody {
+  newPhoneNumber?: string;
+  currentPassword?: string;
+  code?: string;
+}
+
 /**
  * شاشة «حسابي» في التطبيق.
  *
@@ -142,5 +153,58 @@ export class AccountController {
       throw DomainException.badRequest('كلمتا المرور الحالية والجديدة مطلوبتان');
     }
     return this.authn.changePassword(this.actorId(request), current, next);
+  }
+
+  /**
+   * إضافة بريد إلى حساب مسجَّل بالهاتف — القناتان معاً لا إحداهما.
+   *
+   * البريد لا يحلّ محل الرقم: بعد التأكيد يستطيع المكلف الدخول برقمه
+   * وكلمة مروره كما كان، أو برمز يصل بريده.
+   */
+  @Post('email')
+  @HttpCode(200)
+  async addEmail(
+    @Req() request: AuthenticatedRequest,
+    @Body() body: AddEmailBody,
+  ) {
+    const email = (body?.email ?? '').trim();
+    const password = (body?.currentPassword ?? '').trim();
+    if (email.length === 0 || password.length === 0) {
+      throw DomainException.badRequest('البريد وكلمة المرور مطلوبان');
+    }
+    return this.authn.addAccountEmail(this.actorId(request), email, password);
+  }
+
+  /** الخطوة الأولى لتغيير الرقم: كلمة المرور ثم رمز يصل الرقم الجديد. */
+  @Post('phone/change/request')
+  @HttpCode(200)
+  async requestPhoneChange(
+    @Req() request: AuthenticatedRequest,
+    @Body() body: PhoneChangeBody,
+  ) {
+    const phone = (body?.newPhoneNumber ?? '').trim();
+    const password = (body?.currentPassword ?? '').trim();
+    if (phone.length === 0 || password.length === 0) {
+      throw DomainException.badRequest('الرقم الجديد وكلمة المرور مطلوبان');
+    }
+    return this.authn.requestPhoneChange(
+      this.actorId(request),
+      phone,
+      password,
+    );
+  }
+
+  @Post('phone/change/confirm')
+  @HttpCode(200)
+  async confirmPhoneChange(
+    @Req() request: AuthenticatedRequest,
+    @Body() body: PhoneChangeBody,
+  ) {
+    const phone = (body?.newPhoneNumber ?? '').trim();
+    const code = (body?.code ?? '').trim();
+    if (phone.length === 0 || code.length === 0) {
+      throw DomainException.badRequest('الرقم الجديد ورمز التحقق مطلوبان');
+    }
+    return this.authn.confirmPhoneChange(this.actorId(request), phone, code);
   }
 }

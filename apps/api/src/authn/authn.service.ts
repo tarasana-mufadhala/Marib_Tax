@@ -417,6 +417,301 @@ export class AuthnService {
   // Password reset flow
   // ---------------------------------------------------------------------------
 
+  // ---------------------------------------------------------------------------
+  // إضافة بريد إلى حساب مسجَّل بالهاتف
+  // ---------------------------------------------------------------------------
+
+  /**
+   * يبدأ إضافة بريد إلى حساب قائم.
+   *
+   * الحساب في GoTrue يحمل هاتفاً وبريداً معاً، فإضافة البريد لا تُلغي الهاتف:
+   * المكلف يبقى قادراً على الدخول بكلمة مروره ورقمه، ويكسب قناة ثانية
+   * للدخول برمز وللإشعارات. من لا تصله الرسائل النصية يحتاج بديلاً لا بديلاً
+   * عن رقمه.
+   *
+   * التحقق بيد GoTrue: يرسل رابط/رمز تأكيد إلى البريد الجديد ولا يُثبّته
+   * قبل التأكيد، فلا يستطيع أحد نسبة بريد لا يملكه إلى حسابه.
+   */
+  async addAccountEmail(
+    userProfileId: string,
+    emailAddress: string,
+    currentPassword: string,
+  ): Promise<{ pending: boolean }> {
+    const email = String(emailAddress ?? '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw DomainException.badRequest('أدخل بريداً إلكترونياً صحيحاً');
+    }
+
+    const user = await this.usersService.findUserById(userProfileId);
+    const contact = await this.fetchAuthUserById(user.authUserId);
+    const currentPhone = digitsOf(contact.phone);
+    const currentEmail = (contact.email ?? '').trim().toLowerCase();
+
+    if (currentEmail === email) {
+      throw DomainException.conflict('هذا البريد مضاف إلى حسابك بالفعل');
+    }
+
+    // كلمة المرور تُطلب حتى لا تكفي جلسة مسروقة لربط بريد المهاجم بالحساب
+    // ثم الدخول به لاحقاً برمز.
+    const verified = await this.verifyPassword(
+      currentPhone.length > 0 ? { phone: currentPhone } : { email: currentEmail },
+      currentPassword,
+    );
+    if (!verified) {
+      throw DomainException.forbidden('كلمة المرور غير صحيحة');
+    }
+
+    const taken = await this.findAuthUserByEmail(email);
+    if (taken && taken.id !== user.authUserId) {
+      throw DomainException.conflict('هذا البريد مسجَّل لحساب آخر');
+    }
+
+    const res = await fetch(
+      `${this.supabaseUrl}/auth/v1/admin/users/${user.authUserId}`,
+      {
+        method: 'PUT',
+        headers: this.adminHeaders(),
+        // `email_confirm` غير مضبوط عمداً: التأكيد يأتي من صاحب البريد.
+        body: JSON.stringify({ email }),
+      },
+    );
+    if (!res.ok) {
+      const issue = await this.providerConfigurationIssue(res);
+      if (issue) throw DomainException.unavailable(issue.message);
+      this.logger.error(`تعذّر إضافة البريد للحساب (${res.status})`);
+      throw DomainException.unavailable('تعذّر إضافة البريد، حاول لاحقاً');
+    }
+
+    recordAuthEvent(
+      this.db,
+      'email_added',
+      email,
+      'إضافة بريد إلى حساب قائم — بانتظار التأكيد',
+      'email',
+    );
+    return { pending: true };
+  }
+
+  /** حساب GoTrue ببريده، للتأكد أن البريد غير مأخوذ. */
+  private async findAuthUserByEmail(
+    email: string,
+  ): Promise<{ id: string } | null> {
+    const res = await fetch(
+      `${this.supabaseUrl}/auth/v1/admin/users?filter=${encodeURIComponent(email)}`,
+      { headers: this.adminHeaders() },
+    );
+    if (!res.ok) return null;
+    const payload = (await res.json()) as {
+      users?: { id: string; email?: string }[];
+    };
+    const match = (payload.users ?? []).find(
+      (user) => (user.email ?? '').trim().toLowerCase() === email,
+    );
+    return match ? { id: match.id } : null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // تغيير رقم الهاتف
+  // ---------------------------------------------------------------------------
+
+  /**
+   * يطلب رمز تحقق للرقم الجديد.
+   *
+   * الرقم هو هوية الدخول، فتغييره يشترط ثلاثة أمور مجتمعة: جلسة صالحة،
+   * وكلمة المرور الحالية، وإثبات حيازة الرقم الجديد برمز يصله. إسقاط أيٍّ
+   * منها يجعل سرقة جلسة كافية للاستيلاء على الحساب نهائياً.
+   */
+  async requestPhoneChange(
+    userProfileId: string,
+    newPhoneNumber: string,
+    currentPassword: string,
+  ): Promise<{ verificationId: string }> {
+    const phone = this.normalizePhoneNumber(newPhoneNumber);
+
+    const user = await this.usersService.findUserById(userProfileId);
+    const contact = await this.fetchAuthUserById(user.authUserId);
+    const currentPhone = digitsOf(contact.phone);
+    const email = (contact.email ?? '').trim().toLowerCase();
+
+    if (digitsOf(phone) === currentPhone) {
+      throw DomainException.badRequest('الرقم الجديد مطابق لرقمك الحالي');
+    }
+
+    const verified = await this.verifyPassword(
+      currentPhone.length > 0 ? { phone: currentPhone } : { email },
+      currentPassword,
+    );
+    if (!verified) {
+      throw DomainException.forbidden('كلمة المرور غير صحيحة');
+    }
+
+    // رقم يملكه حساب آخر لا يُقبل: رقمان لحساب واحد يكسران استعادة الحساب.
+    const taken = await this.findAuthUserByPhone(phone);
+    if (taken && taken.id !== user.authUserId) {
+      throw DomainException.conflict('هذا الرقم مسجَّل لحساب آخر');
+    }
+
+    return this.otpService.requestOtp(phone);
+  }
+
+  /** يثبّت الرقم الجديد بعد التحقق من الرمز الواصل إليه. */
+  async confirmPhoneChange(
+    userProfileId: string,
+    newPhoneNumber: string,
+    code: string,
+  ): Promise<{ success: boolean }> {
+    const phone = this.normalizePhoneNumber(newPhoneNumber);
+
+    const verified = await this.otpService.verifyOtp(phone, code);
+    if (!verified) {
+      throw DomainException.forbidden('رمز التحقق غير صحيح أو انتهت صلاحيته');
+    }
+
+    const user = await this.usersService.findUserById(userProfileId);
+    const taken = await this.findAuthUserByPhone(phone);
+    if (taken && taken.id !== user.authUserId) {
+      throw DomainException.conflict('هذا الرقم مسجَّل لحساب آخر');
+    }
+
+    const res = await fetch(
+      `${this.supabaseUrl}/auth/v1/admin/users/${user.authUserId}`,
+      {
+        method: 'PUT',
+        headers: this.adminHeaders(),
+        body: JSON.stringify({ phone, phone_confirm: true }),
+      },
+    );
+    if (!res.ok) {
+      this.logger.error(`تعذّر تحديث رقم الهاتف (${res.status})`);
+      throw DomainException.unavailable('تعذّر تحديث الرقم، حاول لاحقاً');
+    }
+
+    recordAuthEvent(
+      this.db,
+      'phone_changed',
+      phone,
+      'تغيير رقم الهاتف بعد التحقق',
+    );
+    return { success: true };
+  }
+
+  // ---------------------------------------------------------------------------
+  // الدخول برمز يصل البريد — بديل لرقم الهاتف
+  // ---------------------------------------------------------------------------
+
+  /**
+   * يرسل رمز دخول إلى بريد المستخدم.
+   *
+   * التسليم عبر GoTrue لا عبر خدمة بريد مستقلة: هو من يملك حسابات المستخدمين
+   * وقوالب الرسائل، وإضافة قناة ثانية تصدر رموزاً كان يعني مصدرَي حقيقة
+   * للرمز الواحد.
+   *
+   * `create_user: false` مقصود: هذه نقطة دخول لا تسجيل، فلا يجوز أن يُنشئ
+   * أي بريد مجهول حساباً بمجرد طلب رمز.
+   */
+  async requestEmailOtp(emailAddress: string): Promise<{ sent: boolean }> {
+    const email = String(emailAddress ?? '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw DomainException.badRequest('أدخل بريداً إلكترونياً صحيحاً');
+    }
+
+    if (this.emailOtpRateLimited(email)) {
+      recordAuthEvent(
+        this.db,
+        'otp_rate_limited',
+        email,
+        'تجاوز حد طلبات رمز البريد',
+        'email',
+      );
+      throw DomainException.badRequest(
+        'طلبت الرمز مرات كثيرة. انتظر دقيقة ثم أعد المحاولة.',
+      );
+    }
+
+    const res = await fetch(`${this.supabaseUrl}/auth/v1/otp`, {
+      method: 'POST',
+      headers: this.adminHeaders(),
+      body: JSON.stringify({ email, create_user: false }),
+    });
+
+    if (!res.ok) {
+      const issue = await this.providerConfigurationIssue(res);
+      if (issue) {
+        this.logger.error(`تعذّر إرسال رمز البريد: ${issue.reason}`);
+        throw DomainException.unavailable(issue.message);
+      }
+      // لا نكشف إن كان البريد مسجَّلاً أم لا: الفرق بين ردَّي النجاح والفشل
+      // يحوّل هذه النقطة إلى أداة تعداد لبُرد المستخدمين.
+      this.logger.warn(`طلب رمز بريد لم ينجح (${res.status})`);
+    }
+
+    recordAuthEvent(this.db, 'otp_requested', email, undefined, 'email');
+    return { sent: true };
+  }
+
+  /** يتحقق من رمز البريد ويُصدر الجلسة. */
+  async verifyEmailOtp(
+    emailAddress: string,
+    code: string,
+  ): Promise<{ accessToken: string; userProfileId: string }> {
+    const email = String(emailAddress ?? '').trim().toLowerCase();
+    const token = String(code ?? '').trim();
+    if (token.length === 0) {
+      throw DomainException.badRequest('رمز التحقق مطلوب');
+    }
+
+    const res = await fetch(`${this.supabaseUrl}/auth/v1/verify`, {
+      method: 'POST',
+      headers: this.adminHeaders(),
+      body: JSON.stringify({ email, token, type: 'email' }),
+    });
+
+    if (!res.ok) {
+      recordAuthEvent(
+        this.db,
+        'login_failed',
+        email,
+        'رمز بريد غير صحيح أو منتهٍ',
+        'email',
+      );
+      throw DomainException.forbidden('رمز التحقق غير صحيح أو انتهت صلاحيته');
+    }
+
+    const payload = (await res.json()) as {
+      access_token?: string;
+      user?: { id?: string };
+    };
+    const accessToken = payload.access_token ?? '';
+    const authUserId = payload.user?.id ?? '';
+    if (accessToken === '' || authUserId === '') {
+      throw DomainException.unavailable('تعذّر إصدار الجلسة، حاول لاحقاً');
+    }
+
+    const actor = await this.usersService
+      .findUserByAuthUserId(authUserId)
+      .catch(() => null);
+    if (!actor || !actor.isActive) {
+      throw DomainException.forbidden('لا يوجد حساب فعّال بهذا البريد');
+    }
+
+    recordAuthEvent(this.db, 'login_succeeded', email, 'دخول برمز بريد', 'email');
+    return { accessToken, userProfileId: actor.id };
+  }
+
+  /** خمسة طلبات في الدقيقة لكل بريد، كحدّ رسائل الهاتف. */
+  private emailOtpRateLimited(email: string): boolean {
+    const now = Date.now();
+    const recent = (this.emailOtpRequests.get(email) ?? []).filter(
+      (at) => now - at < 60_000,
+    );
+    if (recent.length >= 5) return true;
+    recent.push(now);
+    this.emailOtpRequests.set(email, recent);
+    return false;
+  }
+
+  private readonly emailOtpRequests = new Map<string, number[]>();
+
   /**
    * تغيير كلمة المرور من داخل الجلسة.
    *

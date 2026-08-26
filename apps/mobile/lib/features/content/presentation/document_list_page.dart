@@ -115,7 +115,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
                           style: const TextStyle(
                             fontSize: 13,
                             height: 1.7,
-                            color: Color(0xFF5A6B63),
+                            color: AppTheme.secondary,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -123,7 +123,7 @@ class _DocumentListPageState extends State<DocumentListPage> {
                           '${documents.length} مستنداً متاحاً للتحميل',
                           style: const TextStyle(
                             fontSize: 12,
-                            color: Color(0xFF7A8A83),
+                            color: AppTheme.secondary,
                           ),
                         ),
                         if (_intro != null) _IntroText(page: _intro!),
@@ -163,7 +163,7 @@ class _IntroText extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: const Color(0xFFEAF4F0),
+              color: AppTheme.primarySoft,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
@@ -230,7 +230,7 @@ class _DocumentTile extends StatelessWidget {
                           document.readableSize,
                           style: const TextStyle(
                             fontSize: 11.5,
-                            color: Color(0xFF7A8A83),
+                            color: AppTheme.secondary,
                           ),
                         ),
                         if (document.version != null && document.version!.isNotEmpty)
@@ -238,7 +238,7 @@ class _DocumentTile extends StatelessWidget {
                             document.version!,
                             style: const TextStyle(
                               fontSize: 11.5,
-                              color: Color(0xFF7A8A83),
+                              color: AppTheme.secondary,
                             ),
                           ),
                       ],
@@ -271,12 +271,12 @@ class _Message extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 44, color: const Color(0xFF9AAAA3)),
+            Icon(icon, size: 44, color: AppTheme.secondary),
             const SizedBox(height: 12),
             Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFF5A6B63), height: 1.6),
+              style: const TextStyle(color: AppTheme.secondary, height: 1.6),
             ),
             if (action != null) ...[const SizedBox(height: 12), action!],
           ],

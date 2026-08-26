@@ -209,7 +209,7 @@ class _ServiceDocumentsPageState extends State<ServiceDocumentsPage> {
                       child: Text(
                         'لا يمكن إرسال الطلب قبل إرفاق كل المستندات الإلزامية.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 12.5, color: Color(0xFF7A8A83)),
+                        style: TextStyle(fontSize: 12.5, color: AppTheme.secondary),
                       ),
                     ),
                   const SizedBox(height: 24),
@@ -253,7 +253,7 @@ class _RequestHeader extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     'رقم الطلب: ${request.publicRef ?? '—'}',
-                    style: const TextStyle(fontSize: 12.5, color: Color(0xFF5A6B63)),
+                    style: const TextStyle(fontSize: 12.5, color: AppTheme.secondary),
                   ),
                 ],
               ),
@@ -336,7 +336,7 @@ class _DocumentTile extends StatelessWidget {
       child: ListTile(
         leading: Icon(
           done ? Icons.check_circle : Icons.upload_file,
-          color: done ? AppTheme.primary : const Color(0xFF9AAAA3),
+          color: done ? AppTheme.primary : AppTheme.secondary,
         ),
         title: Text(
           document.label,
@@ -354,7 +354,7 @@ class _DocumentTile extends StatelessWidget {
                       : 'اختياري',
               style: TextStyle(
                 fontSize: 12,
-                color: done ? AppTheme.primaryDark : const Color(0xFF7A8A83),
+                color: done ? AppTheme.primaryDark : AppTheme.secondary,
               ),
             ),
             if (document.note != null && !done)
@@ -362,7 +362,7 @@ class _DocumentTile extends StatelessWidget {
                 padding: const EdgeInsets.only(top: 2),
                 child: Text(
                   document.note!,
-                  style: const TextStyle(fontSize: 11.5, color: Color(0xFF9AAAA3)),
+                  style: const TextStyle(fontSize: 11.5, color: AppTheme.secondary),
                 ),
               ),
           ],

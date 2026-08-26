@@ -61,7 +61,7 @@ class _RequestCredentialsPageState extends State<RequestCredentialsPage> {
             const Text(
               'يرجى تغيير كلمة المرور بعد أول دخول.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 13, color: Color(0xFF5A6B63)),
+              style: TextStyle(fontSize: 13, color: AppTheme.secondary),
             ),
             const SizedBox(height: 28),
             FilledButton(
@@ -111,7 +111,7 @@ class _RequestCredentialsPageState extends State<RequestCredentialsPage> {
             const Text(
               'إن كنت قد أنشأت حسابك بنفسك ونسيت كلمة المرور، استخدم «نسيت كلمة المرور».',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: Color(0xFF7A8A83), height: 1.6),
+              style: TextStyle(fontSize: 12, color: AppTheme.secondary, height: 1.6),
             ),
           ],
         ),

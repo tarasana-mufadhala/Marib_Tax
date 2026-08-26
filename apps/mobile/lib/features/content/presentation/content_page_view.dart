@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../app/theme.dart';
 import '../../../core/api/api_exception.dart';
 import '../data/content_repository.dart';
 import '../domain/content_models.dart';
@@ -64,7 +65,7 @@ class _ContentPageViewState extends State<ContentPageView> {
                   Icon(
                     failed ? Icons.cloud_off : Icons.article_outlined,
                     size: 44,
-                    color: const Color(0xFF9AAAA3),
+                    color: AppTheme.secondary,
                   ),
                   const SizedBox(height: 14),
                   Text(
@@ -77,7 +78,7 @@ class _ContentPageViewState extends State<ContentPageView> {
                     style: const TextStyle(
                       fontSize: 14,
                       height: 1.8,
-                      color: Color(0xFF5A6B63),
+                      color: AppTheme.secondary,
                     ),
                   ),
                   const SizedBox(height: 16),

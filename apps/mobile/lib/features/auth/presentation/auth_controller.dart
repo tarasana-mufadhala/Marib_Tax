@@ -120,6 +120,37 @@ class AuthController extends ChangeNotifier {
     });
   }
 
+  /// يطلب رمز دخول على البريد. يحفظ البريد ليعرضه في شاشة التحقق.
+  Future<bool> requestEmailOtp(String rawEmail) async {
+    final email = rawEmail.trim().toLowerCase();
+    if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) {
+      _fail('أدخل بريداً إلكترونياً صحيحاً');
+      return false;
+    }
+    return _run(() async {
+      await _repository.requestEmailOtp(email);
+      _pendingEmail = email;
+    });
+  }
+
+  Future<bool> verifyEmailOtp(String code) async {
+    final email = _pendingEmail;
+    if (email == null) {
+      _fail('اطلب الرمز أولاً');
+      return false;
+    }
+    return _run(() async {
+      await _repository.verifyEmailOtp(email: email, code: code);
+      _pendingEmail = null;
+      _status = AuthStatus.signedIn;
+    });
+  }
+
+  String? _pendingEmail;
+
+  /// البريد الذي أُرسل إليه الرمز، لعرضه في شاشة التحقق.
+  String? get pendingEmail => _pendingEmail;
+
   Future<bool> requestPasswordReset(String rawPhone) async {
     final phone = YemeniPhone.tryParse(rawPhone);
     if (phone == null) {
@@ -171,6 +202,13 @@ class AuthController extends ChangeNotifier {
     if (_status == AuthStatus.signedOut) return;
     _status = AuthStatus.signedOut;
     _errorMessage = 'انتهت جلستك، يرجى تسجيل الدخول من جديد';
+    notifyListeners();
+  }
+
+  /// خطأ تحقّق محلي (قبل بلوغ الشبكة) يُعرض في نفس مكان أخطاء الخادم.
+  void showError(String message) {
+    if (_errorMessage == message) return;
+    _errorMessage = message;
     notifyListeners();
   }
 

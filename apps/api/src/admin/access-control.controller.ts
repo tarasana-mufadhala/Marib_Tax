@@ -24,6 +24,7 @@ import { DomainException } from '../http/domain-exception.js';
 const RESOURCE_LABELS: Record<string, string> = {
   taxpayer: 'المكلفون',
   'taxpayer.profile': 'ملف المكلف',
+  'taxpayer.admin': 'إدارة ملفات المكلفين',
   request: 'الطلبات',
   'request.draft': 'مسودات الطلبات',
   'request.completion': 'استكمال الطلبات',
@@ -80,6 +81,7 @@ const ACTION_LABELS: Record<string, string> = {
   commit: 'ترحيل',
   reject: 'رفض',
   view: 'عرض',
+  status: 'تغيير الحالة',
   export: 'تصدير',
   manage: 'إدارة',
   assign: 'إسناد',

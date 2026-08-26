@@ -66,6 +66,32 @@ class AuthRepository {
     return session;
   }
 
+  /// رمز دخول يصل البريد — بديل لرقم الهاتف.
+  ///
+  /// الخادم يرد بنجاح سواء كان البريد مسجَّلاً أم لا، فلا نُظهر للمستخدم
+  /// تمييزاً لا يملكه أصلاً.
+  Future<void> requestEmailOtp(String email) async {
+    await _api.post(
+      '/auth/otp/email/request',
+      body: {'email': email},
+      authenticated: false,
+    );
+  }
+
+  Future<AuthSession> verifyEmailOtp({
+    required String email,
+    required String code,
+  }) async {
+    final json = await _api.post(
+      '/auth/otp/email/verify',
+      body: {'email': email, 'code': code},
+      authenticated: false,
+    );
+    final session = AuthSession.fromJson(json);
+    await _tokenStore.write(session.accessToken);
+    return session;
+  }
+
   /// FR-002: نسيت كلمة المرور — إرسال رمز لرقم مسجَّل.
   Future<void> requestPasswordReset(YemeniPhone phone) async {
     await _api.post(

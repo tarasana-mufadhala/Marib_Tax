@@ -55,10 +55,6 @@ class WelcomePage extends StatelessWidget {
                         ),
                         const Spacer(),
                         FilledButton(
-                          style: FilledButton.styleFrom(
-                            backgroundColor: AppTheme.gold,
-                            foregroundColor: Colors.black87,
-                          ),
                           onPressed: () => Navigator.of(context).pushNamed(LoginPage.routeName),
                           child: const Text('تسجيل الدخول'),
                         ),

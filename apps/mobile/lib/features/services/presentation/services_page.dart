@@ -113,7 +113,7 @@ class _ServiceCard extends StatelessWidget {
                     child: Text(
                       service.code,
                       textDirection: TextDirection.ltr,
-                      style: const TextStyle(fontSize: 11, color: Color(0xFF5A6B63)),
+                      style: const TextStyle(fontSize: 11, color: AppTheme.secondary),
                     ),
                   ),
                 ],
@@ -124,17 +124,17 @@ class _ServiceCard extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 13,
                   height: 1.6,
-                  color: Color(0xFF5A6B63),
+                  color: AppTheme.secondary,
                 ),
               ),
               const SizedBox(height: 12),
               Row(
                 children: [
-                  const Icon(Icons.attach_file, size: 16, color: Color(0xFF7A8A83)),
+                  const Icon(Icons.attach_file, size: 16, color: AppTheme.secondary),
                   const SizedBox(width: 6),
                   Text(
                     '$mandatory مستند مطلوب',
-                    style: const TextStyle(fontSize: 12.5, color: Color(0xFF7A8A83)),
+                    style: const TextStyle(fontSize: 12.5, color: AppTheme.secondary),
                   ),
                   const Spacer(),
                   const Text(
@@ -170,12 +170,12 @@ class _ErrorState extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.cloud_off, size: 44, color: Color(0xFF9AAAA3)),
+            const Icon(Icons.cloud_off, size: 44, color: AppTheme.secondary),
             const SizedBox(height: 12),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Color(0xFF5A6B63)),
+              style: const TextStyle(color: AppTheme.secondary),
             ),
             if (onRetry != null) ...[
               const SizedBox(height: 16),

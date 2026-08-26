@@ -2,26 +2,27 @@
 
 @layer theme {
   :root {
-    --font-sans: var(--font-almarai, "Almarai"), "Cairo", system-ui, sans-serif;
-    --font-display: var(--font-tajawal, "Tajawal"), "Almarai", system-ui, sans-serif;
+    --font-sans: "Inter", var(--font-almarai, "Almarai"), system-ui, sans-serif;
+    --font-display: "Inter", var(--font-tajawal, "Tajawal"), system-ui, sans-serif;
   }
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0.5rem;
 
-  --usr-primary: #105B7D;
-  --usr-primary-dark: #0B4964;
-  --usr-primary-deeper: #08384E;
-  --usr-primary-soft: #E8F2F5;
-  --usr-gold: #D99A17;
-  --usr-gold-dark: #B87900;
-  --usr-gold-soft: #FFF4DA;
-  --usr-bg: #F7F8FA;
-  --usr-card: #FFFFFF;
-  --usr-border: #DDE6EA;
-  --usr-text: #102333;
-  --usr-muted: #667985;
+  /* Supabase Light Theme Tokens */
+  --usr-primary: #059669;
+  --usr-primary-dark: #047857;
+  --usr-primary-deeper: #065f46;
+  --usr-primary-soft: #ecfdf5;
+  --usr-gold: #d99a17;
+  --usr-gold-dark: #b87900;
+  --usr-gold-soft: #fff4da;
+  --usr-bg: #f8fafc;
+  --usr-card: #ffffff;
+  --usr-border: #e2e8f0;
+  --usr-text: #0f172a;
+  --usr-muted: #64748b;
 
   --background: var(--usr-bg);
   --foreground: var(--usr-text);
@@ -35,17 +36,17 @@
   --popover-foreground: var(--usr-text);
 
   --primary: var(--usr-primary);
-  --primary-foreground: #FFFFFF;
-  --primary-glow: #1A7AA3;
+  --primary-foreground: #ffffff;
+  --primary-glow: #10b981;
 
-  --secondary: var(--usr-primary-soft);
-  --secondary-foreground: var(--usr-primary-dark);
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
 
-  --muted: #EEF1F4;
+  --muted: #f8fafc;
   --muted-foreground: var(--usr-muted);
 
-  --accent: var(--usr-gold);
-  --accent-foreground: var(--usr-primary-deeper);
+  --accent: var(--usr-primary);
+  --accent-foreground: #ffffff;
 
   --border: var(--usr-border);
   --input: var(--usr-border);
@@ -53,13 +54,13 @@
 
   --gradient-hero: linear-gradient(
     135deg,
-    var(--usr-primary-deeper) 0%,
-    var(--usr-primary-dark) 40%,
-    var(--usr-primary) 100%
+    #ffffff 0%,
+    #f8fafc 50%,
+    #f1f5f9 100%
   );
-  --gradient-gold: linear-gradient(90deg, var(--usr-gold-dark) 0%, var(--usr-gold) 50%, var(--usr-gold-dark) 100%);
-  --shadow-card: 0 1px 3px rgb(16 35 51 / 0.06), 0 8px 24px rgb(16 35 51 / 0.08);
-  --shadow-elevated: 0 4px 16px rgb(16 35 51 / 0.1), 0 24px 48px rgb(16 35 51 / 0.12);
+  --gradient-gold: linear-gradient(90deg, #059669 0%, #10b981 50%, #059669 100%);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+  --shadow-elevated: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
 }
 
 @layer base {
@@ -72,26 +73,29 @@
     -webkit-font-smoothing: antialiased;
   }
   h1, h2, h3, h4, h5, h6 {
-    color: var(--usr-primary-dark);
+    color: #0f172a;
     font-family: var(--font-display);
   }
   input, select, textarea {
-    color: #102333 !important;
+    color: #0f172a !important;
     background-color: #ffffff !important;
+    border-color: #cbd5e1 !important;
   }
   table th {
-    color: var(--usr-primary-dark);
+    color: #0f172a;
+    background-color: #f1f5f9;
   }
   table td {
-    color: #1e293b;
+    color: #334155;
   }
 }
 
 .usr-topbar {
-  background: var(--usr-primary-deeper);
-  color: #fff;
+  background: #ffffff;
+  color: #0f172a;
   font-size: 0.8125rem;
   padding: 0.5rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .usr-nav-header {
@@ -101,21 +105,22 @@
   background: var(--usr-card);
   border-bottom: 1px solid var(--usr-border);
   padding: 1rem 1.5rem;
-  box-shadow: 0 1px 0 rgb(16 35 51 / 0.04);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 }
 
 .usr-gold-rule {
-  height: 4px;
+  height: 2px;
   background: var(--gradient-gold);
   flex-shrink: 0;
 }
 
 .usr-hero-deep {
   background: var(--gradient-hero);
-  color: #fff;
+  color: #0f172a;
   padding: 3.5rem 1.5rem 4rem;
   position: relative;
   overflow: hidden;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .usr-institutional-card {
@@ -145,8 +150,9 @@
 
 .usr-page-header {
   background: var(--gradient-hero);
-  color: #ffffff;
+  color: #0f172a;
   padding: 2.5rem 1.5rem 3rem;
   position: relative;
   overflow: hidden;
+  border-bottom: 1px solid #e2e8f0;
 }

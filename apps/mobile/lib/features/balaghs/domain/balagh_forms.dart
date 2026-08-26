@@ -284,6 +284,44 @@ const List<BalaghType> balaghTypes = [
   ),
 ];
 
+/// خطوة واحدة في نموذج البلاغ.
+class BalaghStep {
+  const BalaghStep({required this.title, required this.fields});
+
+  final String title;
+  final List<BalaghField> fields;
+}
+
+/// يقسّم حقول البلاغ إلى خطوات: البيانات الأساسية، ثم التفاصيل، ثم التأكيد.
+///
+/// التقسيم مشتقّ من طبيعة الحقول لا مكتوب لكل بلاغ على حدة: إضافة حقل
+/// إلى المخطط تجد مكانها تلقائياً بدل أن تُنسى خارج الخطوات.
+List<BalaghStep> stepsOf(BalaghType type) {
+  final basics = <BalaghField>[];
+  final details = <BalaghField>[];
+  final confirmations = <BalaghField>[];
+
+  for (final field in type.fields) {
+    if (field.kind == BalaghFieldKind.confirm) {
+      confirmations.add(field);
+    } else if (field.kind == BalaghFieldKind.activities ||
+        field.kind == BalaghFieldKind.choice ||
+        (field.required$ && field.kind != BalaghFieldKind.multiline)) {
+      basics.add(field);
+    } else {
+      details.add(field);
+    }
+  }
+
+  return [
+    if (basics.isNotEmpty) BalaghStep(title: 'البيانات', fields: basics),
+    if (details.isNotEmpty) BalaghStep(title: 'التفاصيل', fields: details),
+    // خطوة التأكيد قائمة دائماً ولو خلت من حقول إقرار: المراجعة قبل
+    // الإرسال جزء من النموذج لا زينة.
+    BalaghStep(title: 'التأكيد', fields: confirmations),
+  ];
+}
+
 BalaghType? balaghTypeOf(String code) {
   for (final type in balaghTypes) {
     if (type.code == code) return type;

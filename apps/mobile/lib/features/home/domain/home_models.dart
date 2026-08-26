@@ -63,6 +63,7 @@ class RequestSummary {
     required this.id,
     required this.publicRef,
     required this.status,
+    this.serviceCode,
     this.serviceName,
     this.submittedAt,
   });
@@ -70,6 +71,9 @@ class RequestSummary {
   final String id;
   final String publicRef;
   final RequestStatus status;
+
+  /// رمز الخدمة (FR-101...) — به تُربط الطلبات القائمة ببطاقات الخدمات.
+  final String? serviceCode;
   final String? serviceName;
   final DateTime? submittedAt;
 
@@ -79,6 +83,8 @@ class RequestSummary {
         status: RequestStatus.fromCode(
           (json['statusCode'] ?? json['status_code'])?.toString(),
         ),
+        serviceCode:
+            (json['serviceTypeCode'] ?? json['service_type_code'])?.toString(),
         serviceName:
             (json['serviceTypeName'] ?? json['service_type_name'])?.toString(),
         submittedAt: DateTime.tryParse(

@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../app/theme.dart';
 
-/// هيكل موحّد لشاشات المصادقة: ترويسة المكتب وبطاقة المحتوى.
+// ErrorBanner و BusyButton انتقلا إلى نظام التصميم الموحّد. يُعاد تصديرهما
+// هنا حتى تبقى الشاشات القائمة تعمل بلا تعديل استيراداتها، وتأخذ الشكل
+// الجديد تلقائياً — فلا نسختان من الزر نفسه تتباعدان مع الوقت.
+export '../design/widgets.dart' show BusyButton, ErrorBanner;
+
+/// هيكل موحّد لشاشات النماذج والمصادقة.
 class AuthScaffold extends StatelessWidget {
   const AuthScaffold({
     super.key,
@@ -26,7 +31,12 @@ class AuthScaffold extends StatelessWidget {
       ),
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.screenPadding,
+            18,
+            AppTheme.screenPadding,
+            24,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -34,9 +44,9 @@ class AuthScaffold extends StatelessWidget {
                 Text(
                   subtitle!,
                   style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xFF5A6B63),
-                    height: 1.6,
+                    fontSize: 13.5,
+                    color: AppTheme.secondary,
+                    height: 1.7,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -46,67 +56,6 @@ class AuthScaffold extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// شريط خطأ موحّد يظهر أعلى النموذج.
-class ErrorBanner extends StatelessWidget {
-  const ErrorBanner({super.key, required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFFDECEA),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: const Color(0xFFF5C6C0)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline, color: AppTheme.danger, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(color: AppTheme.danger, fontSize: 13.5),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// زر أساسي يعرض مؤشر تحميل بدل النص أثناء العمل، ويمنع النقر المزدوج.
-class BusyButton extends StatelessWidget {
-  const BusyButton({
-    super.key,
-    required this.label,
-    required this.busy,
-    required this.onPressed,
-  });
-
-  final String label;
-  final bool busy;
-  final VoidCallback? onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    return FilledButton(
-      onPressed: busy ? null : onPressed,
-      child: busy
-          ? const SizedBox(
-              height: 22,
-              width: 22,
-              child: CircularProgressIndicator(strokeWidth: 2.5, color: Colors.white),
-            )
-          : Text(label),
     );
   }
 }

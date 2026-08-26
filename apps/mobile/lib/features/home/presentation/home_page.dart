@@ -1,31 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../../app/shell.dart';
 import '../../../app/theme.dart';
-import '../../auth/presentation/auth_controller.dart';
-import '../../content/presentation/contact_page.dart';
-import '../../content/presentation/content_page_view.dart';
-import '../../content/presentation/document_list_page.dart';
-import '../../account/presentation/account_page.dart';
+import '../../../core/design/widgets.dart';
+import '../../account/data/account_repository.dart';
 import '../../balaghs/presentation/balaghs_page.dart';
+import '../../services/presentation/service_launcher.dart';
 import '../../services/presentation/services_page.dart';
 import '../data/home_repository.dart';
 import '../domain/home_models.dart';
+import 'inquiry_pages.dart';
 
-/// الصفحة الرئيسية بعد الدخول (القسم 4.2) — العناصر مرتّبة حسب الأهمية
-/// كما نصّ المستند: الإعلانات ثم الخدمات (الأبرز) ثم الاستعلامات ثم الإشعارات.
+/// الصفحة الرئيسية: بطاقة المكلف، ثم الخدمات، ثم الاستعلامات.
+///
+/// الترتيب مقصود: ما يخص المكلف مباشرةً أولاً، ثم ما يستطيع فعله، ثم ما
+/// يستطيع الاطلاع عليه.
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
-
-  static const String routeName = '/';
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
+  late Future<AccountProfile> _account;
   late Future<List<Announcement>> _announcements;
-  late Future<List<RequestSummary>> _requests;
+  late Future<Set<String>> _activeServiceCodes;
 
   @override
   void initState() {
@@ -34,16 +35,26 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _load() {
-    final repository = context.read<HomeRepository>();
-    _announcements = repository.announcements();
-    _requests = repository.myRequests();
+    final home = context.read<HomeRepository>();
+    _account = context.read<AccountRepository>().me();
+    _announcements = home.announcements();
+    // رموز الخدمات التي للمكلف فيها طلب لم يُغلق بعد — تُبرَز على بطاقاتها.
+    _activeServiceCodes = home
+        .myRequests()
+        .then((requests) => requests
+            .where((request) => !request.status.isClosed)
+            .map((request) => request.serviceCode ?? '')
+            .where((code) => code.isNotEmpty)
+            .toSet())
+        .catchError((_) => <String>{});
   }
 
   Future<void> _refresh() async {
     setState(_load);
     await Future.wait([
+      _account.catchError((_) => const AccountProfile()),
       _announcements.catchError((_) => <Announcement>[]),
-      _requests.catchError((_) => <RequestSummary>[]),
+      _activeServiceCodes,
     ]);
   }
 
@@ -51,41 +62,45 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('مكتب الضرائب — مأرب'),
+        title: const Text('الرئيسية'),
+        leading: IconButton(
+          icon: const Icon(Icons.notifications_none),
+          tooltip: 'الإشعارات',
+          onPressed: () => AppShell.of(context)?.goToTab(2),
+        ),
         actions: [
           IconButton(
-            tooltip: 'حسابي',
             icon: const Icon(Icons.person_outline),
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute<void>(builder: (_) => const AccountPage()),
-            ),
-          ),
-          IconButton(
-            tooltip: 'تسجيل الخروج',
-            icon: const Icon(Icons.logout),
-            onPressed: () => context.read<AuthController>().logout(),
+            tooltip: 'الملف الشخصي',
+            onPressed: () => AppShell.of(context)?.goToTab(4),
           ),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: _refresh,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(
+            AppTheme.screenPadding,
+            12,
+            AppTheme.screenPadding,
+            28,
+          ),
           children: [
-            _AnnouncementsBanner(future: _announcements),
-            const SizedBox(height: 24),
-            const _SectionTitle('الخدمات المقدَّمة'),
-            const SizedBox(height: 12),
-            const _ServicesGrid(),
-            const SizedBox(height: 24),
-            const _SectionTitle('الاستعلامات'),
-            const SizedBox(height: 12),
-            _RequestsSummary(future: _requests),
-            const SizedBox(height: 24),
-            const _SectionTitle('معلومات ومحتوى'),
-            const SizedBox(height: 12),
-            const _InfoLinks(),
-            const SizedBox(height: 24),
+            _TaxpayerCard(future: _account),
+            const SizedBox(height: AppTheme.sectionGap),
+            SectionHeader(
+              title: 'الخدمات',
+              actionLabel: 'عرض الكل',
+              onAction: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const ServicesPage()),
+              ),
+            ),
+            _ServicesGrid(activeCodes: _activeServiceCodes),
+            const SizedBox(height: AppTheme.sectionGap),
+            const SectionHeader(title: 'الاستعلامات'),
+            const _InquiriesList(),
+            const SizedBox(height: AppTheme.sectionGap),
+            _AnnouncementsSection(future: _announcements),
           ],
         ),
       ),
@@ -93,24 +108,318 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text);
+/// بطاقة المكلف الخضراء، أو دعوة لطلب رقم ضريبي إن لم يكن له رقم.
+class _TaxpayerCard extends StatelessWidget {
+  const _TaxpayerCard({required this.future});
 
-  final String text;
+  final Future<AccountProfile> future;
 
   @override
-  Widget build(BuildContext context) => Text(
-        text,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: AppTheme.primaryDark,
-        ),
-      );
+  Widget build(BuildContext context) {
+    return FutureBuilder<AccountProfile>(
+      future: future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Skeleton(height: 104, radius: AppTheme.cardRadius);
+        }
+
+        final profile = snapshot.data;
+        final taxNumber = profile?.taxpayer?.taxNumber;
+        final hasTaxNumber = (taxNumber ?? '').trim().isNotEmpty;
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              begin: Alignment.topRight,
+              end: Alignment.bottomLeft,
+              colors: [AppTheme.primary, AppTheme.primaryDark],
+            ),
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Row(
+            children: [
+              Container(
+                height: 48,
+                width: 48,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.16),
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: const Icon(
+                  Icons.account_balance_outlined,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 13),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'مرحباً بك',
+                      style: TextStyle(fontSize: 12.5, color: Color(0xCCFFFFFF)),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      profile?.displayName ?? 'مكلف',
+                      style: const TextStyle(
+                        fontSize: 16.5,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    if (hasTaxNumber)
+                      Text(
+                        'الرقم الضريبي: $taxNumber',
+                        textDirection: TextDirection.ltr,
+                        style: const TextStyle(
+                          fontSize: 12.5,
+                          color: Color(0xE6FFFFFF),
+                        ),
+                      )
+                    else ...[
+                      const Text(
+                        'لم يتم ربط حسابك برقم ضريبي حتى الآن.',
+                        style: TextStyle(
+                          fontSize: 12.5,
+                          height: 1.5,
+                          color: Color(0xE6FFFFFF),
+                        ),
+                      ),
+                      const SizedBox(height: 9),
+                      SizedBox(
+                        height: 34,
+                        child: FilledButton(
+                          onPressed: () => Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => const ServicesPage(),
+                            ),
+                          ),
+                          style: FilledButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: AppTheme.primaryDark,
+                            minimumSize: Size.zero,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            textStyle: const TextStyle(
+                              fontFamily: 'Tajawal',
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          child: const Text('طلب رقم ضريبي'),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 }
 
-class _AnnouncementsBanner extends StatelessWidget {
-  const _AnnouncementsBanner({required this.future});
+/// شبكة الخدمات الخمس مع مدخل البلاغات.
+class _ServicesGrid extends StatelessWidget {
+  const _ServicesGrid({required this.activeCodes});
+
+  final Future<Set<String>> activeCodes;
+
+  static const _items = [
+    (
+      code: 'FR-101',
+      title: 'فتح ملف ضريبي',
+      icon: Icons.note_add_outlined,
+    ),
+    (
+      code: 'FR-102',
+      title: 'استخراج رقم ضريبي',
+      icon: Icons.badge_outlined,
+    ),
+    (code: 'FR-103', title: 'بدل فاقد', icon: Icons.restore_page_outlined),
+    (code: 'FR-104', title: 'تحديث بيانات', icon: Icons.edit_note_outlined),
+    (
+      code: 'FR-105',
+      title: 'شهادة ضريبة المبيعات',
+      icon: Icons.workspace_premium_outlined,
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<Set<String>>(
+      future: activeCodes,
+      builder: (context, snapshot) {
+        final active = snapshot.data ?? const <String>{};
+        return GridView.count(
+          crossAxisCount: 3,
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          mainAxisSpacing: AppTheme.cardGap,
+          crossAxisSpacing: AppTheme.cardGap,
+          childAspectRatio: 0.92,
+          children: [
+            for (final item in _items)
+              _ServiceTile(
+                title: item.title,
+                icon: item.icon,
+                hasActiveRequest: active.contains(item.code),
+                // تفتح الخدمة نفسها لا قائمة الخدمات. الكتالوج يُجلب داخل
+                // المُشغّل ليبقى الخادم هو المرجع لما يُتاح لهذا المكلف.
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) => ServiceLauncher(
+                      code: item.code,
+                      title: item.title,
+                    ),
+                  ),
+                ),
+              ),
+            _ServiceTile(
+              title: 'البلاغات',
+              icon: Icons.campaign_outlined,
+              accent: AppTheme.warning,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => const BalaghsPage()),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _ServiceTile extends StatelessWidget {
+  const _ServiceTile({
+    required this.title,
+    required this.icon,
+    required this.onTap,
+    this.accent,
+    this.hasActiveRequest = false,
+  });
+
+  final String title;
+  final IconData icon;
+  final VoidCallback onTap;
+  final Color? accent;
+
+  /// للمكلف طلب قائم على هذه الخدمة لم يُغلق بعد.
+  final bool hasActiveRequest;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = accent ?? AppTheme.primary;
+    return Material(
+      color: AppTheme.surface,
+      borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+            border: Border.all(color: AppTheme.border),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    height: 40,
+                    width: 40,
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(11),
+                    ),
+                    child: Icon(icon, size: 21, color: color),
+                  ),
+                  if (hasActiveRequest)
+                    PositionedDirectional(
+                      top: -2,
+                      end: -2,
+                      child: Container(
+                        height: 11,
+                        width: 11,
+                        decoration: BoxDecoration(
+                          color: AppTheme.warning,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppTheme.surface, width: 2),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 9),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 12,
+                  height: 1.3,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.text,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _InquiriesList extends StatelessWidget {
+  const _InquiriesList();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        NavRow(
+          icon: Icons.badge_outlined,
+          title: 'الرقم الضريبي وبياناته',
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const TaxNumberPage()),
+          ),
+        ),
+        const SizedBox(height: AppTheme.cardGap),
+        NavRow(
+          icon: Icons.payments_outlined,
+          title: 'المستحقات الضريبية',
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => const DuesPage()),
+          ),
+        ),
+        const SizedBox(height: AppTheme.cardGap),
+        NavRow(
+          icon: Icons.description_outlined,
+          title: 'حالة الطلبات',
+          onTap: () => AppShell.of(context)?.goToTab(1),
+        ),
+        const SizedBox(height: AppTheme.cardGap),
+        NavRow(
+          icon: Icons.campaign_outlined,
+          title: 'حالة البلاغات',
+          onTap: () => AppShell.of(context)?.goToTab(1),
+        ),
+      ],
+    );
+  }
+}
+
+class _AnnouncementsSection extends StatelessWidget {
+  const _AnnouncementsSection({required this.future});
 
   final Future<List<Announcement>> future;
 
@@ -120,426 +429,57 @@ class _AnnouncementsBanner extends StatelessWidget {
       future: future,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const _BannerShell(child: LinearProgressIndicator());
+          return const Skeleton(height: 72, radius: AppTheme.cardRadius);
         }
         final items = snapshot.data ?? const <Announcement>[];
-        if (items.isEmpty) {
-          return const _BannerShell(
-            child: Text(
-              'لا توجد إعلانات حالياً',
-              style: TextStyle(color: Colors.white70),
-            ),
-          );
-        }
-        return SizedBox(
-          height: 132,
-          child: PageView.builder(
-            itemCount: items.length,
-            controller: PageController(viewportFraction: 0.94),
-            itemBuilder: (context, index) {
-              final item = items[index];
-              return Padding(
-                padding: const EdgeInsets.only(left: 8),
-                child: _BannerShell(
+        if (items.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SectionHeader(title: 'إعلانات المكتب'),
+            for (final item in items.take(3))
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppTheme.cardGap),
+                child: Container(
+                  padding: const EdgeInsets.all(13),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surface,
+                    borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+                    border: Border.all(color: AppTheme.border),
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         item.title,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppTheme.text,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Expanded(
-                        child: Text(
-                          item.body ?? '',
-                          maxLines: 3,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: Color(0xFFD6E8E1),
-                            fontSize: 13,
-                            height: 1.6,
+                      if ((item.body ?? '').trim().isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 5),
+                          child: Text(
+                            item.body!,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              height: 1.6,
+                              color: AppTheme.secondary,
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ),
-              );
-            },
-          ),
+              ),
+          ],
         );
       },
-    );
-  }
-}
-
-class _BannerShell extends StatelessWidget {
-  const _BannerShell({required this.child});
-
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: 132,
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [AppTheme.primaryDark, AppTheme.primary],
-        ),
-        borderRadius: BorderRadius.circular(18),
-      ),
-      alignment: Alignment.centerRight,
-      child: child,
-    );
-  }
-}
-
-/// الخدمات الخمس والبلاغات الستة (4.3 و4.4).
-///
-/// الطلبات تفتح كتالوج الخادم الحقيقي — لا قائمة ثابتة هنا، لأن ما يُتاح
-/// للمكلف يعتمد على حالته (FR-102 مثلاً تُخفى عمّن يملك رقماً ضريبياً).
-/// البلاغات الستة تفتح نموذجاً يُبنى من وصف حقول مطابق لمخطط الخادم.
-class _ServicesGrid extends StatelessWidget {
-  const _ServicesGrid();
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const _GroupLabel('الطلبات'),
-        const _RequestsEntryCard(),
-        const SizedBox(height: 16),
-        const _GroupLabel('البلاغات'),
-        const _BalaghsEntryCard(),
-      ],
-    );
-  }
-
-}
-
-/// مدخل واحد لكل خدمات القسم 4.3؛ القائمة تُقرأ من الخادم داخل الشاشة.
-class _RequestsEntryCard extends StatelessWidget {
-  const _RequestsEntryCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const ServicesPage()),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                height: 44,
-                width: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEAF4F0),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.folder_open, color: AppTheme.primary),
-              ),
-              const SizedBox(width: 14),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'تقديم طلب خدمة',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'فتح ملف ضريبي، استخراج رقم، بدل فاقد، تحديث بيانات، شهادة مبيعات',
-                      style: TextStyle(fontSize: 12.5, color: Color(0xFF5A6B63), height: 1.5),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_left, color: AppTheme.primary),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// مدخل البلاغات الستة، بنفس شكل بطاقة الطلبات: الشاشة الأولى تعرض
-/// مدخلين واضحين لا اثنتي عشرة بطاقة.
-class _BalaghsEntryCard extends StatelessWidget {
-  const _BalaghsEntryCard();
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () => Navigator.of(context).push(
-          MaterialPageRoute<void>(builder: (_) => const BalaghsPage()),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              Container(
-                height: 44,
-                width: 44,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEAF4F0),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(Icons.campaign_outlined, color: AppTheme.primary),
-              ),
-              const SizedBox(width: 14),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'تقديم بلاغ',
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'إيقاف نشاط، خروج مستأجر، خروج عامل، تغيير عنوان، نقل ملكية، تفعيل نشاط',
-                      style: TextStyle(fontSize: 12.5, color: Color(0xFF5A6B63), height: 1.5),
-                    ),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_left, color: AppTheme.primary),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _GroupLabel extends StatelessWidget {
-  const _GroupLabel(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Text(
-          text,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-            color: Color(0xFF5A6B63),
-          ),
-        ),
-      );
-}
-
-class _RequestsSummary extends StatelessWidget {
-  const _RequestsSummary({required this.future});
-
-  final Future<List<RequestSummary>> future;
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<List<RequestSummary>>(
-      future: future,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Card(
-            child: Padding(
-              padding: EdgeInsets.all(24),
-              child: Center(child: CircularProgressIndicator()),
-            ),
-          );
-        }
-        if (snapshot.hasError) {
-          return const Card(
-            child: ListTile(
-              leading: Icon(Icons.cloud_off, color: Color(0xFF9AAAA3)),
-              title: Text('تعذّر تحميل طلباتك'),
-              subtitle: Text('اسحب للأسفل لإعادة المحاولة'),
-            ),
-          );
-        }
-        final items = snapshot.data ?? const <RequestSummary>[];
-        if (items.isEmpty) {
-          return const Card(
-            child: ListTile(
-              leading: Icon(Icons.inbox_outlined, color: Color(0xFF9AAAA3)),
-              title: Text('لا توجد طلبات أو بلاغات بعد'),
-              subtitle: Text('ابدأ بأي خدمة من القائمة أعلاه'),
-            ),
-          );
-        }
-        return Card(
-          child: Column(
-            children: [
-              for (final item in items.take(5))
-                ListTile(
-                  title: Text(item.serviceName ?? item.publicRef),
-                  subtitle: Text(item.publicRef, textDirection: TextDirection.ltr),
-                  trailing: _StatusChip(status: item.status),
-                ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-}
-
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.status});
-
-  final RequestStatus status;
-
-  @override
-  Widget build(BuildContext context) {
-    final (background, foreground) = switch (status) {
-      _ when status.needsTaxpayerAction => (const Color(0xFFFFF3E0), const Color(0xFF9A5B00)),
-      RequestStatus.rejected || RequestStatus.cancelled => (const Color(0xFFFDECEA), AppTheme.danger),
-      RequestStatus.completed || RequestStatus.approved => (const Color(0xFFE8F5EE), AppTheme.primaryDark),
-      _ => (const Color(0xFFEEF2F0), const Color(0xFF5A6B63)),
-    };
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        status.label,
-        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: foreground),
-      ),
-    );
-  }
-}
-
-/// أقسام المحتوى (4.2 بنود 5–11).
-///
-/// كلها تقرأ من نقاط الموقع العام نفسها، فما ينشره المكتب يظهر في الموقع
-/// والتطبيق معاً بلا ازدواج في المصدر.
-class _InfoLinks extends StatelessWidget {
-  const _InfoLinks();
-
-  @override
-  Widget build(BuildContext context) {
-    final entries = <({IconData icon, String label, Widget Function() page})>[
-      (
-        icon: Icons.info_outline,
-        label: 'عن المكتب',
-        page: () => const ContentPageView(
-              pageKey: 'about',
-              title: 'عن المكتب',
-              fallback:
-                  'مكتب الضرائب بمحافظة مأرب — الجهة المسؤولة عن تحصيل الضرائب '
-                  'وتقديم الخدمات الضريبية في المحافظة.',
-            ),
-      ),
-      (
-        icon: Icons.menu_book_outlined,
-        label: 'مركز المعلومات',
-        page: () => const ContentPageView(
-              pageKey: 'info-center',
-              title: 'مركز المعلومات',
-            ),
-      ),
-      (
-        icon: Icons.help_outline,
-        label: 'الإرشادات',
-        page: () => const DocumentListPage(
-              introPageKey: 'guidelines',
-              title: 'الإرشادات والأدلة',
-              subtitle:
-                  'أدلة المصلحة الإرشادية تشرح إجراءات التسجيل والإقرارات '
-                  'والتحصيل والمنازعات خطوةً بخطوة.',
-              category: 'guide',
-            ),
-      ),
-      (
-        icon: Icons.description_outlined,
-        label: 'النماذج',
-        page: () => const DocumentListPage(
-              title: 'النماذج والإقرارات',
-              subtitle: 'الاستمارات المعتمدة للتعبئة والتقديم لدى المكتب.',
-              category: 'form',
-            ),
-      ),
-      (
-        icon: Icons.gavel_outlined,
-        label: 'القوانين واللوائح',
-        page: () => const DocumentListPage(
-              title: 'القوانين واللوائح',
-              subtitle: 'النصوص القانونية الحاكمة للعمل الضريبي.',
-              category: 'law',
-            ),
-      ),
-      (
-        icon: Icons.article_outlined,
-        label: 'القرارات والتعليمات',
-        page: () => const DocumentListPage(
-              title: 'القرارات والتعليمات',
-              subtitle: 'القرارات والتعاميم الصادرة عن مصلحة الضرائب.',
-              category: 'decision',
-            ),
-      ),
-      (
-        icon: Icons.receipt_long_outlined,
-        label: 'ضرائب الدخل',
-        page: () => const DocumentListPage(
-              title: 'ضرائب الدخل',
-              subtitle:
-                  'كل ما يخص ضريبة الدخل: القوانين والقرارات والإقرارات والأدلة.',
-              topic: 'income_tax',
-            ),
-      ),
-      (
-        icon: Icons.point_of_sale_outlined,
-        label: 'ضريبة المبيعات',
-        page: () => const DocumentListPage(
-              title: 'ضريبة المبيعات',
-              subtitle:
-                  'كل ما يخص الضريبة العامة على المبيعات: القوانين والقرارات '
-                  'والنماذج والأدلة.',
-              topic: 'sales_tax',
-            ),
-      ),
-      (
-        icon: Icons.call_outlined,
-        label: 'عناوين الاتصال',
-        page: () => const ContactPage(),
-      ),
-    ];
-
-    return Card(
-      child: Column(
-        children: [
-          for (final entry in entries)
-            ListTile(
-              leading: Icon(entry.icon, color: AppTheme.primary),
-              title: Text(entry.label),
-              trailing: const Icon(Icons.chevron_left, size: 20),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(builder: (_) => entry.page()),
-              ),
-            ),
-        ],
-      ),
     );
   }
 }

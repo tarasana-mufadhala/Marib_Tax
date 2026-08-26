@@ -638,23 +638,6 @@ export class AdminController {
     }
   }
 
-  @RequirePermission('taxpayer.profile.read')
-  @Get('taxpayers')
-  async getTaxpayers() {
-    if (!this.db.isInitialized) return [];
-    try {
-      const rows = await this.db.db
-        .selectFrom('registry.taxpayers' as any)
-        .selectAll()
-        .orderBy('created_at' as any, 'desc')
-        .limit(100)
-        .execute();
-      return rows;
-    } catch {
-      return [];
-    }
-  }
-
   // تعيد طلبات كل المكلفين بأسمائهم ⇒ صلاحية موظف لا صلاحية مكلف.
   @RequirePermission('request.review')
   @Get('requests')

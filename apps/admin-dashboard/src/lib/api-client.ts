@@ -203,6 +203,48 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
   return await res.json();
 }
 
+/** انتقال حالة متاح على ملف مكلف، كما يحدّده الخادم. */
+export interface TaxpayerTransition {
+  code: string;
+  label: string;
+  reasonRequired: boolean;
+}
+
+/** صف في سجل المكلفين بلوحة الإدارة. */
+export interface AdminTaxpayer {
+  id: string;
+  taxNumber: string | null;
+  displayName: string;
+  statusCode: string;
+  statusLabel: string;
+  createdAt: string;
+  phone: string | null;
+  email: string | null;
+  activityCount: number;
+  openRequests: number;
+  allowedTransitions: TaxpayerTransition[];
+}
+
+export interface AdminTaxpayerDetails extends AdminTaxpayer {
+  legalEntityName: string | null;
+  contacts: { type: string; value: string; isPrimary: boolean }[];
+  activities: {
+    id: string;
+    name: string | null;
+    activityType: string | null;
+    statusCode: string | null;
+  }[];
+  history: {
+    fromStatus: string | null;
+    toStatus: string;
+    fromLabel: string | null;
+    toLabel: string;
+    reason: string | null;
+    changedAt: string;
+    officerName: string | null;
+  }[];
+}
+
 /** تسميات البلاغات الستة، مطابِقة لما يعرضه التطبيق للمكلف. */
 const BALAGH_TITLES: Record<string, string> = {
   'FR-201': 'إخطار إيقاف نشاط',
@@ -304,23 +346,6 @@ export const api = {
         permissions: string[];
       }>('/admin/me'),
 
-    getTaxpayers: async (): Promise<Taxpayer[]> => {
-      const rows = await apiRequest<any[]>('/admin/taxpayers');
-      return (rows ?? []).map((r) => ({
-        id: String(r.id),
-        tin: r.public_ref ?? '—',
-        tradeName: r.display_name ?? '—',
-        ownerName: r.owner_name ?? '—',
-        phone: r.primary_phone ?? '—',
-        governorate: r.governorate_name ?? '—',
-        directorate: r.directorate_name ?? '—',
-        activityType: r.activity_type_name ?? '—',
-        registrationDate: fmtDate(r.created_at),
-        status: mapTaxpayerStatus(r.status_code),
-        totalDues: Number(r.total_dues ?? 0),
-      }));
-    },
-
     getRequests: async (): Promise<RequestItem[]> => {
       const rows = await apiRequest<any[]>('/admin/requests');
       return (rows ?? []).map((r) => ({
@@ -338,6 +363,37 @@ export const api = {
      * البلاغات الستة كما تصل من تطبيق المكلف. مصدرها جدول مستقل عن الطلبات،
      * فلها نداء مستقل — دمجها في `getRequests` كان يعني إخفاءها بالكامل.
      */
+    /**
+     * سجل المكلفين لشاشة الإدارة.
+     *
+     * التصفية والبحث على الخادم لا في المتصفح: تحميل السجل كاملاً ثم
+     * تصفيته محلياً يعني إرسال بيانات كل المكلفين إلى كل جهاز موظف.
+     */
+    getAdminTaxpayers: async (params?: {
+      status?: string;
+      search?: string;
+    }): Promise<AdminTaxpayer[]> => {
+      const query = new URLSearchParams();
+      if (params?.status) query.set('status', params.status);
+      if (params?.search) query.set('search', params.search);
+      const suffix = query.toString() ? `?${query.toString()}` : '';
+      return (await apiRequest<AdminTaxpayer[]>(`/admin/taxpayers${suffix}`)) ?? [];
+    },
+
+    getAdminTaxpayer: async (id: string): Promise<AdminTaxpayerDetails> =>
+      apiRequest<AdminTaxpayerDetails>(`/admin/taxpayers/${id}`),
+
+    changeTaxpayerStatus: async (
+      id: string,
+      toStatus: string,
+      reason: string,
+    ): Promise<void> => {
+      await apiRequest(`/admin/taxpayers/${id}/status`, {
+        method: 'POST',
+        body: JSON.stringify({ toStatus, reason }),
+      });
+    },
+
     getBalaghs: async (): Promise<RequestItem[]> => {
       const rows = await apiRequest<any[]>('/admin/balaghs');
       return (rows ?? []).map((r) => ({

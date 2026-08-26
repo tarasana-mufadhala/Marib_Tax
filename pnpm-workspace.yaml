@@ -3,6 +3,8 @@ packages:
   - "packages/*"
 
 allowBuilds:
+  '@astryxdesign/cli': set this to true or false
+  '@astryxdesign/core': set this to true or false
   sharp: false
   unrs-resolver: false
 

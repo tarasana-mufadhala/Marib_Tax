@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AdminController } from './admin.controller.js';
+import { TaxpayerAdminController } from './taxpayer-admin.controller.js';
 import { AccessControlController } from './access-control.controller.js';
 import { AttachmentsController } from './attachments.controller.js';
 import { ImportsController } from './imports.controller.js';
@@ -11,7 +12,7 @@ import { MessagingModule } from '../messaging/messaging.module.js';
 
 @Module({
   imports: [DatabaseModule, MessagingModule],
-  controllers: [AdminController, AccessControlController, AttachmentsController, ImportsController, PublicContentController, ReportsController],
+  controllers: [AdminController, TaxpayerAdminController, AccessControlController, AttachmentsController, ImportsController, PublicContentController, ReportsController],
   providers: [StorageService],
   // تستعمله وحدة الخدمات لرفع مرفقات المكلف.
   exports: [StorageService],

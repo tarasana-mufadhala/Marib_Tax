@@ -26,7 +26,8 @@ const ADMIN_PASSWORD = process.env.SEED_ADMIN_PASSWORD || 'Marib@2026';
 const ADMIN_NAME = process.env.SEED_ADMIN_NAME || 'مدير النظام';
 
 const PERMISSION_CODES = [
-  'taxpayer.profile.read','taxpayer.profile.update','request.read','request.draft.create',
+  'taxpayer.profile.read','taxpayer.profile.update',
+  'taxpayer.admin.read','taxpayer.admin.status','request.read','request.draft.create',
   'request.draft.edit','request.draft.delete','request.submit','request.completion.provide',
   'request.review','request.completion.request','request.decision.recommend','request.decision.final',
   'request.admin.close','request.archive','balagh.read','balagh.create','balagh.draft.edit',

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../../../app/theme.dart';
 import '../../../core/widgets/app_scaffold.dart';
 import '../domain/auth_models.dart';
 import '../domain/password_rules.dart';
@@ -182,7 +183,7 @@ class _RegisterDetailsPageState extends State<RegisterDetailsPage> {
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: Text('جارٍ التحميل...',
-                      style: TextStyle(color: Color(0xFF7A8A83))),
+                      style: TextStyle(color: AppTheme.secondary)),
                 ),
               ),
             );
@@ -197,7 +198,7 @@ class _RegisterDetailsPageState extends State<RegisterDetailsPage> {
                   const Expanded(
                     child: Text(
                       'تعذّر تحميل الكيانات القانونية',
-                      style: TextStyle(color: Color(0xFF7A8A83)),
+                      style: TextStyle(color: AppTheme.secondary),
                     ),
                   ),
                   TextButton(
@@ -241,7 +242,7 @@ class _TaxNumberChip extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: const Color(0xFFEAF4F0),
+        color: AppTheme.primarySoft,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: const Color(0xFFCADDD5)),
       ),

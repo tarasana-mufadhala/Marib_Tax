@@ -47,7 +47,7 @@ class ContactPage extends StatelessWidget {
           const Text(
             'للاستفسار عن معاملتك أو الإبلاغ عن مشكلة، تواصل مع المكتب عبر أيٍّ '
             'من الوسائل التالية.',
-            style: TextStyle(fontSize: 13.5, height: 1.8, color: Color(0xFF5A6B63)),
+            style: TextStyle(fontSize: 13.5, height: 1.8, color: AppTheme.secondary),
           ),
           const SizedBox(height: 18),
           for (final channel in _channels)
@@ -105,14 +105,14 @@ class _ChannelTile extends StatelessWidget {
           height: 40,
           width: 40,
           decoration: BoxDecoration(
-            color: const Color(0xFFEAF4F0),
+            color: AppTheme.primarySoft,
             borderRadius: BorderRadius.circular(11),
           ),
           child: Icon(icon, size: 20, color: AppTheme.primary),
         ),
         title: Text(
           label,
-          style: const TextStyle(fontSize: 12.5, color: Color(0xFF7A8A83)),
+          style: const TextStyle(fontSize: 12.5, color: AppTheme.secondary),
         ),
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 3),
@@ -121,14 +121,14 @@ class _ChannelTile extends StatelessWidget {
             style: const TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: Color(0xFF1B2B24),
+              color: AppTheme.text,
             ),
           ),
         ),
         trailing: Icon(
           action.isEmpty ? Icons.copy_outlined : Icons.open_in_new,
           size: 17,
-          color: const Color(0xFF9AAAA3),
+          color: AppTheme.secondary,
         ),
       ),
     );

@@ -30,7 +30,7 @@ class BalaghsPage extends StatelessWidget {
           const Text(
             'اختر نوع البلاغ الذي تريد تقديمه. بعد الإرسال يصلك إشعار بكل '
             'تغيّر في حالته حتى صدور القرار.',
-            style: TextStyle(fontSize: 13.5, height: 1.8, color: Color(0xFF5A6B63)),
+            style: TextStyle(fontSize: 13.5, height: 1.8, color: AppTheme.secondary),
           ),
           const SizedBox(height: 16),
           for (final type in balaghTypes)
@@ -46,7 +46,7 @@ class BalaghsPage extends StatelessWidget {
                   height: 42,
                   width: 42,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFEAF4F0),
+                    color: AppTheme.primarySoft,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
@@ -70,7 +70,7 @@ class BalaghsPage extends StatelessWidget {
                         : 'يُعالَج داخل المكتب بلا نزول ميداني',
                     style: const TextStyle(
                       fontSize: 12,
-                      color: Color(0xFF7A8A83),
+                      color: AppTheme.secondary,
                     ),
                   ),
                 ),

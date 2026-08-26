@@ -56,7 +56,7 @@ export default function DownloadPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 space-y-3">
           <Badge variant="gold" className="px-3 py-1 font-bold text-xs">الخدمات الذاتية للمكلفين</Badge>
           <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold font-display text-white">
-            تطبيق ضرائب مأرب للهواتف الذكية
+            تطبيق الجوال لضرائب مأرب للهواتف الذكية
           </h1>
           <p className="text-xs sm:text-base text-slate-200 font-light max-w-2xl mx-auto">
             منظومة المكلفين المحمولة لمتابعة كافة المعاملات واستلام الإشعارات الرسمية لحظة بلحظة
@@ -74,7 +74,7 @@ export default function DownloadPage() {
               </div>
               <div>
                 <h2 className="text-xl sm:text-3xl font-bold font-display text-white">
-                  تطبيق المكلفين — فرع مأرب (v1.0.4)
+                  تطبيق الجوال للمكلفين — فرع مأرب (v1.0.4)
                 </h2>
                 <p className="text-xs text-[var(--usr-gold-soft)] font-mono">الإصدار الرسمي المعتمد • متوافق مع Android 8.0+</p>
               </div>
@@ -100,7 +100,7 @@ export default function DownloadPage() {
         <section className="space-y-6">
           <div className="border-r-4 border-[var(--usr-gold)] pr-3 sm:pr-4">
             <h3 className="text-xl sm:text-3xl font-bold font-display text-[var(--usr-primary-dark)]">
-              أبرز مزايا تطبيق الهاتف المحمول
+              أبرز مزايا تطبيق الجوال
             </h3>
             <p className="text-xs sm:text-sm text-[var(--usr-muted)] mt-1">
               خدمات وتسهيلات رقمية متكاملة في متناول يدك

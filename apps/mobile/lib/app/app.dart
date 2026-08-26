@@ -3,9 +3,11 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../core/api/api_client.dart';
+import '../core/storage/draft_store.dart';
 import '../core/storage/token_store.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/presentation/auth_controller.dart';
+import '../features/auth/presentation/email_otp_page.dart';
 import '../features/auth/presentation/forgot_password_page.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/auth/presentation/register_details_page.dart';
@@ -19,15 +21,22 @@ import '../features/account/data/account_repository.dart';
 import '../features/balaghs/data/balagh_repository.dart';
 import '../features/content/data/content_repository.dart';
 import '../features/services/data/service_repository.dart';
-import '../features/home/presentation/home_page.dart';
+import '../features/splash/presentation/splash_page.dart';
+import 'shell.dart';
 import 'theme.dart';
 
 /// جذر التطبيق. يقبل حقن التبعيات حتى تُختبر الشاشات بلا شبكة ولا تخزين منصّة.
 class MaribTaxApp extends StatefulWidget {
-  const MaribTaxApp({super.key, this.tokenStore, this.apiClient});
+  const MaribTaxApp({
+    super.key,
+    this.tokenStore,
+    this.apiClient,
+    this.draftStore,
+  });
 
   final TokenStore? tokenStore;
   final ApiClient? apiClient;
+  final DraftStore? draftStore;
 
   @override
   State<MaribTaxApp> createState() => _MaribTaxAppState();
@@ -42,6 +51,7 @@ class _MaribTaxAppState extends State<MaribTaxApp> {
   late final ContentRepository _content;
   late final BalaghRepository _balaghs;
   late final AccountRepository _account;
+  late final DraftStore _drafts;
 
   @override
   void initState() {
@@ -56,6 +66,7 @@ class _MaribTaxAppState extends State<MaribTaxApp> {
     _content = ContentRepository(api: _api);
     _balaghs = BalaghRepository(api: _api);
     _account = AccountRepository(api: _api);
+    _drafts = widget.draftStore ?? SecureDraftStore();
     // انتهاء الجلسة من أي نداء يُعيد التطبيق لشاشة الدخول فوراً.
     _api.onUnauthenticated = _auth.onSessionExpired;
     _auth.restoreSession();
@@ -77,6 +88,7 @@ class _MaribTaxAppState extends State<MaribTaxApp> {
         Provider<ContentRepository>.value(value: _content),
         Provider<BalaghRepository>.value(value: _balaghs),
         Provider<AccountRepository>.value(value: _account),
+        Provider<DraftStore>.value(value: _drafts),
       ],
       child: MaterialApp(
         title: 'مكتب الضرائب بمحافظة مأرب',
@@ -93,6 +105,7 @@ class _MaribTaxAppState extends State<MaribTaxApp> {
         routes: {
           LoginPage.routeName: (_) => const LoginPage(),
           ForgotPasswordPage.routeName: (_) => const ForgotPasswordPage(),
+          EmailOtpPage.routeName: (_) => const EmailOtpPage(),
           RequestCredentialsPage.routeName: (_) => const RequestCredentialsPage(),
           RegisterPhonePage.routeName: (_) => const RegisterPhonePage(),
           RegisterOtpPage.routeName: (_) => const RegisterOtpPage(),
@@ -113,10 +126,8 @@ class _RootGate extends StatelessWidget {
   Widget build(BuildContext context) {
     final status = context.watch<AuthController>().status;
     return switch (status) {
-      AuthStatus.unknown => const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        ),
-      AuthStatus.signedIn => const HomePage(),
+      AuthStatus.unknown => const SplashPage(),
+      AuthStatus.signedIn => const AppShell(),
       AuthStatus.signedOut => const WelcomePage(),
     };
   }

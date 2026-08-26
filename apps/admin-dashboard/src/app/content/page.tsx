@@ -62,7 +62,7 @@ const LIBRARY_CATEGORY_AR: Record<string, string> = {
 
 const PAGE_KEYS = [
   { key: 'about', label: 'عن المكتب والرؤية والرسالة' },
-  { key: 'contact', label: 'بيانات التواصل والمقر' },
+  { key: 'contact', label: 'بيانات التواصل والعنوان' },
   { key: 'guidelines', label: 'الإرشادات والتوعية الضريبية' },
   { key: 'info-center', label: 'مركز المعلومات والأنظمة' },
 ];
@@ -583,7 +583,7 @@ export default function AdminContentPage() {
               ))}
             </div>
           ) : (
-            <p className="text-xs text-[var(--usr-muted)]">لا توجد رسائل واردة بعد — ستظهر هنا فور إرسالها من صفحة «التواصل والمقر» على الموقع العام.</p>
+            <p className="text-xs text-[var(--usr-muted)]">لا توجد رسائل واردة بعد — ستظهر هنا فور إرسالها من صفحة «التواصل والعنوان» على الموقع العام.</p>
           )}
         </CardContent>
       </Card>
@@ -603,17 +603,131 @@ export default function AdminContentPage() {
               value={editingPage.title}
               onChange={(e) => setEditingPage({ ...editingPage, title: e.target.value })}
             />
-            <div className="space-y-1.5">
-              <label className="block text-xs font-semibold text-[var(--usr-text)]">محتوى الصفحة (النص الكامل) *</label>
-              <textarea
-                rows={8}
-                className="flex w-full rounded-lg border border-[var(--usr-border)] bg-white px-3 py-2 text-sm text-[var(--usr-text)] focus:outline-none focus:ring-2 focus:ring-[var(--usr-primary)]"
-                value={editingPage.body}
-                onChange={(e) => setEditingPage({ ...editingPage, body: e.target.value })}
-                placeholder="اكتب محتوى الصفحة..."
-                required
-              />
-            </div>
+
+            {editingPage.key === 'contact' ? (() => {
+              const contactData = (() => {
+                const DEFAULT = {
+                  whatsapp: '+967 777 000 111',
+                  phone: '06-302155 / 06-302156',
+                  address: 'محافظة مأرب — مأرب المدينة — الشارع العام — المجمع الحكومي لمكاتب الوزارات والهيئات الحكومية',
+                  hours: 'الأحد إلى الخميس — من 8:00 صباحاً حتى 2:00 ظهراً',
+                  notes: '',
+                };
+                if (!editingPage.body.trim()) return DEFAULT;
+                try {
+                  const p = JSON.parse(editingPage.body);
+                  if (typeof p === 'object' && p !== null) {
+                    return {
+                      whatsapp: p.whatsapp || DEFAULT.whatsapp,
+                      phone: p.phone || DEFAULT.phone,
+                      address: p.address || DEFAULT.address,
+                      hours: p.hours || DEFAULT.hours,
+                      notes: p.notes || '',
+                    };
+                  }
+                } catch {
+                  return { ...DEFAULT, notes: editingPage.body };
+                }
+                return DEFAULT;
+              })();
+
+              const updateContact = (patch: Partial<typeof contactData>) => {
+                const updated = { ...contactData, ...patch };
+                setEditingPage({ ...editingPage, body: JSON.stringify(updated) });
+              };
+
+              return (
+                <div className="space-y-3 p-3.5 rounded-2xl bg-[var(--usr-bg)] border border-[var(--usr-border)]">
+                  <p className="font-bold text-[var(--usr-primary-dark)] text-xs border-b border-slate-200 pb-2">
+                    بيانات التواصل وأرقام الخدمة المعتمدة
+                  </p>
+                  
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-emerald-800">
+                      💬 رقم التواصل عبر الواتساب (يتحول تلقائياً لرابط محادثة مباشر على الموقع):
+                    </label>
+                    <input
+                      type="text"
+                      dir="ltr"
+                      className="flex w-full rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm font-mono text-emerald-900 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      value={contactData.whatsapp}
+                      onChange={(e) => updateContact({ whatsapp: e.target.value })}
+                      placeholder="+967 777 000 111"
+                      required
+                    />
+                    <p className="text-[11px] text-slate-500">
+                      أدخل الرقم بالصيغة الدولية أو المحلية (مثل +967777000111 أو 777000111). وسيتم إنشاء رابط الواتساب التفاعلي تلقائياً.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-[var(--usr-text)]">
+                      📞 أرقام الهاتف الثابت والسنترال:
+                    </label>
+                    <input
+                      type="text"
+                      dir="ltr"
+                      className="flex w-full rounded-lg border border-[var(--usr-border)] bg-white px-3 py-2 text-sm font-mono text-slate-800 font-bold focus:outline-none focus:ring-2 focus:ring-[var(--usr-primary)]"
+                      value={contactData.phone}
+                      onChange={(e) => updateContact({ phone: e.target.value })}
+                      placeholder="06-302155 / 06-302156"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-[var(--usr-text)]">
+                      📍 عنوان المقر الرئيسي والموقع:
+                    </label>
+                    <input
+                      type="text"
+                      className="flex w-full rounded-lg border border-[var(--usr-border)] bg-white px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[var(--usr-primary)]"
+                      value={contactData.address}
+                      onChange={(e) => updateContact({ address: e.target.value })}
+                      placeholder="محافظة مأرب — مأرب المدينة..."
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-[var(--usr-text)]">
+                      ⏰ أوقات الدوام الرسمي واستقبال المراجعين:
+                    </label>
+                    <input
+                      type="text"
+                      className="flex w-full rounded-lg border border-[var(--usr-border)] bg-white px-3 py-2 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-[var(--usr-primary)]"
+                      value={contactData.hours}
+                      onChange={(e) => updateContact({ hours: e.target.value })}
+                      placeholder="الأحد إلى الخميس — من 8:00 صباحاً حتى 2:00 ظهراً"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-xs font-semibold text-[var(--usr-text)]">
+                      📝 توجيهات أو إرشادات إضافية للجمهور (اختياري):
+                    </label>
+                    <textarea
+                      rows={3}
+                      className="flex w-full rounded-lg border border-[var(--usr-border)] bg-white px-3 py-2 text-xs text-[var(--usr-text)] focus:outline-none focus:ring-2 focus:ring-[var(--usr-primary)]"
+                      value={contactData.notes}
+                      onChange={(e) => updateContact({ notes: e.target.value })}
+                      placeholder="أي ملاحظات تظهر بأسفل صفحة التواصل..."
+                    />
+                  </div>
+                </div>
+              );
+            })() : (
+              <div className="space-y-1.5">
+                <label className="block text-xs font-semibold text-[var(--usr-text)]">محتوى الصفحة (النص الكامل) *</label>
+                <textarea
+                  rows={8}
+                  className="flex w-full rounded-lg border border-[var(--usr-border)] bg-white px-3 py-2 text-sm text-[var(--usr-text)] focus:outline-none focus:ring-2 focus:ring-[var(--usr-primary)]"
+                  value={editingPage.body}
+                  onChange={(e) => setEditingPage({ ...editingPage, body: e.target.value })}
+                  placeholder="اكتب محتوى الصفحة..."
+                  required
+                />
+              </div>
+            )}
+
             <Button variant="gold" size="lg" type="submit" className="w-full font-bold" disabled={savingPage}>
               {savingPage ? 'جاري الحفظ...' : 'حفظ ونشر الصفحة على الموقع العام'}
             </Button>

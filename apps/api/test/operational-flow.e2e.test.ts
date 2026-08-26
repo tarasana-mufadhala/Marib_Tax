@@ -34,6 +34,7 @@ import {
   type StoredDecisionRecord,
 } from '../src/decisions/decisions.repository.js';
 import { DecisionsMemoryRepository } from '../src/decisions/decisions.memory-repository.js';
+import { DatabaseService } from '../src/database/database.service.js';
 import { DuesPaymentsController } from '../src/dues-payments/dues-payments.controller.js';
 import { DuesPaymentsService } from '../src/dues-payments/dues-payments.service.js';
 import {
@@ -121,6 +122,10 @@ describe('operational modules E2E flows (visits, decisions, dues, payments, noti
           provide: DUES_PAYMENTS_REPOSITORY,
           useClass: DuesPaymentsMemoryRepository,
         },
+        // المتحكّم يستعلم القاعدة لتقييد المستحقات بملكيتها؛ هنا مستودع في
+        // الذاكرة بلا قاعدة، فقاعدة غير مُهيّأة تُسقط فحص الملكية وتُبقي
+        // المسار الوظيفي المُختبَر كما هو.
+        { provide: DatabaseService, useValue: { isInitialized: false } },
         NotificationsService,
         { provide: NOTIFICATIONS_REPOSITORY, useValue: notificationsRepo },
         { provide: CURRENT_ACTOR, useClass: CurrentActorService },

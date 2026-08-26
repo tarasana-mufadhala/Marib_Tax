@@ -110,10 +110,10 @@ class _ChoiceCard extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: selected ? const Color(0xFFEAF4F0) : Colors.white,
+          color: selected ? AppTheme.primarySoft : Colors.white,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? AppTheme.primary : const Color(0xFFE3EAE6),
+            color: selected ? AppTheme.primary : AppTheme.border,
             width: selected ? 2 : 1,
           ),
         ),
@@ -121,7 +121,7 @@ class _ChoiceCard extends StatelessWidget {
           children: [
             Icon(
               selected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
-              color: selected ? AppTheme.primary : const Color(0xFF9AAAA3),
+              color: selected ? AppTheme.primary : AppTheme.secondary,
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -135,7 +135,7 @@ class _ChoiceCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     description,
-                    style: const TextStyle(fontSize: 13, color: Color(0xFF5A6B63)),
+                    style: const TextStyle(fontSize: 13, color: AppTheme.secondary),
                   ),
                 ],
               ),

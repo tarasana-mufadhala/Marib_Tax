@@ -54,6 +54,10 @@ export interface ReadinessResponse {
 export const permissionCodes = [
   'taxpayer.profile.read',
   'taxpayer.profile.update',
+  // إدارة ملفات المكلفين: صلاحيتا الموظف. `taxpayer.profile.read/update`
+  // ممنوحتان لكل مكلف لملفه هو، فلا تصلحان لسجل المكلفين كافةً.
+  'taxpayer.admin.read',
+  'taxpayer.admin.status',
   'request.read',
   'request.draft.create',
   'request.draft.edit',

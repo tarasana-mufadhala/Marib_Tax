@@ -86,6 +86,7 @@ import { DECISIONS_REPOSITORY } from '../src/decisions/decisions.repository.js';
 import { DecisionsMemoryRepository } from '../src/decisions/decisions.memory-repository.js';
 
 import { DuesPaymentsController } from '../src/dues-payments/dues-payments.controller.js';
+import { DatabaseService } from '../src/database/database.service.js';
 import { DuesPaymentsService } from '../src/dues-payments/dues-payments.service.js';
 import { DUES_PAYMENTS_REPOSITORY } from '../src/dues-payments/dues-payments.repository.js';
 import { DuesPaymentsMemoryRepository } from '../src/dues-payments/dues-payments.memory-repository.js';
@@ -505,6 +506,10 @@ describe('AG-3 Backend E2E Operational Flows (FR-101, FR-102, FR-201, Overpaymen
         DecisionsService,
         { provide: DECISIONS_REPOSITORY, useClass: DecisionsMemoryRepository },
         { provide: DuesPaymentsService, useClass: TestDuesPaymentsService },
+        // المتحكّم يستعلم القاعدة لتقييد المستحقات بملكيتها؛ هنا مستودع
+        // في الذاكرة بلا قاعدة، فقاعدة غير مُهيّأة تُسقط فحص الملكية
+        // وتُبقي المسار الوظيفي المُختبَر كما هو.
+        { provide: DatabaseService, useValue: { isInitialized: false } },
         { provide: DUES_PAYMENTS_REPOSITORY, useClass: DuesPaymentsMemoryRepository },
         { provide: CURRENT_ACTOR, useClass: CurrentActorService },
         { provide: ACTOR_CONTEXT_RESOLVER, useValue: actors },

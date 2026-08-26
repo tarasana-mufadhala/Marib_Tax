@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   MapPinIcon,
@@ -7,8 +10,23 @@ import {
   SmartphoneIcon,
   ShieldCheckIcon,
 } from '@marib-tax/web-ui';
+import { publicApi } from '@/lib/api-client';
+import { parseContactInfo, getWhatsAppLink, DEFAULT_CONTACT_INFO } from '@/lib/contact-utils';
+import type { ContactInfo } from '@/lib/contact-utils';
 
 export function PublicFooter() {
+  const [contactInfo, setContactInfo] = useState<ContactInfo>(DEFAULT_CONTACT_INFO);
+
+  useEffect(() => {
+    publicApi.getContentPage('contact').then((page) => {
+      if (page?.body) {
+        setContactInfo(parseContactInfo(page.body));
+      }
+    });
+  }, []);
+
+  const waUrl = getWhatsAppLink(contactInfo.whatsapp);
+
   return (
     <footer className="bg-[var(--usr-primary-deeper)] text-white mt-auto border-t-4 border-[var(--usr-gold)] relative overflow-hidden">
       {/* Decorative ambient background */}
@@ -84,19 +102,30 @@ export function PublicFooter() {
           <ul className="space-y-3 text-xs text-slate-300">
             <li className="flex items-start gap-2.5">
               <MapPinIcon size={16} className="text-[var(--usr-gold)] shrink-0 mt-0.5" />
-              <span>مأرب المدينة — الشارع العام — المجمع الحكومي لمكاتب الوزارات</span>
+              <span>{contactInfo.address}</span>
             </li>
             <li className="flex items-center gap-2.5">
               <PhoneIcon size={16} className="text-[var(--usr-gold)] shrink-0" />
-              <span>الهاتف الثابت: <strong dir="ltr" className="text-white font-mono">06-302155</strong></span>
+              <span>الهاتف الثابت: <strong dir="ltr" className="text-white font-mono">{contactInfo.phone}</strong></span>
             </li>
             <li className="flex items-center gap-2.5">
               <MessageSquareIcon size={16} className="text-[var(--usr-gold)] shrink-0" />
-              <span>واتساب البلاغات: <strong dir="ltr" className="text-white font-mono">+967 777 000 111</strong></span>
+              <span>
+                واتساب البلاغات:{' '}
+                <a
+                  href={waUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-white hover:text-[var(--usr-gold)] font-mono font-bold hover:underline transition-colors dir-ltr inline-block"
+                  title="فتح محادثة واتساب مباشرة"
+                >
+                  {contactInfo.whatsapp}
+                </a>
+              </span>
             </li>
             <li className="flex items-center gap-2.5">
               <ClockIcon size={16} className="text-[var(--usr-gold)] shrink-0" />
-              <span>أوقات الاستقبال: الأحد - الخميس (8:00 ص - 2:00 م)</span>
+              <span>أوقات الاستقبال: {contactInfo.hours}</span>
             </li>
           </ul>
         </div>
@@ -104,7 +133,7 @@ export function PublicFooter() {
         {/* Column 4: Mobile App & Digital Systems */}
         <div className="space-y-3.5">
           <h4 className="font-bold text-sm sm:text-base font-display text-[var(--usr-gold)] mb-3 sm:mb-4 border-r-3 border-[var(--usr-gold)] pr-2.5">
-            تطبيق الهاتف المحمول
+            تطبيق الجوال
           </h4>
           <p className="text-xs text-slate-300 leading-relaxed font-light">
             استعلم عن مستحقاتك وتابع حالة طلباتك واستلم الإشعارات الرسمية مباشرة عبر تطبيق الهاتف الذكي.
@@ -114,7 +143,7 @@ export function PublicFooter() {
             className="inline-flex items-center justify-center gap-2.5 w-full py-3 px-4 bg-gradient-to-r from-[var(--usr-gold)] to-[var(--usr-gold-dark)] text-[var(--usr-primary-deeper)] rounded-xl font-bold text-xs hover:brightness-110 transition-all shadow-md border border-amber-300/50"
           >
             <SmartphoneIcon size={17} />
-            <span>تنزيل تطبيق المكلفين APK</span>
+            <span>تنزيل تطبيق الجوال APK</span>
           </Link>
           <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-[11px] text-slate-300 flex items-center gap-2">
             <span className="text-[var(--usr-gold)] font-bold">ملاحظة:</span>
@@ -137,3 +166,4 @@ export function PublicFooter() {
     </footer>
   );
 }
+

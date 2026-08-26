@@ -141,7 +141,7 @@ class _AccountPageState extends State<AccountPage> {
                         style: TextStyle(
                           fontSize: 11.5,
                           height: 1.7,
-                          color: Color(0xFF7A8A83),
+                          color: AppTheme.secondary,
                         ),
                       ),
                     ),
@@ -335,7 +335,7 @@ class _Row extends StatelessWidget {
             width: 118,
             child: Text(
               label,
-              style: const TextStyle(fontSize: 12.5, color: Color(0xFF7A8A83)),
+              style: const TextStyle(fontSize: 12.5, color: AppTheme.secondary),
             ),
           ),
           Expanded(
@@ -346,7 +346,7 @@ class _Row extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 13.5,
                 fontWeight: FontWeight.w600,
-                color: Color(0xFF1B2B24),
+                color: AppTheme.text,
               ),
             ),
           ),
@@ -395,12 +395,12 @@ class _ErrorState extends StatelessWidget {
       padding: const EdgeInsets.all(24),
       children: [
         const SizedBox(height: 60),
-        const Icon(Icons.cloud_off, size: 44, color: Color(0xFF9AAAA3)),
+        const Icon(Icons.cloud_off, size: 44, color: AppTheme.secondary),
         const SizedBox(height: 14),
         Text(
           message,
           textAlign: TextAlign.center,
-          style: const TextStyle(fontSize: 14, height: 1.8, color: Color(0xFF5A6B63)),
+          style: const TextStyle(fontSize: 14, height: 1.8, color: AppTheme.secondary),
         ),
         const SizedBox(height: 12),
         Center(child: TextButton(onPressed: onRetry, child: const Text('إعادة المحاولة'))),

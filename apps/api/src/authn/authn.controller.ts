@@ -24,6 +24,29 @@ export class AuthnController {
     return this.authnService.verifyRegistrationOtp(phoneNumber, code);
   }
 
+  /**
+   * رمز دخول يصل البريد — بديل لرقم الهاتف لمن لا تصله الرسائل.
+   *
+   * الرد ثابت بصرف النظر عن وجود البريد في القاعدة: تمييز المسجَّل من غيره
+   * يحوّل النقطة إلى أداة تعداد لبُرد المستخدمين.
+   */
+  @Post('otp/email/request')
+  @HttpCode(200)
+  requestEmailOtp(
+    @Body('email') email: string,
+  ): Promise<{ sent: boolean }> {
+    return this.authnService.requestEmailOtp(email);
+  }
+
+  @Post('otp/email/verify')
+  @HttpCode(200)
+  verifyEmailOtp(
+    @Body('email') email: string,
+    @Body('code') code: string,
+  ): Promise<{ accessToken: string; userProfileId: string }> {
+    return this.authnService.verifyEmailOtp(email, code);
+  }
+
   @Post('register')
   @HttpCode(201)
   register(
