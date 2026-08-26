@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   BarChartIcon,
@@ -18,40 +19,127 @@ import {
   ShieldCheckIcon,
 } from '@marib-tax/web-ui';
 import { OfficeLogo } from '@/components/OfficeLogo';
-import { logout } from '@/lib/auth';
+import { fetchCurrentUser, logout } from '@/lib/auth';
 
 export function AdminSidebar() {
   const pathname = usePathname();
   const router = useRouter();
+
+  /**
+   * صلاحيات المستخدم من الخادم. تبقى `null` حتى تصل، فلا يُعرض قسم ثم
+   * يختفي أمام عينيه. الإخفاء هنا تنظيمٌ للواجهة لا حماية: الحماية في
+   * الـ API الذي يرفض ما لا يملكه المستخدم بصرف النظر عمّا تعرضه اللوحة.
+   */
+  const [permissions, setPermissions] = useState<string[] | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetchCurrentUser().then((user) => {
+      if (alive) setPermissions(user?.permissions ?? []);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [pathname]);
 
   const handleLogout = () => {
     logout();
     router.push('/login');
   };
 
-  const navSections = [
+  /**
+   * الصلاحيات التي تفتح كل قسم. القسم يظهر لمن يملك واحدة منها على الأقل،
+   * فموظف الفحص يرى النزول الميداني ولا يرى المستخدمين والصلاحيات.
+   */
+  const allSections = [
     {
       title: 'العمليات والرقابة اليومية',
       items: [
-        { href: '/', label: 'نظرة عامة ومؤشرات', icon: BarChartIcon },
-        { href: '/requests', label: 'إدارة الطلبات والبلاغات', icon: InboxIcon },
-        { href: '/taxpayers', label: 'سجل المكلفين والمنشآت', icon: BuildingIcon },
-        { href: '/field-visits', label: 'النزول الميداني والفحص', icon: CarIcon },
-        { href: '/decisions', label: 'القرارات والربط الضريبي', icon: ScaleIcon },
-        { href: '/dues', label: 'المستحقات والمتأخرات', icon: DollarIcon },
+        { href: '/', label: 'نظرة عامة ومؤشرات', icon: BarChartIcon, needs: [] },
+        {
+          href: '/requests',
+          label: 'إدارة الطلبات والبلاغات',
+          icon: InboxIcon,
+          needs: ['request.read', 'balagh.read'],
+        },
+        {
+          href: '/taxpayers',
+          label: 'سجل المكلفين والمنشآت',
+          icon: BuildingIcon,
+          needs: ['taxpayer.profile.read'],
+        },
+        {
+          href: '/field-visits',
+          label: 'النزول الميداني والفحص',
+          icon: CarIcon,
+          needs: ['field_visit.schedule', 'field_visit.result.record'],
+        },
+        {
+          href: '/decisions',
+          label: 'القرارات والربط الضريبي',
+          icon: ScaleIcon,
+          needs: [
+            'request.decision.recommend',
+            'request.decision.final',
+            'balagh.decision.recommend',
+            'balagh.decision.final',
+          ],
+        },
+        {
+          href: '/dues',
+          label: 'المستحقات والمتأخرات',
+          icon: DollarIcon,
+          needs: ['due.register', 'due.correct', 'payment.confirm'],
+        },
       ],
     },
     {
       title: 'البوابة الرقمية والإدارة',
       items: [
-        { href: '/content', label: 'إدارة المحتوى والإعلانات', icon: MegaphoneIcon },
-        { href: '/services', label: 'إدارة الخدمات والكيانات', icon: ScaleIcon },
-        { href: '/reports', label: 'التقارير الرقابية (29)', icon: FileTextIcon },
-        { href: '/imports', label: 'استيراد وترحيل البيانات', icon: RefreshIcon },
-        { href: '/users', label: 'المستخدمون والصلاحيات', icon: UsersIcon },
+        {
+          href: '/content',
+          label: 'إدارة المحتوى والإعلانات',
+          icon: MegaphoneIcon,
+          needs: ['content.publish', 'content.withdraw'],
+        },
+        {
+          href: '/services',
+          label: 'إدارة الخدمات والكيانات',
+          icon: ScaleIcon,
+          needs: ['masterdata.manage'],
+        },
+        {
+          href: '/reports',
+          label: 'التقارير الرقابية (29)',
+          icon: FileTextIcon,
+          needs: ['report.view'],
+        },
+        {
+          href: '/imports',
+          label: 'استيراد وترحيل البيانات',
+          icon: RefreshIcon,
+          needs: ['import.preview', 'import.commit'],
+        },
+        {
+          href: '/users',
+          label: 'المستخدمون والصلاحيات',
+          icon: UsersIcon,
+          needs: ['user.read', 'user.manage', 'role.read'],
+        },
       ],
     },
   ];
+
+  const navSections = allSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter(
+        (item) =>
+          item.needs.length === 0 ||
+          (permissions ?? []).some((code) => item.needs.includes(code)),
+      ),
+    }))
+    .filter((section) => section.items.length > 0);
 
   return (
     <aside className="w-68 bg-[var(--usr-primary-deeper)] text-white min-h-screen flex flex-col border-l border-slate-800 shrink-0 select-none shadow-2xl relative z-40">

@@ -6,8 +6,8 @@ import '../../auth/presentation/auth_controller.dart';
 import '../../content/presentation/contact_page.dart';
 import '../../content/presentation/content_page_view.dart';
 import '../../content/presentation/document_list_page.dart';
-import '../../balaghs/domain/balagh_forms.dart';
-import '../../balaghs/presentation/balagh_form_page.dart';
+import '../../account/presentation/account_page.dart';
+import '../../balaghs/presentation/balaghs_page.dart';
 import '../../services/presentation/services_page.dart';
 import '../data/home_repository.dart';
 import '../domain/home_models.dart';
@@ -53,6 +53,13 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text('مكتب الضرائب — مأرب'),
         actions: [
+          IconButton(
+            tooltip: 'حسابي',
+            icon: const Icon(Icons.person_outline),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const AccountPage()),
+            ),
+          ),
           IconButton(
             tooltip: 'تسجيل الخروج',
             icon: const Icon(Icons.logout),
@@ -203,15 +210,6 @@ class _BannerShell extends StatelessWidget {
 class _ServicesGrid extends StatelessWidget {
   const _ServicesGrid();
 
-  static const List<({String code, String title, IconData icon})> _reports = [
-    (code: 'FR-201', title: 'إيقاف نشاط', icon: Icons.pause_circle_outline),
-    (code: 'FR-202', title: 'خروج مستأجر', icon: Icons.home_work_outlined),
-    (code: 'FR-203', title: 'خروج عامل', icon: Icons.person_remove_outlined),
-    (code: 'FR-204', title: 'تغيير عنوان النشاط', icon: Icons.location_on_outlined),
-    (code: 'FR-205', title: 'نقل ملكية عقار', icon: Icons.swap_horiz),
-    (code: 'FR-206', title: 'تفعيل نشاط موقوف', icon: Icons.play_circle_outline),
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -221,31 +219,11 @@ class _ServicesGrid extends StatelessWidget {
         const _RequestsEntryCard(),
         const SizedBox(height: 16),
         const _GroupLabel('البلاغات'),
-        _grid(context, _reports),
+        const _BalaghsEntryCard(),
       ],
     );
   }
 
-  Widget _grid(
-    BuildContext context,
-    List<({String code, String title, IconData icon})> items,
-  ) {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      mainAxisSpacing: 10,
-      crossAxisSpacing: 10,
-      childAspectRatio: 1.55,
-      children: items
-          .map((item) => _ServiceCard(
-                code: item.code,
-                title: item.title,
-                icon: item.icon,
-              ))
-          .toList(),
-    );
-  }
 }
 
 /// مدخل واحد لكل خدمات القسم 4.3؛ القائمة تُقرأ من الخادم داخل الشاشة.
@@ -299,6 +277,58 @@ class _RequestsEntryCard extends StatelessWidget {
   }
 }
 
+/// مدخل البلاغات الستة، بنفس شكل بطاقة الطلبات: الشاشة الأولى تعرض
+/// مدخلين واضحين لا اثنتي عشرة بطاقة.
+class _BalaghsEntryCard extends StatelessWidget {
+  const _BalaghsEntryCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: InkWell(
+        borderRadius: BorderRadius.circular(16),
+        onTap: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const BalaghsPage()),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                height: 44,
+                width: 44,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEAF4F0),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.campaign_outlined, color: AppTheme.primary),
+              ),
+              const SizedBox(width: 14),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'تقديم بلاغ',
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      'إيقاف نشاط، خروج مستأجر، خروج عامل، تغيير عنوان، نقل ملكية، تفعيل نشاط',
+                      style: TextStyle(fontSize: 12.5, color: Color(0xFF5A6B63), height: 1.5),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_left, color: AppTheme.primary),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _GroupLabel extends StatelessWidget {
   const _GroupLabel(this.text);
 
@@ -316,52 +346,6 @@ class _GroupLabel extends StatelessWidget {
           ),
         ),
       );
-}
-
-class _ServiceCard extends StatelessWidget {
-  const _ServiceCard({
-    required this.code,
-    required this.title,
-    required this.icon,
-  });
-
-  final String code;
-  final String title;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      child: InkWell(
-        borderRadius: BorderRadius.circular(16),
-        onTap: () {
-          final type = balaghTypeOf(code);
-          if (type == null) return;
-          Navigator.of(context).push(
-            MaterialPageRoute<void>(
-              builder: (_) => BalaghFormPage(type: type),
-            ),
-          );
-        },
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Icon(icon, color: AppTheme.primary, size: 26),
-              Text(
-                title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _RequestsSummary extends StatelessWidget {

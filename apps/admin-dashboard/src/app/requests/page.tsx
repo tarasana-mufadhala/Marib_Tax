@@ -82,8 +82,13 @@ export default function RequestsPage() {
     async function fetchRequests() {
       try {
         setLoading(true);
-        const data = await api.admin.getRequests();
-        setRequests(data || []);
+        // البلاغات تُقرأ من نداء مستقل لأن مصدرها جدول مستقل. تُدمج هنا
+        // في قائمة واحدة كما يقتضي عنوان القسم: الطلبات والبلاغات.
+        const [requestRows, balaghRows] = await Promise.all([
+          api.admin.getRequests(),
+          api.admin.getBalaghs().catch(() => []),
+        ]);
+        setRequests([...(requestRows || []), ...(balaghRows || [])]);
       } finally {
         setLoading(false);
       }
@@ -117,7 +122,7 @@ export default function RequestsPage() {
       <div className="flex items-center justify-between border-r-4 border-[var(--usr-gold)] pr-3">
         <div>
           <h2 className="text-2xl font-bold font-display text-[var(--usr-primary-dark)]">إدارة الطلبات والمعاملات الواردة</h2>
-          <p className="text-xs text-[var(--usr-muted)]">متابعة ومعالجة جميع الطلبات والإقرارات المقدمة من المكلفين</p>
+          <p className="text-xs text-[var(--usr-muted)]">متابعة ومعالجة الطلبات والبلاغات المقدمة من المكلفين</p>
         </div>
       </div>
 

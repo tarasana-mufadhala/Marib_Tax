@@ -417,6 +417,114 @@ export class AuthnService {
   // Password reset flow
   // ---------------------------------------------------------------------------
 
+  /**
+   * تغيير كلمة المرور من داخل الجلسة.
+   *
+   * كلمة المرور الحالية تُتحقَّق بمنح فعلي من GoTrue لا بمقارنة محلية: رمز
+   * الجلسة وحده لا يكفي لتغيير كلمة المرور — من يستولي على هاتف مفتوح
+   * يجب أن يُوقفه عدم معرفته بكلمة المرور القائمة.
+   */
+  async changePassword(
+    userProfileId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ success: boolean }> {
+    const user = await this.usersService.findUserById(userProfileId);
+
+    const authUser = await this.fetchAuthUserById(user.authUserId);
+    const phone = digitsOf(authUser.phone);
+    const email = (authUser.email ?? '').trim().toLowerCase();
+
+    if (phone.length === 0 && email.length === 0) {
+      throw DomainException.unprocessable(
+        'لا يمكن تغيير كلمة المرور لهذا الحساب، يرجى مراجعة المكتب',
+      );
+    }
+
+    if (!this.securityService.validatePasswordStrength(newPassword)) {
+      throw DomainException.badRequest(
+        'كلمة المرور الجديدة يجب أن تكون 8 أحرف فأكثر وتجمع بين حروف كبيرة وصغيرة وأرقام ورموز',
+      );
+    }
+    if (newPassword === currentPassword) {
+      throw DomainException.badRequest(
+        'كلمة المرور الجديدة مطابقة للحالية',
+      );
+    }
+
+    const verified = await this.verifyPassword(
+      phone.length > 0 ? { phone } : { email },
+      currentPassword,
+    );
+    if (!verified) {
+      throw DomainException.forbidden('كلمة المرور الحالية غير صحيحة');
+    }
+
+    await this.updateAuthUserPassword(user.authUserId, newPassword);
+    // الحساب صار بكلمة جديدة، فأي قفل ناتج عن محاولات سابقة لم يعد له معنى.
+    this.loginLockouts.delete(phone.length > 0 ? phone : email);
+
+    recordAuthEvent(
+      this.db,
+      'password_changed',
+      phone.length > 0 ? phone : email,
+      'تغيير كلمة المرور من داخل الجلسة',
+      phone.length > 0 ? 'password' : 'email',
+    );
+
+    return { success: true };
+  }
+
+  /** هاتف صاحب الحساب وبريده، لعرضهما في شاشة «حسابي». */
+  async accountContact(
+    authUserId: string,
+  ): Promise<{ phone: string | null; email: string | null }> {
+    const user = await this.fetchAuthUserById(authUserId);
+    const phone = digitsOf(user.phone);
+    const email = (user.email ?? '').trim();
+    return {
+      phone: phone.length > 0 ? phone : null,
+      email: email.length > 0 ? email : null,
+    };
+  }
+
+  /** بيانات حساب GoTrue بمعرّفه — للهاتف والبريد دون كلمة المرور. */
+  private async fetchAuthUserById(
+    authUserId: string,
+  ): Promise<{ phone?: string; email?: string }> {
+    const res = await fetch(
+      `${this.supabaseUrl}/auth/v1/admin/users/${authUserId}`,
+      { headers: this.adminHeaders() },
+    );
+    if (!res.ok) {
+      throw DomainException.unavailable('تعذّر الوصول إلى خدمة الحسابات');
+    }
+    return (await res.json()) as { phone?: string; email?: string };
+  }
+
+  /**
+   * تحقّق صامت من كلمة مرور: منح مباشر بلا مرور بمنطق القفل، فمحاولة
+   * المستخدم تغيير كلمة مروره لا يجوز أن تقفل حسابه القائم.
+   */
+  private async verifyPassword(
+    identity: { phone: string } | { email: string },
+    password: string,
+  ): Promise<boolean> {
+    try {
+      const res = await fetch(
+        `${this.supabaseUrl}/auth/v1/token?grant_type=password`,
+        {
+          method: 'POST',
+          headers: this.adminHeaders(),
+          body: JSON.stringify({ ...identity, password }),
+        },
+      );
+      return res.ok;
+    } catch {
+      throw DomainException.unavailable('تعذّر الوصول إلى خدمة الحسابات');
+    }
+  }
+
   async requestPasswordResetOtp(
     phoneNumber: string,
   ): Promise<{ verificationId: string }> {

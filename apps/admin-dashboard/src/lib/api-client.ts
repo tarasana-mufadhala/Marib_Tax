@@ -203,6 +203,16 @@ async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promi
   return await res.json();
 }
 
+/** تسميات البلاغات الستة، مطابِقة لما يعرضه التطبيق للمكلف. */
+const BALAGH_TITLES: Record<string, string> = {
+  'FR-201': 'إخطار إيقاف نشاط',
+  'FR-202': 'إخطار خروج مستأجر أو إخلاء عقار',
+  'FR-203': 'إخطار خروج عامل',
+  'FR-204': 'إخطار تغيير عنوان النشاط',
+  'FR-205': 'إخطار نقل ملكية عقار',
+  'FR-206': 'إخطار تفعيل نشاط موقوف',
+};
+
 export const api = {
   auth: {
     login: async (credentials: { phone: string; password?: string }) => {
@@ -319,6 +329,23 @@ export const api = {
         taxpayerName: r.taxpayer_name ?? '—',
         tin: r.taxpayer_ref ?? '—',
         serviceType: r.service_type_name ?? '—',
+        submissionDate: fmtDate(r.submitted_at ?? r.created_at),
+        status: mapRequestStatus(r.status_code),
+      }));
+    },
+
+    /**
+     * البلاغات الستة كما تصل من تطبيق المكلف. مصدرها جدول مستقل عن الطلبات،
+     * فلها نداء مستقل — دمجها في `getRequests` كان يعني إخفاءها بالكامل.
+     */
+    getBalaghs: async (): Promise<RequestItem[]> => {
+      const rows = await apiRequest<any[]>('/admin/balaghs');
+      return (rows ?? []).map((r) => ({
+        id: String(r.id),
+        requestNumber: r.public_ref ?? String(r.id).slice(0, 8),
+        taxpayerName: r.taxpayer_name ?? '—',
+        tin: r.taxpayer_ref ?? '—',
+        serviceType: BALAGH_TITLES[r.balagh_type_code] ?? r.balagh_type_code,
         submissionDate: fmtDate(r.submitted_at ?? r.created_at),
         status: mapRequestStatus(r.status_code),
       }));

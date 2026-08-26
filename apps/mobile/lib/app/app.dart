@@ -15,6 +15,7 @@ import '../features/auth/presentation/register_phone_page.dart';
 import '../features/auth/presentation/register_tax_number_page.dart';
 import '../features/auth/presentation/welcome_page.dart';
 import '../features/home/data/home_repository.dart';
+import '../features/account/data/account_repository.dart';
 import '../features/balaghs/data/balagh_repository.dart';
 import '../features/content/data/content_repository.dart';
 import '../features/services/data/service_repository.dart';
@@ -40,6 +41,7 @@ class _MaribTaxAppState extends State<MaribTaxApp> {
   late final ServiceRepository _services;
   late final ContentRepository _content;
   late final BalaghRepository _balaghs;
+  late final AccountRepository _account;
 
   @override
   void initState() {
@@ -53,6 +55,7 @@ class _MaribTaxAppState extends State<MaribTaxApp> {
     _services = ServiceRepository(api: _api);
     _content = ContentRepository(api: _api);
     _balaghs = BalaghRepository(api: _api);
+    _account = AccountRepository(api: _api);
     // انتهاء الجلسة من أي نداء يُعيد التطبيق لشاشة الدخول فوراً.
     _api.onUnauthenticated = _auth.onSessionExpired;
     _auth.restoreSession();
@@ -73,6 +76,7 @@ class _MaribTaxAppState extends State<MaribTaxApp> {
         Provider<ServiceRepository>.value(value: _services),
         Provider<ContentRepository>.value(value: _content),
         Provider<BalaghRepository>.value(value: _balaghs),
+        Provider<AccountRepository>.value(value: _account),
       ],
       child: MaterialApp(
         title: 'مكتب الضرائب بمحافظة مأرب',

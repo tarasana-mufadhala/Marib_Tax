@@ -693,6 +693,50 @@ export class AdminController {
     }
   }
 
+  /**
+   * البلاغات الستة كما تصل من التطبيق.
+   *
+   * كانت اللوحة تقرأ `requests.service_requests` وحدها، فبلاغ المكلف يُحفظ
+   * في `balaghat.balaghs` ولا يراه موظف قط رغم أن القسم اسمه «الطلبات
+   * والبلاغات» — أي أن البلاغ يُقدَّم ويُنسى.
+   */
+  @RequirePermission('balagh.review')
+  @Get('balaghs')
+  async getBalaghs() {
+    if (!this.db.isInitialized) return [];
+    try {
+      const rows = await sql<{
+        id: string;
+        public_ref: string | null;
+        balagh_type_code: string;
+        status_code: string;
+        submitted_at: Date | null;
+        created_at: Date;
+        taxpayer_name: string | null;
+        taxpayer_ref: string | null;
+      }>`
+        select b.id,
+               b.public_ref,
+               b.balagh_type_code,
+               b.status_code,
+               b.submitted_at,
+               b.created_at,
+               tp.display_name as taxpayer_name,
+               tp.public_ref as taxpayer_ref
+        from balaghat.balaghs b
+        left join registry.taxpayers tp on tp.id = b.taxpayer_id
+        where b.archived_at is null
+          -- المسودة ملك صاحبها حتى يرسلها: عرضها للموظف كشفٌ لما لم يُقدَّم بعد.
+          and b.status_code <> 'draft'
+        order by b.created_at desc
+        limit 50
+      `.execute(this.db.db);
+      return rows.rows;
+    } catch {
+      return [];
+    }
+  }
+
   @RequirePermission('field_visit.schedule')
   @Get('visits')
   async getVisits() {
