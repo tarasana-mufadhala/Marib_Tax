@@ -9,6 +9,8 @@ import {
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import {
+  CORRECTABLE_DUE_STATUSES,
+  DUE_STATUSES,
   DUES_PAYMENTS_REPOSITORY,
   type DuesPaymentsRepository,
   type StoredPaymentDue,
@@ -31,51 +33,47 @@ export class DuesPaymentsService {
     private readonly rolesPermissionsService?: RolesPermissionsService,
   ) {}
 
-  private async checkFinanceOfficerRole(actorProfileId: string): Promise<void> {
-    if (!this.usersService || !this.rolesPermissionsService) {
-      // In testing contexts where authorization services are not mocked/provided, bypass check
-      return;
+  /**
+   * يتحقق أن المنفّذ موظف مكتب فعّال.
+   *
+   * كان يشترط دوراً باسم `FINANCE_OFFICER` حرفياً، وهو دور لا وجود له في
+   * القاعدة — فكان تعديل أي مبلغ وتأكيد أي سداد مرفوضاً للجميع، ومنهم مدير
+   * النظام. حصر الصلاحية بدور مكتوب في الكود يخالف نموذج المشروع أصلاً:
+   * التخويل يمر بالصلاحيات (`due.correct` و`payment.confirm`) التي يفرضها
+   * الحارس قبل بلوغ الخدمة، ويمنحها المدير للدور الذي يختاره.
+   *
+   * ما يبقى هنا هو ما لا تعرفه الصلاحية: أن المنفّذ ملف موظف فعّال لا حساب
+   * مكلف، لأن التعديل يُقيَّد باسمه في سجل التدقيق.
+   *
+   * يعيد معرّف *ملف الموظف* لا معرّف المستخدم: سجلا التعديل والتأكيد
+   * يشيران إلى `identity.staff_profiles`، وتمرير معرّف المستخدم كان يكسر
+   * المفتاح الأجنبي فيسقط الحفظ بخطأ مبتلع.
+   */
+  private async requireActiveStaff(actorProfileId: string): Promise<string> {
+    if (!this.usersService) {
+      // سياق اختباري بلا خدمات تخويل: الحارس هو من يفرض الصلاحية.
+      return actorProfileId;
     }
 
+    let staff: { id: string; isActive: boolean } | null = null;
     try {
-      const staff =
-        await this.usersService.findStaffByUserProfileId(actorProfileId);
-      if (!staff || !staff.isActive) {
-        throw new ForbiddenException('Actor is not an active staff profile.');
-      }
+      staff = await this.usersService.findStaffByUserProfileId(actorProfileId);
+    } catch {
+      // «لا ملف موظف» حالة مشروعة تعني حساب مكلف؛ تُعالَج أدناه.
+      staff = null;
+    }
 
-      const assignments =
-        await this.rolesPermissionsService.listActiveAssignmentsForStaff(
-          staff.id,
-        );
-      let isFinanceOfficer = false;
-      for (const assignment of assignments) {
-        const role = await this.rolesPermissionsService.findRoleById(
-          assignment.roleId,
-        );
-        if (role && role.code === 'FINANCE_OFFICER') {
-          isFinanceOfficer = true;
-          break;
-        }
-      }
-
-      if (!isFinanceOfficer) {
-        throw new ForbiddenException(
-          'Only staff profiles with the FINANCE_OFFICER role can make due corrections or process receipt confirmations.',
-        );
-      }
-    } catch (err) {
-      if (err instanceof ForbiddenException) {
-        throw err;
-      }
+    if (!staff || !staff.isActive) {
       throw new ForbiddenException(
-        'Failed to verify staff roles for the operation.',
+        'هذه العملية مقصورة على موظفي المكتب الفعّالين',
       );
     }
+    return staff.id;
   }
 
   async assessDue(
     input: {
+      taxpayerId: string;
       serviceRequestId: string | null;
       balaghId: string | null;
       amount: number;
@@ -86,12 +84,11 @@ export class DuesPaymentsService {
     },
     actorProfileId: string,
   ): Promise<StoredPaymentDue> {
-    const hasRequest = !!input.serviceRequestId;
-    const hasBalagh = !!input.balaghId;
-
-    if ((hasRequest && hasBalagh) || (!hasRequest && !hasBalagh)) {
+    // المستحق ينشأ عن معاملة واحدة لا اثنتين؛ وقد لا ينشأ عن معاملة أصلاً
+    // (ربط سنوي أو متأخرات يُقيّدها المكتب ابتداءً)، فغيابهما معاً مقبول.
+    if (input.serviceRequestId && input.balaghId) {
       throw new BadRequestException(
-        'Exact-one parent context (serviceRequestId XOR balaghId) is required.',
+        'المستحق ينشأ عن طلب أو بلاغ لا عن الاثنين معاً',
       );
     }
 
@@ -110,11 +107,12 @@ export class DuesPaymentsService {
     const due: StoredPaymentDue = {
       id: dueId,
       publicRef: `DUE-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
+      taxpayerId: input.taxpayerId,
       serviceRequestId: input.serviceRequestId,
       balaghId: input.balaghId,
       amount: roundedAmount,
       currencyCode: 'YER',
-      statusCode: 'PENDING',
+      statusCode: DUE_STATUSES.unpaid,
       assessedAt: new Date(),
       createdAt: new Date(),
       createdByProfileId: actorProfileId,
@@ -150,17 +148,20 @@ export class DuesPaymentsService {
     actorStaffProfileId: string,
   ): Promise<StoredPaymentDue> {
     // 1. Correction Authority (OD-15)
-    await this.checkFinanceOfficerRole(actorStaffProfileId);
+    const staffProfileId = await this.requireActiveStaff(actorStaffProfileId);
 
     const due = await this.repository.findDueById(dueId);
     if (!due) {
       throw new NotFoundException('Payment due record not found.');
     }
 
-    const currentStatus = due.statusCode.toUpperCase();
-    if (currentStatus !== 'PENDING') {
+    // كانت المقارنة بـ 'PENDING' بينما القاعدة تحمل 'unpaid'، فكان تعديل
+    // أي مستحق قائم مرفوضاً. المفردة الآن واحدة، والمقارنة غير حساسة لحالة
+    // الأحرف احتياطاً لسطور قديمة.
+    const currentStatus = due.statusCode.trim().toLowerCase();
+    if (!CORRECTABLE_DUE_STATUSES.includes(currentStatus)) {
       throw new ConflictException(
-        `Cannot correct a due that is already "${due.statusCode}".`,
+        `لا يمكن تعديل مستحق حالته «${due.statusCode}»`,
       );
     }
 
@@ -183,14 +184,14 @@ export class DuesPaymentsService {
       currencyCode: 'YER',
       reason: input.reason,
       correctedAt: new Date(),
-      correctedByStaffProfileId: actorStaffProfileId,
+      correctedByStaffProfileId: staffProfileId,
     };
 
     await this.repository.createCorrection(correction);
 
     return this.repository.updateDue(dueId, {
       amount: roundedNewAmount,
-      statusCode: 'PENDING',
+      // الحالة تبقى كما هي: تعديل المبلغ لا يمحو سداداً جزئياً وقع فعلاً.
       updatedAt: new Date(),
     });
   }
@@ -248,7 +249,7 @@ export class DuesPaymentsService {
     actorStaffProfileId: string,
   ): Promise<StoredPaymentConfirmation> {
     // 1. Confirmation Authority (OD-15)
-    await this.checkFinanceOfficerRole(actorStaffProfileId);
+    const staffProfileId = await this.requireActiveStaff(actorStaffProfileId);
 
     const receipt = await this.repository.findReceiptById(receiptId);
     if (!receipt) {
@@ -283,10 +284,19 @@ export class DuesPaymentsService {
       )
       .reduce((sum, r) => sum + r.amount, 0);
 
-    // If fully paid, transition due state to PAID
-    if (totalPaid >= due.amount) {
+    // حالة المستحق تتبع ما أُكِّد قبضه: مسدَّد كاملاً، أو جزئياً، أو لا شيء.
+    // كانت تُكتب 'PAID' بحروف كبيرة بينما القاعدة تحمل 'paid'، فتظهر حالتان
+    // لمعنى واحد وتفشل كل مقارنة لاحقة.
+    const nextStatus =
+      totalPaid >= due.amount
+        ? DUE_STATUSES.paid
+        : totalPaid > 0
+          ? DUE_STATUSES.partiallyPaid
+          : DUE_STATUSES.unpaid;
+
+    if (nextStatus !== due.statusCode) {
       await this.repository.updateDue(due.id, {
-        statusCode: 'PAID',
+        statusCode: nextStatus,
         updatedAt: new Date(),
       });
     }
@@ -311,7 +321,7 @@ export class DuesPaymentsService {
       id: randomUUID(),
       paymentReceiptId: receiptId,
       confirmedAt: new Date(),
-      confirmedByStaffProfileId: actorStaffProfileId,
+      confirmedByStaffProfileId: staffProfileId,
       notes: input.notes,
     };
 

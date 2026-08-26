@@ -76,7 +76,11 @@ export const publicApi = {
 
   getServices: async (): Promise<TaxService[]> => {
     const rows = await safeFetch<any[]>('/public/services', []);
-    return (rows ?? []).map((r) => ({
+    const cleanRows = (rows ?? []).filter((r) => {
+      const name = String(r.name || r.title || '');
+      return !name.includes('اختبار') && !name.includes('تجريب') && !name.includes('test');
+    });
+    return cleanRows.map((r) => ({
       id: String(r.id),
       title: r.name ?? '',
       description: r.description ?? '',

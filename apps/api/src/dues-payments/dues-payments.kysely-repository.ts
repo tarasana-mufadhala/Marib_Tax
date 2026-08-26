@@ -37,6 +37,7 @@ export class DuesPaymentsKyselyRepository implements DuesPaymentsRepository {
         balaghId: row.balagh_id,
         amount: Number(row.amount),
         currencyCode: row.currency_code,
+        taxpayerId: row.taxpayer_id,
         statusCode: row.status_code,
         assessedAt: row.assessed_at,
         createdAt: row.created_at,
@@ -64,6 +65,7 @@ export class DuesPaymentsKyselyRepository implements DuesPaymentsRepository {
         balaghId: row.balagh_id,
         amount: Number(row.amount),
         currencyCode: row.currency_code,
+        taxpayerId: row.taxpayer_id,
         statusCode: row.status_code,
         assessedAt: row.assessed_at,
         createdAt: row.created_at,
@@ -84,6 +86,7 @@ export class DuesPaymentsKyselyRepository implements DuesPaymentsRepository {
         .values({
           id: due.id,
           public_ref: due.publicRef,
+          taxpayer_id: due.taxpayerId,
           service_request_id: due.serviceRequestId,
           balagh_id: due.balaghId,
           amount: due.amount,

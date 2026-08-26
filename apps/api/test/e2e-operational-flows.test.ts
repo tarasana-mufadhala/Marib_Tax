@@ -258,7 +258,7 @@ class TestDuesPaymentsService extends DuesPaymentsService {
     const credit_balance_after = isOverpaid ? overpayment_amount.toString() : '0';
 
     await this.repository.updateDue(due.id, {
-      statusCode: 'PAID',
+      statusCode: 'paid',
       updatedAt: new Date(),
     });
 
@@ -778,6 +778,8 @@ describe('AG-3 Backend E2E Operational Flows (FR-101, FR-102, FR-201, Overpaymen
       .post('/api/v1/dues')
       .set('Authorization', 'Bearer valid')
       .send({
+        // المستحق يُقيَّد على مكلف بعينه؛ الطلب يوثّق ما نشأ عنه فقط.
+        taxpayerId: randomUUID(),
         serviceRequestId,
         amount: 150000.0,
         currencyCode: 'YER',

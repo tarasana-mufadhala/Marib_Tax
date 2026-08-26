@@ -62,7 +62,8 @@ export class DuesPaymentsController {
   /**
    * مستحقات المكلف الحالي ومدفوعاته.
    *
-   * المستحق مرتبط بطلب أو ببلاغ لا بالمكلف مباشرةً، فيُوصَل به عبرهما.
+   * الربط بالمكلف مباشر عبر `taxpayer_id`، فيظهر للمكلف ما قيّده المكتب
+   * عليه ابتداءً كما يظهر ما نشأ عن طلباته.
    * لا بد أن تسبق هذه النقطة `@Get(':id')` وإلا التقط المسارُ المُعامَل
    * كلمة `me` وعاملها معرّفاً.
    */
@@ -96,9 +97,7 @@ export class DuesPaymentsController {
       from dues.payment_dues d
       left join requests.service_requests sr on sr.id = d.service_request_id
       left join requests.service_types st on st.id = sr.service_type_id
-      left join balaghat.balaghs b on b.id = d.balagh_id
-      join registry.taxpayer_account_links tal
-        on tal.taxpayer_id = coalesce(sr.taxpayer_id, b.taxpayer_id)
+      join registry.taxpayer_account_links tal on tal.taxpayer_id = d.taxpayer_id
       where tal.user_profile_id = ${userProfileId}::uuid
         and tal.active_state_code = 'active'
         and d.archived_at is null
@@ -133,6 +132,7 @@ export class DuesPaymentsController {
     const actorId = this.actors.requireActorId();
     return this.service.assessDue(
       {
+        taxpayerId: parsed.data.taxpayerId,
         serviceRequestId: parsed.data.serviceRequestId,
         balaghId: parsed.data.balaghId,
         amount: parsed.data.amount,
@@ -238,10 +238,7 @@ export class DuesPaymentsController {
     const result = await sql<{ count: number }>`
       select count(*)::int as count
       from dues.payment_dues d
-      left join requests.service_requests sr on sr.id = d.service_request_id
-      left join balaghat.balaghs b on b.id = d.balagh_id
-      join registry.taxpayer_account_links tal
-        on tal.taxpayer_id = coalesce(sr.taxpayer_id, b.taxpayer_id)
+      join registry.taxpayer_account_links tal on tal.taxpayer_id = d.taxpayer_id
       where d.id = ${dueId}::uuid
         and tal.user_profile_id = ${userProfileId}::uuid
         and tal.active_state_code = 'active'

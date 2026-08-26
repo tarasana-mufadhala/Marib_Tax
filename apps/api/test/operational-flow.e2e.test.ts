@@ -224,6 +224,8 @@ describe('operational modules E2E flows (visits, decisions, dues, payments, noti
       .post('/api/v1/dues')
       .set('Authorization', 'Bearer valid')
       .send({
+        // المستحق يُقيَّد على مكلف بعينه؛ الطلب يوثّق ما نشأ عنه فقط.
+        taxpayerId: randomUUID(),
         serviceRequestId,
         amount: 250000.0,
         currencyCode: 'YER',
@@ -233,7 +235,7 @@ describe('operational modules E2E flows (visits, decisions, dues, payments, noti
 
     expect(dueRes.status).toBe(201);
     const dueBody = dueRes.body as StoredPaymentDue;
-    expect(dueBody.statusCode).toBe('PENDING');
+    expect(dueBody.statusCode).toBe('unpaid');
     expect(dueBody.amount).toBe(250000.0);
     const dueId = dueBody.id;
 

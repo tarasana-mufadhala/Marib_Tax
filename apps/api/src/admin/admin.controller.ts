@@ -756,46 +756,6 @@ export class AdminController {
     }
   }
 
-  @RequirePermission('due.register')
-  @Get('dues')
-  async getDues() {
-    if (!this.db.isInitialized) return [];
-    try {
-      const rows = await (this.db.db
-        .selectFrom('dues.payment_dues' as any) as any)
-        .leftJoin(
-          'requests.service_requests',
-          'requests.service_requests.id',
-          'dues.payment_dues.service_request_id',
-        )
-        .leftJoin(
-          'registry.taxpayers',
-          'registry.taxpayers.id',
-          'requests.service_requests.taxpayer_id',
-        )
-        .select([
-          'dues.payment_dues.id as id',
-          'dues.payment_dues.public_ref as public_ref',
-          'dues.payment_dues.amount as amount',
-          'dues.payment_dues.currency_code as currency_code',
-          'dues.payment_dues.status_code as status_code',
-          'dues.payment_dues.assessed_at as assessed_at',
-          'dues.payment_dues.created_at as created_at',
-          'dues.payment_dues.updated_at as updated_at',
-          'requests.service_requests.public_ref as request_ref',
-          'registry.taxpayers.display_name as taxpayer_name',
-          'registry.taxpayers.public_ref as taxpayer_ref',
-        ])
-        .where('dues.payment_dues.archived_at', 'is', null)
-        .orderBy('dues.payment_dues.created_at', 'desc')
-        .limit(100)
-        .execute();
-      return rows;
-    } catch {
-      return [];
-    }
-  }
-
   @RequirePermission('payment.confirm')
   @Patch('dues/:id/status')
   async updateDueStatus(

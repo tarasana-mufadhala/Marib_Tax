@@ -245,6 +245,37 @@ export interface AdminTaxpayerDetails extends AdminTaxpayer {
   }[];
 }
 
+/** مستحق كما تعرضه لوحة الإدارة. */
+export interface AdminDue {
+  id: string;
+  publicRef: string | null;
+  amount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  currencyCode: string;
+  statusCode: string;
+  statusLabel: string;
+  assessedAt: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+  taxpayerId: string;
+  taxpayerName: string | null;
+  taxpayerRef: string | null;
+  requestRef: string | null;
+  basisTypeCode: string | null;
+  documentReference: string | null;
+  editable: boolean;
+}
+
+export interface DueCorrection {
+  priorAmount: number;
+  newAmount: number;
+  currencyCode: string;
+  reason: string;
+  correctedAt: string;
+  officerName: string | null;
+}
+
 /** تسميات البلاغات الستة، مطابِقة لما يعرضه التطبيق للمكلف. */
 const BALAGH_TITLES: Record<string, string> = {
   'FR-201': 'إخطار إيقاف نشاط',
@@ -407,20 +438,53 @@ export const api = {
       }));
     },
 
-    getDues: async (): Promise<TaxDue[]> => {
-      const rows = await apiRequest<any[]>('/admin/dues');
-      return (rows ?? []).map((r) => {
-        const dateStr = r.assessed_at ?? r.created_at ?? '';
-        return {
-          id: String(r.id),
-          tin: r.taxpayer_ref ?? '—',
-          taxpayerName: r.taxpayer_name ?? '—',
-          taxYear: dateStr ? new Date(dateStr).getFullYear() : new Date().getFullYear(),
-          amount: Number(r.amount ?? 0),
-          dueDate: dateStr,
-          status: mapDueStatus(r.status_code),
-          requestRef: r.request_ref ?? undefined,
-        } as TaxDue;
+    /** سجل المستحقات مع أسماء المكلفين والمسدَّد والمتبقي. */
+    getAdminDues: async (params?: {
+      status?: string;
+      taxpayerId?: string;
+      search?: string;
+    }): Promise<AdminDue[]> => {
+      const query = new URLSearchParams();
+      if (params?.status) query.set('status', params.status);
+      if (params?.taxpayerId) query.set('taxpayerId', params.taxpayerId);
+      if (params?.search) query.set('search', params.search);
+      const suffix = query.toString() ? `?${query.toString()}` : '';
+      return (await apiRequest<AdminDue[]>(`/admin/dues${suffix}`)) ?? [];
+    },
+
+    getDueCorrections: async (id: string): Promise<DueCorrection[]> =>
+      (await apiRequest<DueCorrection[]>(`/admin/dues/${id}/corrections`)) ?? [],
+
+    /** تسجيل مستحق جديد على مكلف. */
+    createDue: async (input: {
+      taxpayerId: string;
+      amount: number;
+      basisTypeCode: string;
+      documentReference?: string | null;
+      serviceRequestId?: string | null;
+    }): Promise<void> => {
+      await apiRequest('/dues', {
+        method: 'POST',
+        body: JSON.stringify({
+          taxpayerId: input.taxpayerId,
+          amount: input.amount,
+          currencyCode: 'YER',
+          basisTypeCode: input.basisTypeCode,
+          documentReference: input.documentReference || null,
+          serviceRequestId: input.serviceRequestId || null,
+        }),
+      });
+    },
+
+    /** تعديل مبلغ مستحق قائم. السبب إلزامي ويُحفظ في سجل التعديلات. */
+    correctDue: async (
+      id: string,
+      newAmount: number,
+      reason: string,
+    ): Promise<void> => {
+      await apiRequest(`/dues/${id}/corrections`, {
+        method: 'POST',
+        body: JSON.stringify({ newAmount, reason }),
       });
     },
 

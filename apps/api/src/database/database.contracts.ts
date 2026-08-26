@@ -222,6 +222,7 @@ export interface FinancialCorrectionsTable {
 export interface PaymentDuesTable {
   id: string;
   public_ref: string | null;
+  taxpayer_id: string;
   service_request_id: string | null;
   balagh_id: string | null;
   amount: number;
