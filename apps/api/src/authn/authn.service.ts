@@ -635,14 +635,22 @@ export class AuthnService {
     });
 
     if (!res.ok) {
-      const issue = await this.providerConfigurationIssue(res);
+      const providerIssue = await this.providerConfigurationIssue(res);
+      if (providerIssue) {
+        this.logger.error(`تعذّر إرسال رمز البريد: ${providerIssue.reason}`);
+        throw DomainException.unavailable(providerIssue.message);
+      }
+
+      const issue = await this.mailerIssue(res);
       if (issue) {
+        // عطل في الخدمة لا في المستخدم: يُقال له، ويُسجَّل للمكتب.
         this.logger.error(`تعذّر إرسال رمز البريد: ${issue.reason}`);
         throw DomainException.unavailable(issue.message);
       }
-      // لا نكشف إن كان البريد مسجَّلاً أم لا: الفرق بين ردَّي النجاح والفشل
-      // يحوّل هذه النقطة إلى أداة تعداد لبُرد المستخدمين.
-      this.logger.warn(`طلب رمز بريد لم ينجح (${res.status})`);
+
+      // «لا حساب بهذا البريد» يُكتم: الفرق بين ردَّي النجاح والفشل يحوّل
+      // هذه النقطة إلى أداة تعداد لبُرد المستخدمين.
+      this.logger.debug('طلب رمز بريد لعنوان غير مسجَّل');
     }
 
     recordAuthEvent(this.db, 'otp_requested', email, undefined, 'email');
@@ -696,6 +704,149 @@ export class AuthnService {
 
     recordAuthEvent(this.db, 'login_succeeded', email, 'دخول برمز بريد', 'email');
     return { accessToken, userProfileId: actor.id };
+  }
+
+  /**
+   * يصنّف رفض GoTrue لطلب بريد.
+   *
+   * الفارق جوهري: عطل في إعداد البريد يجب أن يُقال للمستخدم صراحةً ويُسجَّل
+   * للمكتب، بينما «هذا البريد غير مسجَّل» يجب أن يبقى مكتوماً وإلا صارت
+   * النقطة أداة تعداد لبُرد المستخدمين.
+   *
+   * يعيد null حين يكون الرفض من نوع «لا حساب بهذا البريد».
+   */
+  private async mailerIssue(
+    response: Response,
+  ): Promise<{ reason: string; message: string } | null> {
+    let payload: { error_code?: string; msg?: string } = {};
+    try {
+      payload = (await response.clone().json()) as typeof payload;
+    } catch {
+      return {
+        reason: `mailer_unreadable_${response.status}`,
+        message: 'تعذّر إرسال الرمز، يرجى المحاولة لاحقاً',
+      };
+    }
+
+    const code = payload.error_code ?? '';
+    const detail = payload.msg ?? code;
+
+    switch (code) {
+      // لا حساب بهذا البريد: `create_user: false` يمنع الإنشاء فيرد GoTrue
+      // بهذا الرمز. يُكتم عمداً.
+      case 'otp_disabled':
+      case 'user_not_found':
+        return null;
+
+      // بريد Supabase المدمج يسمح برسالتين أو ثلاث في الساعة فقط، وهو
+      // للتطوير لا للإنتاج. الحل ضبط SMTP خاص بالمكتب في إعدادات المشروع.
+      case 'over_email_send_rate_limit':
+        return {
+          reason: `over_email_send_rate_limit — ${detail}`,
+          message:
+            'تجاوز المكتب حد إرسال البريد المسموح حالياً. حاول بعد قليل، ' +
+            'أو ادخل برقم هاتفك.',
+        };
+
+      // المزود المدمج يرفض العناوين خارج فريق المشروع.
+      case 'email_address_invalid':
+        return {
+          reason: `email_address_invalid — ${detail}`,
+          message:
+            'خدمة البريد لدى المكتب لا تصل هذا العنوان حالياً. ادخل برقم ' +
+            'هاتفك أو راجع المكتب.',
+        };
+
+      case 'validation_failed':
+        return {
+          reason: `validation_failed — ${detail}`,
+          message: 'أدخل بريداً إلكترونياً صحيحاً',
+        };
+
+      default:
+        return {
+          reason: `${code || response.status} — ${detail}`,
+          message: 'تعذّر إرسال الرمز إلى بريدك، يرجى المحاولة لاحقاً',
+        };
+    }
+  }
+
+  /**
+   * حالة خدمة البريد كما يراها الخادم.
+   *
+   * تُقرأ من إعدادات GoTrue مباشرةً لا من متغيّرات بيئتنا: مصدر الحقيقة هو
+   * المشروع، وإعداد عندنا يخالفه يعطي طمأنينة كاذبة.
+   */
+  async emailProviderStatus(): Promise<{
+    enabled: boolean;
+    autoConfirm: boolean;
+    signupsDisabled: boolean;
+    note: string;
+  }> {
+    const res = await fetch(`${this.supabaseUrl}/auth/v1/settings`, {
+      headers: this.adminHeaders(),
+    });
+    if (!res.ok) {
+      throw DomainException.unavailable('تعذّر الوصول إلى خدمة الحسابات');
+    }
+
+    const settings = (await res.json()) as {
+      external?: { email?: boolean };
+      mailer_autoconfirm?: boolean;
+      disable_signup?: boolean;
+    };
+
+    const enabled = settings.external?.email === true;
+    return {
+      enabled,
+      autoConfirm: settings.mailer_autoconfirm === true,
+      signupsDisabled: settings.disable_signup === true,
+      note: enabled
+        ? 'مزوّد البريد مفعّل. إن كان المكتب يستعمل بريد Supabase المدمج ' +
+          'فحدّه رسالتان إلى ثلاث في الساعة ولا يصل إلا عناوين فريق ' +
+          'المشروع — الإنتاج يحتاج SMTP خاصاً بالمكتب في إعدادات المشروع.'
+        : 'مزوّد البريد معطّل في إعدادات المشروع، فلا يصل أي رمز بريد.',
+    };
+  }
+
+  /**
+   * إرسال تجريبي للتحقق من وصول البريد فعلاً.
+   *
+   * إعداد سليم على الورق لا يعني رسالة تصل: الحد والقوالب والعنوان المرسِل
+   * كلها تسقط بعده. هذه النقطة تُجري المحاولة وتُعيد سبب الفشل كما هو.
+   */
+  async sendTestEmail(
+    emailAddress: string,
+  ): Promise<{ delivered: boolean; reason: string | null }> {
+    const email = String(emailAddress ?? '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw DomainException.badRequest('أدخل بريداً إلكترونياً صحيحاً');
+    }
+
+    const res = await fetch(`${this.supabaseUrl}/auth/v1/otp`, {
+      method: 'POST',
+      headers: this.adminHeaders(),
+      body: JSON.stringify({ email, create_user: false }),
+    });
+
+    if (res.ok) return { delivered: true, reason: null };
+
+    // في الاختبار يُكشف سبب «لا حساب بهذا البريد» أيضاً: المستدعي موظف
+    // يشخّص الخدمة لا زائر يعدّد الحسابات.
+    let payload: { error_code?: string; msg?: string } = {};
+    try {
+      payload = (await res.clone().json()) as typeof payload;
+    } catch {
+      return { delivered: false, reason: `HTTP ${res.status}` };
+    }
+    const code = payload.error_code ?? String(res.status);
+    if (code === 'otp_disabled' || code === 'user_not_found') {
+      return {
+        delivered: false,
+        reason: 'لا يوجد حساب بهذا البريد — جرّب بريد حساب مسجَّل',
+      };
+    }
+    return { delivered: false, reason: `${code}: ${payload.msg ?? ''}`.trim() };
   }
 
   /** خمسة طلبات في الدقيقة لكل بريد، كحدّ رسائل الهاتف. */

@@ -260,6 +260,14 @@ export interface AdminTaxpayerDetails extends AdminTaxpayer {
   }[];
 }
 
+/** حالة مزوّد البريد كما تقولها إعدادات مشروع Supabase. */
+export interface EmailProviderStatus {
+  enabled: boolean;
+  autoConfirm: boolean;
+  signupsDisabled: boolean;
+  note: string;
+}
+
 /** مستحق كما تعرضه لوحة الإدارة. */
 export interface AdminDue {
   id: string;
@@ -430,6 +438,18 @@ export const api = {
      * التصفية والبحث على الخادم لا في المتصفح: تحميل السجل كاملاً ثم
      * تصفيته محلياً يعني إرسال بيانات كل المكلفين إلى كل جهاز موظف.
      */
+    getEmailStatus: async (): Promise<EmailProviderStatus> =>
+      apiRequest<EmailProviderStatus>('/admin/system/email'),
+
+    /** إرسال تجريبي: الإعداد السليم على الورق لا يعني رسالة تصل. */
+    testEmail: async (
+      email: string,
+    ): Promise<{ delivered: boolean; reason: string | null }> =>
+      apiRequest('/admin/system/email/test', {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      }),
+
     getAdminTaxpayers: async (params?: {
       status?: string;
       search?: string;

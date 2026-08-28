@@ -15,7 +15,7 @@ import {
   Modal,
   Input,
 } from '@marib-tax/web-ui';
-import { api } from '@/lib/api-client';
+import { api, EmailProviderStatus } from '@/lib/api-client';
 
 interface StaffUser {
   id: string;
@@ -168,6 +168,8 @@ export default function UsersPage() {
           </Button>
         </div>
       </div>
+
+      <EmailServicePanel />
 
       {error && (
         <div className="p-3 rounded-lg bg-red-50 text-red-700 text-xs border border-red-200">
@@ -475,6 +477,102 @@ function EmptyState({ message, hint }: { message: string; hint: string }) {
       <InboxIcon size={40} className="mx-auto text-[var(--usr-muted)] mb-3" />
       <p className="text-sm font-semibold text-[var(--usr-primary-dark)]">{message}</p>
       <p className="text-xs text-[var(--usr-muted)] mt-1">{hint}</p>
+    </div>
+  );
+}
+
+/**
+ * حالة خدمة البريد وإرسال تجريبي.
+ *
+ * الدخول برمز بريد وإضافة بريد للحساب كلاهما يمر بمزوّد البريد في مشروع
+ * Supabase. حين لا تصل رسالة لا يعرف الموظف أالعطل في الإعداد أم في حد
+ * الإرسال أم في العنوان، فتضع هذه اللوحة الجواب أمامه.
+ */
+function EmailServicePanel() {
+  const [status, setStatus] = useState<EmailProviderStatus | null>(null);
+  const [statusError, setStatusError] = useState('');
+  const [testAddress, setTestAddress] = useState('');
+  const [testing, setTesting] = useState(false);
+  const [result, setResult] = useState<{
+    delivered: boolean;
+    reason: string | null;
+  } | null>(null);
+
+  useEffect(() => {
+    api.admin
+      .getEmailStatus()
+      .then(setStatus)
+      .catch((err) =>
+        setStatusError(
+          err instanceof Error ? err.message : 'تعذر قراءة حالة البريد',
+        ),
+      );
+  }, []);
+
+  const runTest = async () => {
+    if (testAddress.trim().length === 0) return;
+    try {
+      setTesting(true);
+      setResult(null);
+      setResult(await api.admin.testEmail(testAddress.trim()));
+    } catch (err) {
+      setResult({
+        delivered: false,
+        reason: err instanceof Error ? err.message : 'تعذر تنفيذ الاختبار',
+      });
+    } finally {
+      setTesting(false);
+    }
+  };
+
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <h3 className="text-sm font-bold text-[var(--usr-primary-dark)]">
+          خدمة البريد الإلكتروني
+        </h3>
+        {status && (
+          <Badge variant={status.enabled ? 'success' : 'destructive'}>
+            {status.enabled ? 'مفعّلة' : 'معطّلة'}
+          </Badge>
+        )}
+      </div>
+
+      {statusError && (
+        <p className="text-xs text-red-700 font-bold">{statusError}</p>
+      )}
+
+      {status && (
+        <p className="text-xs text-slate-600 leading-relaxed">{status.note}</p>
+      )}
+
+      <div className="flex flex-wrap gap-2 items-center">
+        <div className="min-w-[240px] flex-1">
+          <Input
+            dir="ltr"
+            placeholder="بريد حساب مسجَّل للاختبار"
+            value={testAddress}
+            onChange={(e) => setTestAddress(e.target.value)}
+          />
+        </div>
+        <Button variant="outline" size="sm" onClick={runTest} disabled={testing}>
+          {testing ? 'جاري الإرسال...' : 'إرسال تجريبي'}
+        </Button>
+      </div>
+
+      {result && (
+        <div
+          className={`p-3 rounded-lg text-xs border ${
+            result.delivered
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+              : 'bg-amber-50 text-amber-900 border-amber-200'
+          }`}
+        >
+          {result.delivered
+            ? 'قبِل المزوّد الرسالة. تحقّق من وصولها إلى صندوق الوارد.'
+            : `لم تُرسل — ${result.reason ?? 'سبب غير معروف'}`}
+        </div>
+      )}
     </div>
   );
 }
