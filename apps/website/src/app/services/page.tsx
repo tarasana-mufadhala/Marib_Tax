@@ -18,6 +18,7 @@ import {
 } from '@marib-tax/web-ui';
 import { publicApi } from '@/lib/api-client';
 import type { TaxService } from '@/lib/api-client';
+import { getServiceVectorIcon } from '@/lib/icon-helper';
 
 const FALLBACK_SERVICES: TaxService[] = [
   {
@@ -134,8 +135,8 @@ export default async function ServicesPage() {
               >
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <div className="w-12 h-12 rounded-2xl bg-[var(--usr-primary-soft)] text-[var(--usr-primary-dark)] flex items-center justify-center font-bold text-xl shadow-xs">
-                      <FileTextIcon size={24} className="text-[var(--usr-primary)]" />
+                    <div className="w-12 h-12 rounded-2xl bg-slate-50 flex items-center justify-center border border-slate-200 shadow-2xs">
+                      {getServiceVectorIcon(srv.category, srv.title, 24)}
                     </div>
                     <Badge variant="gold">{srv.category || 'خدمة معتمدة'}</Badge>
                   </div>

@@ -298,20 +298,13 @@ export default function AdminContentPage() {
   return (
     <div className="space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between border-r-4 border-[var(--usr-gold)] pr-3">
-        <div>
-          <h2 className="text-2xl font-bold font-display text-[var(--usr-primary-dark)]">
-            إدارة وربط محتوى الموقع العام والبوابة الرسمية
-          </h2>
-          <p className="text-xs text-[var(--usr-muted)] mt-1">
-            التحكم الكامل في الإعلانات، النصوص والصفحات، مكتبة الوثائق والنماذج، والأسئلة الشائعة التي تظهر للجمهور
-          </p>
-        </div>
-        <a href="http://localhost:3002" target="_blank" rel="noopener noreferrer">
-          <Button variant="gold" size="sm" className="font-bold gap-1.5">
-            <span>معاينة الموقع العام 🌐</span>
-          </Button>
-        </a>
+      <div className="border-r-4 border-emerald-600 pr-3">
+        <h2 className="text-2xl font-bold font-display text-[var(--usr-primary-dark)]">
+          إدارة وربط محتوى الموقع العام والبوابة الرسمية
+        </h2>
+        <p className="text-xs text-[var(--usr-muted)] mt-1">
+          التحكم الكامل في الإعلانات، النصوص والصفحات، مكتبة الوثائق والنماذج، والأسئلة الشائعة التي تظهر للجمهور
+        </p>
       </div>
 
       {/* Sub-Navigation Tabs */}

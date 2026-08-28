@@ -133,9 +133,55 @@ export class DuesAdminController {
         basisTypeCode: row.basis_type_code,
         documentReference: row.document_reference,
         // التعديل ممكن ما دام المبلغ لم يُسدَّد بالكامل ولم يُلغَ.
-        editable: row.status_code === 'unpaid' || row.status_code === 'partially_paid',
+        editable:
+          row.status_code === 'unpaid' || row.status_code === 'partially_paid',
+        // السداد يُسجَّل ما دام هناك متبقٍّ؛ الإلغاء ما دام لم يُقبض شيء.
+        payable:
+          row.status_code !== 'paid' && row.status_code !== 'cancelled',
+        cancellable: paid === 0 && row.status_code !== 'cancelled',
       };
     });
+  }
+
+  /** المدفوعات المعتمدة على مستحق واحد — من قبض وكم ومتى. */
+  @Get(':id/payments')
+  @RequirePermission('due.register')
+  async payments(@Param('id', new ParseUUIDPipe()) id: string) {
+    this.ensureDatabase();
+
+    const result = await sql<{
+      id: string;
+      public_ref: string | null;
+      amount: string;
+      received_at: Date;
+      acceptance_status_code: string;
+      confirmed_at: Date | null;
+      officer_name: string | null;
+    }>`
+      select r.id,
+             r.public_ref,
+             r.amount,
+             r.received_at,
+             r.acceptance_status_code,
+             pc.confirmed_at,
+             up.display_name as officer_name
+      from dues.payment_receipts r
+      left join dues.payment_confirmations pc on pc.payment_receipt_id = r.id
+      left join identity.user_profiles up on up.id = pc.confirmed_by_profile_id
+      where r.payment_due_id = ${id}::uuid
+      order by r.received_at desc
+      limit 100
+    `.execute(this.db.db);
+
+    return result.rows.map((row) => ({
+      id: row.id,
+      publicRef: row.public_ref,
+      amount: Number(row.amount),
+      receivedAt: row.received_at,
+      statusCode: row.acceptance_status_code,
+      confirmedAt: row.confirmed_at,
+      officerName: row.officer_name,
+    }));
   }
 
   /** سجل تعديلات مستحق واحد — من غيّر المبلغ ومتى ولماذا. */

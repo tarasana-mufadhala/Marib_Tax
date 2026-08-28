@@ -6,6 +6,13 @@ export const DUE_STATUSES = {
   cancelled: 'cancelled',
 } as const;
 
+/** حالات الإيصال. الإيصال دعوى حتى يعتمدها موظف الصندوق. */
+export const RECEIPT_STATUSES = {
+  uploaded: 'uploaded',
+  verified: 'verified',
+  rejected: 'rejected',
+} as const;
+
 /** الحالات التي ما زال المبلغ فيها قابلاً للتعديل. */
 export const CORRECTABLE_DUE_STATUSES: readonly string[] = [
   DUE_STATUSES.unpaid,

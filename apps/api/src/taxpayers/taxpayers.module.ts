@@ -5,10 +5,11 @@ import { TaxpayerService } from './taxpayer.service.js';
 import { TAXPAYER_REPOSITORY } from './taxpayer.repository.js';
 import { TaxpayerKyselyRepository } from './taxpayer.kysely-repository.js';
 import { DatabaseModule } from '../database/database.module.js';
+import { UsersModule } from '../users/users.module.js';
 import { AuthnModule } from '../authn/authn.module.js';
 
 @Module({
-  imports: [DatabaseModule, AuthnModule],
+  imports: [DatabaseModule, AuthnModule, UsersModule],
   // ملف «أنا» يسبق TaxpayerController لأن مساره /taxpayers/me يجب ألا
   // يُلتقط كـ /taxpayers/:id.
   controllers: [TaxpayerProfileController, TaxpayerController],

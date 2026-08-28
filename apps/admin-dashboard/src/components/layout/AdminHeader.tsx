@@ -53,12 +53,6 @@ export function AdminHeader() {
             <span>الموقع العام 🌐</span>
           </Button>
         </a>
-
-        {/* Logout Button */}
-        <Button variant="destructive" size="sm" onClick={handleLogout} className="gap-1.5 font-bold shadow-2xs bg-red-600 hover:bg-red-700 text-white">
-          <LogOut size={15} />
-          <span>خروج</span>
-        </Button>
       </div>
     </header>
   );

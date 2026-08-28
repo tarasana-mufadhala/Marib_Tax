@@ -13,7 +13,9 @@ import {
 import { sql } from 'kysely';
 import {
   assessDueSchema,
+  cancelDueSchema,
   correctDueSchema,
+  recordPaymentSchema,
   uploadReceiptSchema,
   confirmPaymentSchema,
 } from '@marib-tax/contracts';
@@ -165,6 +167,48 @@ export class DuesPaymentsController {
         reason: parsed.data.reason,
       },
       actorId,
+    );
+  }
+
+  /**
+   * تسجيل سداد بمبلغه — يُنشئ الإيصال ويعتمده معاً.
+   *
+   * `payment.confirm` لا `payment.receipt.upload`: هذه ليست دعوى سداد
+   * يرفعها مكلف، بل قبضٌ يقرّه موظف الصندوق باسمه.
+   */
+  @Post(':id/payments')
+  @HttpCode(201)
+  @RequirePermission('payment.confirm')
+  recordPayment(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() body: unknown,
+  ): Promise<StoredPaymentDue> {
+    const parsed = recordPaymentSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new UnprocessableEntityException();
+    }
+    return this.service.recordPayment(
+      id,
+      { amount: parsed.data.amount, notes: parsed.data.notes ?? null },
+      this.actors.requireActorId(),
+    );
+  }
+
+  @Post(':id/cancel')
+  @HttpCode(200)
+  @RequirePermission('due.correct')
+  cancel(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() body: unknown,
+  ): Promise<StoredPaymentDue> {
+    const parsed = cancelDueSchema.safeParse(body);
+    if (!parsed.success) {
+      throw new UnprocessableEntityException();
+    }
+    return this.service.cancelDue(
+      id,
+      parsed.data.reason,
+      this.actors.requireActorId(),
     );
   }
 

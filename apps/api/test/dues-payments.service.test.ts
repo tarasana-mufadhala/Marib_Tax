@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { DuesPaymentsMemoryRepository } from '../src/dues-payments/dues-payments.memory-repository.js';
-import { DUE_STATUSES } from '../src/dues-payments/dues-payments.repository.js';
+import {
+  DUE_STATUSES,
+  RECEIPT_STATUSES,
+} from '../src/dues-payments/dues-payments.repository.js';
 import { DuesPaymentsService } from '../src/dues-payments/dues-payments.service.js';
 import type { StoredFinancialCorrection } from '../src/dues-payments/dues-payments.repository.js';
 
@@ -68,7 +71,7 @@ describe('DuesPaymentsService', () => {
     );
 
     expect(receipt1.amount).toBe(80000.0);
-    expect(receipt1.acceptanceStatusCode).toBe('UPLOADED');
+    expect(receipt1.acceptanceStatusCode).toBe(RECEIPT_STATUSES.uploaded);
 
     // Confirm receipt 1
     const conf1 = await service.confirmPayment(

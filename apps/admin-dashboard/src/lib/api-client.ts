@@ -227,12 +227,27 @@ export interface AdminTaxpayer {
 
 export interface AdminTaxpayerDetails extends AdminTaxpayer {
   legalEntityName: string | null;
+  /** حسابات الدخول المرتبطة بالملف، بهواتفها من خدمة الحسابات. */
+  accounts: {
+    userProfileId: string;
+    displayName: string | null;
+    phone: string | null;
+    email: string | null;
+    relationship: string;
+    verificationStatus: string;
+    linkedAt: string;
+  }[];
   contacts: { type: string; value: string; isPrimary: boolean }[];
   activities: {
     id: string;
+    publicRef: string | null;
     name: string | null;
     activityType: string | null;
     statusCode: string | null;
+    createdAt: string;
+    address: string | null;
+    cityCode: string | null;
+    districtCode: string | null;
   }[];
   history: {
     fromStatus: string | null;
@@ -265,6 +280,21 @@ export interface AdminDue {
   basisTypeCode: string | null;
   documentReference: string | null;
   editable: boolean;
+  /** يمكن تسجيل سداد عليه — لم يُسدَّد بالكامل ولم يُلغَ. */
+  payable: boolean;
+  /** يمكن إلغاؤه — لم يُقبض منه شيء. */
+  cancellable: boolean;
+}
+
+/** دفعة مقبوضة على مستحق. */
+export interface DuePayment {
+  id: string;
+  publicRef: string | null;
+  amount: number;
+  receivedAt: string;
+  statusCode: string;
+  confirmedAt: string | null;
+  officerName: string | null;
 }
 
 export interface DueCorrection {
@@ -450,6 +480,31 @@ export const api = {
       if (params?.search) query.set('search', params.search);
       const suffix = query.toString() ? `?${query.toString()}` : '';
       return (await apiRequest<AdminDue[]>(`/admin/dues${suffix}`)) ?? [];
+    },
+
+    getDuePayments: async (id: string): Promise<DuePayment[]> =>
+      (await apiRequest<DuePayment[]>(`/admin/dues/${id}/payments`)) ?? [],
+
+    /**
+     * تسجيل سداد بمبلغه. الحالة تُشتق على الخادم من مجموع ما قُبض، فلا
+     * تُرسَل من هنا: «مسدَّد» بلا مبلغ مقابل يجعل الدفتر يكذب.
+     */
+    recordDuePayment: async (
+      id: string,
+      amount: number,
+      notes: string,
+    ): Promise<void> => {
+      await apiRequest(`/dues/${id}/payments`, {
+        method: 'POST',
+        body: JSON.stringify({ amount, notes: notes || null }),
+      });
+    },
+
+    cancelDue: async (id: string, reason: string): Promise<void> => {
+      await apiRequest(`/dues/${id}/cancel`, {
+        method: 'POST',
+        body: JSON.stringify({ reason }),
+      });
     },
 
     getDueCorrections: async (id: string): Promise<DueCorrection[]> =>

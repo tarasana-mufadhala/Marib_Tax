@@ -11,6 +11,7 @@ import { randomUUID } from 'node:crypto';
 import {
   CORRECTABLE_DUE_STATUSES,
   DUE_STATUSES,
+  RECEIPT_STATUSES,
   DUES_PAYMENTS_REPOSITORY,
   type DuesPaymentsRepository,
   type StoredPaymentDue,
@@ -229,7 +230,7 @@ export class DuesPaymentsService {
       paymentDueId: dueId,
       amount: roundedAmount,
       currencyCode: 'YER',
-      acceptanceStatusCode: 'UPLOADED',
+      acceptanceStatusCode: RECEIPT_STATUSES.uploaded,
       receivedAt: new Date(),
       replacesReceiptId: input.replacesReceiptId,
       createdAt: new Date(),
@@ -239,6 +240,105 @@ export class DuesPaymentsService {
     };
 
     return this.repository.createReceipt(receipt);
+  }
+
+  /**
+   * تسجيل سداد يقبضه الموظف على الصندوق.
+   *
+   * المسار العام خطوتان — إيصال يرفعه المكلف ثم تأكيد يعتمده الموظف —
+   * لأن الإيصال دعوى حتى تُقبل. أما ما يقبضه الموظف بيده فهو الدعوى
+   * والاعتماد معاً، ففصلهما إلى نداءين يخلق حالةً وسطى لا وجود لها في
+   * الواقع ويترك السداد معلّقاً إن انقطع الاتصال بين النداءين.
+   *
+   * حالة المستحق تُشتق من مجموع ما أُكِّد قبضه لا تُكتب باليد: كتابة
+   * «مسدَّد» بلا مبلغ مقابل تجعل الدفتر يكذب.
+   */
+  async recordPayment(
+    dueId: string,
+    input: { amount: number; notes: string | null },
+    actorProfileId: string,
+  ): Promise<StoredPaymentDue> {
+    await this.requireActiveStaff(actorProfileId);
+
+    const due = await this.repository.findDueById(dueId);
+    if (!due) {
+      throw new NotFoundException('Payment due record not found.');
+    }
+
+    const status = due.statusCode.trim().toLowerCase();
+    if (status === DUE_STATUSES.cancelled) {
+      throw new ConflictException('لا يُسجَّل سداد على مستحق ملغى');
+    }
+    if (status === DUE_STATUSES.paid) {
+      throw new ConflictException('هذا المستحق مسدَّد بالكامل');
+    }
+
+    const receipt = await this.uploadReceipt(
+      dueId,
+      { amount: input.amount, currencyCode: 'YER', replacesReceiptId: null },
+      actorProfileId,
+    );
+
+    await this.confirmPayment(receipt.id, { notes: input.notes }, actorProfileId);
+
+    const updated = await this.repository.findDueById(dueId);
+    if (!updated) {
+      throw new NotFoundException('Payment due record not found.');
+    }
+    return updated;
+  }
+
+  /**
+   * إلغاء مستحق قُيِّد خطأً.
+   *
+   * الإلغاء لا يُشتق من المدفوعات فهو القرار الوحيد الذي يُكتب على الحالة
+   * مباشرة، ولذلك يشترط سبباً. ولا يقع على مستحق قُبض منه شيء: ما دخل
+   * الصندوق لا يُمحى بإلغاء، بل يُصحَّح مبلغه.
+   */
+  async cancelDue(
+    dueId: string,
+    reason: string,
+    actorProfileId: string,
+  ): Promise<StoredPaymentDue> {
+    await this.requireActiveStaff(actorProfileId);
+
+    if (reason.trim().length === 0) {
+      throw new BadRequestException('سبب الإلغاء مطلوب');
+    }
+
+    const due = await this.repository.findDueById(dueId);
+    if (!due) {
+      throw new NotFoundException('Payment due record not found.');
+    }
+
+    const status = due.statusCode.trim().toLowerCase();
+    if (status === DUE_STATUSES.cancelled) {
+      throw new ConflictException('هذا المستحق ملغى بالفعل');
+    }
+
+    const receipts = await this.repository.listReceiptsForDue(dueId);
+    const confirmed = receipts.some(
+      (receipt) =>
+        receipt.acceptanceStatusCode.trim().toLowerCase() ===
+        RECEIPT_STATUSES.verified,
+    );
+    if (confirmed) {
+      throw new ConflictException(
+        'لا يُلغى مستحق قُبض منه مبلغ. عدّل المبلغ بدل الإلغاء.',
+      );
+    }
+
+    // السبب يُحفظ في سجل التعديلات ليبقى الإلغاء مُعلَّلاً ومنسوباً.
+    await this.correctDue(
+      dueId,
+      { newAmount: due.amount, reason: `إلغاء المستحق: ${reason.trim()}` },
+      actorProfileId,
+    );
+
+    return this.repository.updateDue(dueId, {
+      statusCode: DUE_STATUSES.cancelled,
+      updatedAt: new Date(),
+    });
   }
 
   async confirmPayment(
@@ -256,8 +356,8 @@ export class DuesPaymentsService {
       throw new NotFoundException('Payment receipt not found.');
     }
 
-    const acceptanceStatus = receipt.acceptanceStatusCode.toUpperCase();
-    if (acceptanceStatus !== 'UPLOADED' && acceptanceStatus !== 'PENDING') {
+    const acceptanceStatus = receipt.acceptanceStatusCode.trim().toLowerCase();
+    if (acceptanceStatus !== RECEIPT_STATUSES.uploaded) {
       throw new ConflictException(
         `Receipt has already been "${receipt.acceptanceStatusCode}".`,
       );
@@ -265,7 +365,7 @@ export class DuesPaymentsService {
 
     // Update receipt status to VERIFIED
     await this.repository.updateReceipt(receiptId, {
-      acceptanceStatusCode: 'VERIFIED',
+      acceptanceStatusCode: RECEIPT_STATUSES.verified,
       updatedAt: new Date(),
     });
 
@@ -279,8 +379,10 @@ export class DuesPaymentsService {
       receipt.paymentDueId,
     );
     const totalPaid = receipts
-      .filter((r) =>
-        ['VERIFIED', 'APPROVED'].includes(r.acceptanceStatusCode.toUpperCase()),
+      .filter(
+        (r) =>
+          r.acceptanceStatusCode.trim().toLowerCase() ===
+          RECEIPT_STATUSES.verified,
       )
       .reduce((sum, r) => sum + r.amount, 0);
 
@@ -321,7 +423,9 @@ export class DuesPaymentsService {
       id: randomUUID(),
       paymentReceiptId: receiptId,
       confirmedAt: new Date(),
-      confirmedByStaffProfileId: staffProfileId,
+      // العمود يشير إلى `identity.user_profiles` لا إلى ملفات الموظفين،
+      // خلافاً لسجل التعديلات. الاسم مضلِّل والمرجع هو الفيصل.
+      confirmedByStaffProfileId: actorStaffProfileId,
       notes: input.notes,
     };
 

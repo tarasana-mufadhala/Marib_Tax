@@ -8,6 +8,11 @@ import { VERIFIED_ACTOR } from '../src/authn/bearer-actor-context.resolver.js';
 import type { AuthenticatedRequest } from '../src/authn/bearer-actor-context.resolver.js';
 
 const OFFICER = '11111111-1111-1111-1111-111111111111';
+
+/** لا تُقرأ خدمة الحسابات في هذه الحالات؛ بديل صامت يكفي. */
+const AUTHN_STUB = {
+  accountContact: () => Promise.resolve({ phone: null, email: null }),
+};
 const TAXPAYER = '22222222-2222-2222-2222-222222222222';
 
 function officerRequest(): AuthenticatedRequest {
@@ -110,9 +115,10 @@ describe('قواعد انتقال حالة ملف المكلف', () => {
 
 describe('حراسة متحكّم إدارة المكلفين', () => {
   it('يرفض العمل حين تكون القاعدة غير متاحة بدل ابتلاع الفشل', async () => {
-    const controller = new TaxpayerAdminController({
-      isInitialized: false,
-    } as never);
+    const controller = new TaxpayerAdminController(
+      { isInitialized: false } as never,
+      AUTHN_STUB as never,
+    );
 
     await expect(
       controller.changeStatus(officerRequest(), TAXPAYER, {
@@ -123,9 +129,10 @@ describe('حراسة متحكّم إدارة المكلفين', () => {
   });
 
   it('يرفض طلباً بلا سياق ممثّل', async () => {
-    const controller = new TaxpayerAdminController({
-      isInitialized: true,
-    } as never);
+    const controller = new TaxpayerAdminController(
+      { isInitialized: true } as never,
+      AUTHN_STUB as never,
+    );
     const anonymous = {} as unknown as AuthenticatedRequest;
 
     await expect(
@@ -134,9 +141,10 @@ describe('حراسة متحكّم إدارة المكلفين', () => {
   });
 
   it('يرفض حالة غير معروفة قبل لمس القاعدة', async () => {
-    const controller = new TaxpayerAdminController({
-      isInitialized: true,
-    } as never);
+    const controller = new TaxpayerAdminController(
+      { isInitialized: true } as never,
+      AUTHN_STUB as never,
+    );
 
     await expect(
       controller.changeStatus(officerRequest(), TAXPAYER, {

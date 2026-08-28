@@ -24,6 +24,25 @@ const STATUS_TONE: Record<string, 'success' | 'warning' | 'destructive' | 'defau
   rejected: 'destructive',
 };
 
+/** تسميات قنوات الاتصال المخزَّنة في السجل. */
+const CONTACT_LABELS: Record<string, string> = {
+  phone: 'رقم الهاتف',
+  email: 'البريد الإلكتروني',
+  tax_number: 'الرقم الضريبي',
+};
+
+const RELATIONSHIP_LABELS: Record<string, string> = {
+  owner: 'المالك',
+  agent: 'وكيل',
+  representative: 'مفوَّض',
+};
+
+const VERIFICATION_LABELS: Record<string, string> = {
+  pending: 'بانتظار التحقق',
+  verified: 'مُتحقَّق منه',
+  rejected: 'مرفوض',
+};
+
 const STATUS_FILTERS = [
   { code: '', label: 'الكل' },
   { code: 'under_review', label: 'قيد المراجعة' },
@@ -186,6 +205,30 @@ export default function TaxpayersPage() {
   );
 }
 
+/** صف «تسمية: قيمة» في بطاقات التفاصيل. */
+function DetailRow({
+  label,
+  value,
+  ltr = false,
+}: {
+  label: string;
+  value: string | null | undefined;
+  ltr?: boolean;
+}) {
+  const text = (value ?? '').trim();
+  return (
+    <div className="flex justify-between gap-3 px-3 py-2">
+      <dt className="text-slate-500 shrink-0">{label}</dt>
+      <dd
+        dir={ltr ? 'ltr' : undefined}
+        className={`font-semibold text-left ${ltr ? 'font-mono' : ''}`}
+      >
+        {text.length > 0 ? text : '—'}
+      </dd>
+    </div>
+  );
+}
+
 /** ملف المكلف وإجراءاته الإدارية. */
 function TaxpayerDrawer({
   taxpayer,
@@ -327,7 +370,68 @@ function TaxpayerDrawer({
 
           <section>
             <h4 className="text-xs font-bold text-[var(--usr-primary)] mb-2">
-              قنوات الاتصال
+              بيانات التسجيل
+            </h4>
+            <dl className="rounded-xl border border-slate-200 divide-y divide-slate-100 text-xs">
+              <DetailRow label="الاسم كما سُجِّل" value={taxpayer.displayName} />
+              <DetailRow label="الرقم الضريبي" value={taxpayer.taxNumber} ltr />
+              <DetailRow
+                label="الكيان القانوني"
+                value={taxpayer.legalEntityName}
+              />
+              <DetailRow label="حالة الملف" value={taxpayer.statusLabel} />
+              <DetailRow
+                label="تاريخ التسجيل"
+                value={new Date(taxpayer.createdAt).toLocaleDateString('ar')}
+              />
+              <DetailRow
+                label="طلبات مفتوحة"
+                value={String(taxpayer.openRequests)}
+              />
+            </dl>
+          </section>
+
+          <section>
+            <h4 className="text-xs font-bold text-[var(--usr-primary)] mb-2">
+              حسابات الدخول المرتبطة
+            </h4>
+            {taxpayer.accounts.length === 0 ? (
+              <p className="text-xs text-slate-500">
+                لا حساب مرتبط — سُجِّل هذا الملف من اللوحة أو بالاستيراد.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {taxpayer.accounts.map((account) => (
+                  <dl
+                    key={account.userProfileId}
+                    className="rounded-xl border border-slate-200 divide-y divide-slate-100 text-xs"
+                  >
+                    <DetailRow label="الاسم" value={account.displayName} />
+                    <DetailRow label="رقم الهاتف" value={account.phone} ltr />
+                    <DetailRow label="البريد" value={account.email} ltr />
+                    <DetailRow
+                      label="الصفة"
+                      value={
+                        RELATIONSHIP_LABELS[account.relationship] ??
+                        account.relationship
+                      }
+                    />
+                    <DetailRow
+                      label="حالة التحقق"
+                      value={
+                        VERIFICATION_LABELS[account.verificationStatus] ??
+                        account.verificationStatus
+                      }
+                    />
+                  </dl>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section>
+            <h4 className="text-xs font-bold text-[var(--usr-primary)] mb-2">
+              قنوات الاتصال المسجَّلة
             </h4>
             {taxpayer.contacts.length === 0 ? (
               <p className="text-xs text-slate-500">لا قنوات مسجَّلة.</p>
@@ -338,7 +442,9 @@ function TaxpayerDrawer({
                     key={`${contact.type}-${index}`}
                     className="flex justify-between text-xs border-b border-slate-100 py-1.5"
                   >
-                    <span className="text-slate-500">{contact.type}</span>
+                    <span className="text-slate-500">
+                      {CONTACT_LABELS[contact.type] ?? contact.type}
+                    </span>
                     <span dir="ltr" className="font-mono">
                       {contact.value}
                     </span>
@@ -355,19 +461,20 @@ function TaxpayerDrawer({
             {taxpayer.activities.length === 0 ? (
               <p className="text-xs text-slate-500">لا أنشطة مسجَّلة.</p>
             ) : (
-              <ul className="space-y-1">
+              <div className="space-y-2">
                 {taxpayer.activities.map((activity) => (
-                  <li
+                  <dl
                     key={activity.id}
-                    className="flex justify-between text-xs border-b border-slate-100 py-1.5"
+                    className="rounded-xl border border-slate-200 divide-y divide-slate-100 text-xs"
                   >
-                    <span className="font-semibold">{activity.name ?? '—'}</span>
-                    <span className="text-slate-500">
-                      {activity.activityType ?? '—'}
-                    </span>
-                  </li>
+                    <DetailRow label="الاسم التجاري" value={activity.name} />
+                    <DetailRow label="نوع النشاط" value={activity.activityType} />
+                    <DetailRow label="العنوان" value={activity.address} />
+                    <DetailRow label="حالة النشاط" value={activity.statusCode} />
+                    <DetailRow label="مرجع النشاط" value={activity.publicRef} ltr />
+                  </dl>
                 ))}
-              </ul>
+              </div>
             )}
           </section>
 

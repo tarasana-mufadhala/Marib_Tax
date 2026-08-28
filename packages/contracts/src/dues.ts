@@ -65,6 +65,30 @@ export const correctDueSchema = z
 
 export type CorrectDueInput = z.infer<typeof correctDueSchema>;
 
+/**
+ * تسجيل سداد يقبضه الموظف على الصندوق.
+ *
+ * لا حقل للحالة: الحالة تُشتق من مجموع ما أُكِّد قبضه. كتابة «مسدَّد» بلا
+ * مبلغ مقابل تجعل الدفتر يكذب.
+ */
+export const recordPaymentSchema = z
+  .object({
+    amount: z.number().multipleOf(0.01).positive(),
+    notes: optionalText,
+  })
+  .strict();
+
+export type RecordPaymentInput = z.infer<typeof recordPaymentSchema>;
+
+/** إلغاء مستحق قُيِّد خطأً — القرار الوحيد الذي يُكتب على الحالة مباشرة. */
+export const cancelDueSchema = z
+  .object({
+    reason: z.string().trim().min(1).max(1000),
+  })
+  .strict();
+
+export type CancelDueInput = z.infer<typeof cancelDueSchema>;
+
 export const uploadReceiptSchema = z
   .object({
     amount: z.number().multipleOf(0.01),

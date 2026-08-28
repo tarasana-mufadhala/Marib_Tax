@@ -8,11 +8,12 @@ import { ImportsController } from './imports.controller.js';
 import { PublicContentController } from './public-content.controller.js';
 import { ReportsController } from './reports.controller.js';
 import { StorageService } from './storage.service.js';
+import { AuthnModule } from '../authn/authn.module.js';
 import { DatabaseModule } from '../database/database.module.js';
 import { MessagingModule } from '../messaging/messaging.module.js';
 
 @Module({
-  imports: [DatabaseModule, MessagingModule],
+  imports: [DatabaseModule, MessagingModule, AuthnModule],
   controllers: [AdminController, TaxpayerAdminController, DuesAdminController, AccessControlController, AttachmentsController, ImportsController, PublicContentController, ReportsController],
   providers: [StorageService],
   // تستعمله وحدة الخدمات لرفع مرفقات المكلف.

@@ -263,7 +263,7 @@ describe('operational modules E2E flows (visits, decisions, dues, payments, noti
 
     expect(receiptRes.status).toBe(201);
     const receiptBody = receiptRes.body as StoredPaymentReceipt;
-    expect(receiptBody.acceptanceStatusCode).toBe('UPLOADED');
+    expect(receiptBody.acceptanceStatusCode).toBe('uploaded');
     const receiptId = receiptBody.id;
 
     // 8. Confirm payment receipt

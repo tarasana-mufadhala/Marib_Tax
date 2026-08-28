@@ -31,6 +31,7 @@ import {
 } from '@marib-tax/web-ui';
 import { publicApi } from '@/lib/api-client';
 import type { Announcement, TaxService, PublicFaq, PublicStats } from '@/lib/api-client';
+import { getServiceVectorIcon } from '@/lib/icon-helper';
 
 const springTransition = { type: 'spring' as const, stiffness: 120, damping: 18 };
 
@@ -572,8 +573,8 @@ export default function HomePage() {
                 >
                   <div className="space-y-3.5">
                     <div className="flex items-center justify-between">
-                      <div className="w-11 h-11 rounded-2xl bg-sky-50 text-sky-900 flex items-center justify-center font-bold border border-sky-100 shadow-2xs">
-                        <FileTextIcon size={20} className="text-sky-800" />
+                      <div className="w-11 h-11 rounded-2xl bg-sky-50 flex items-center justify-center border border-sky-100 shadow-2xs">
+                        {getServiceVectorIcon(srv.category, srv.title, 20)}
                       </div>
                       <Badge variant="gold" className="text-[11px] bg-amber-50 text-amber-900 border border-amber-200">{srv.category}</Badge>
                     </div>

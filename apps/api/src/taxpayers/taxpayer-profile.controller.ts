@@ -16,6 +16,8 @@ import {
   type AuthenticatedRequest,
 } from '../authn/bearer-actor-context.resolver.js';
 import { DatabaseService } from '../database/database.service.js';
+import { AuthnService } from '../authn/authn.service.js';
+import { UsersService } from '../users/users.service.js';
 
 interface CompleteProfileBody {
   firstName?: string;
@@ -39,7 +41,28 @@ interface CompleteProfileBody {
  */
 @Controller('api/v1/taxpayers/me')
 export class TaxpayerProfileController {
-  constructor(private readonly db: DatabaseService) {}
+  constructor(
+    private readonly db: DatabaseService,
+    private readonly users: UsersService,
+    private readonly authn: AuthnService,
+  ) {}
+
+  /**
+   * هاتف صاحب الحساب وبريده من خدمة الحسابات.
+   *
+   * الفشل هنا لا يُسقط التسجيل: قنوات الاتصال بيانات مساعدة، وإسقاط ملف
+   * مكلف كامل لأن خدمة الحسابات تعثّرت لحظةً خسارةٌ أكبر من نقص رقم.
+   */
+  private async contactOf(
+    userProfileId: string,
+  ): Promise<{ phone: string | null; email: string | null }> {
+    try {
+      const profile = await this.users.findUserById(userProfileId);
+      return await this.authn.accountContact(profile.authUserId);
+    } catch {
+      return { phone: null, email: null };
+    }
+  }
 
   private actorId(request: AuthenticatedRequest): string {
     const actor = request[VERIFIED_ACTOR];
@@ -164,6 +187,8 @@ export class TaxpayerProfileController {
       throw new BadRequestException('الكيان القانوني غير معروف');
     }
 
+    const contact = await this.contactOf(userProfileId);
+
     return this.db.db.transaction().execute(async (trx) => {
       // 1. مكلف قائم بنفس الرقم الضريبي ⇒ ربط لا إنشاء.
       let taxpayerId: string | null = null;
@@ -233,7 +258,24 @@ export class TaxpayerProfileController {
                 now(), now(), ${userProfileId}::uuid)
       `.execute(trx);
 
-      // 6. جهات الاتصال: الرقم الضريبي إن وُجد.
+      // 6. قنوات الاتصال: الهاتف والبريد من حساب الدخول.
+      //    الهاتف كان يبقى في خدمة الحسابات وحدها، فسجل المكلفين في اللوحة
+      //    يعرض المكلف بلا رقم — والمكتب يحتاج رقمه لا حساب دخوله.
+      for (const [type, value] of [
+        ['phone', contact.phone],
+        ['email', contact.email],
+      ] as const) {
+        if (!value) continue;
+        await sql`
+          insert into registry.taxpayer_contacts
+            (id, taxpayer_id, contact_type_code, contact_value, is_primary,
+             is_active, effective_from, created_at, created_by_profile_id)
+          values (${randomUUID()}::uuid, ${taxpayerId}::uuid, ${type},
+                  ${value}, true, true, now(), now(), ${userProfileId}::uuid)
+        `.execute(trx);
+      }
+
+      // 7. الرقم الضريبي إن وُجد.
       if (taxNumber !== null && !linkedToExisting) {
         await sql`
           insert into registry.taxpayer_contacts

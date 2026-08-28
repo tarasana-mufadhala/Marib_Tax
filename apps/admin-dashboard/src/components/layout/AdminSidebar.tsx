@@ -250,25 +250,6 @@ export function AdminSidebar() {
 
       {/* Fixed Bottom Actions & Logout Section (Pinned at Bottom) */}
       <div className="p-2.5 border-t border-slate-100 bg-slate-50/80 backdrop-blur-xs space-y-2 shrink-0 mt-auto">
-        {/* Public Website Preview Link */}
-        <a
-          href="http://localhost:3002"
-          target="_blank"
-          rel="noopener noreferrer"
-          title={isCollapsed ? 'معاينة الموقع العام' : undefined}
-          className={`flex items-center ${
-            isCollapsed ? 'justify-center px-2 py-2' : 'justify-between px-3 py-2'
-          } rounded-lg bg-white hover:bg-slate-100 text-xs text-slate-700 hover:text-slate-900 border border-slate-200 shadow-2xs transition-colors font-semibold`}
-        >
-          <div className="flex items-center gap-2">
-            <Globe size={16} className="text-emerald-600 shrink-0" />
-            {!isCollapsed && <span>معاينة الموقع العام</span>}
-          </div>
-          {!isCollapsed && (
-            <span className="text-[10px] text-emerald-600 font-mono font-bold">↗</span>
-          )}
-        </a>
-
         {/* Prominent Logout Button */}
         <button
           onClick={handleLogout}
