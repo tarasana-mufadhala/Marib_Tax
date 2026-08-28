@@ -47,6 +47,33 @@ export class AuthnController {
     return this.authnService.verifyEmailOtp(email, code);
   }
 
+  /**
+   * استعادة كلمة المرور بالبريد — بديل الهاتف لمن لا تصله الرسائل النصية.
+   *
+   * الرد ثابت سواء كان البريد مسجَّلاً أم لا، كنقطة رمز الدخول.
+   */
+  @Post('password/reset/email/request')
+  @HttpCode(200)
+  requestEmailPasswordReset(
+    @Body('email') email: string,
+  ): Promise<{ sent: boolean }> {
+    return this.authnService.requestEmailPasswordReset(email);
+  }
+
+  @Post('password/reset/email/confirm')
+  @HttpCode(200)
+  confirmEmailPasswordReset(
+    @Body('email') email: string,
+    @Body('code') code: string,
+    @Body('newPassword') newPassword: string,
+  ): Promise<{ success: boolean }> {
+    return this.authnService.confirmEmailPasswordReset(
+      email,
+      code,
+      newPassword,
+    );
+  }
+
   @Post('register')
   @HttpCode(201)
   register(

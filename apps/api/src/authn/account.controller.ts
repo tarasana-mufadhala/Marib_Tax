@@ -20,6 +20,11 @@ interface AddEmailBody {
   currentPassword?: string;
 }
 
+interface ConfirmEmailBody {
+  email?: string;
+  code?: string;
+}
+
 interface PhoneChangeBody {
   newPhoneNumber?: string;
   currentPassword?: string;
@@ -173,6 +178,18 @@ export class AccountController {
       throw DomainException.badRequest('البريد وكلمة المرور مطلوبان');
     }
     return this.authn.addAccountEmail(this.actorId(request), email, password);
+  }
+
+  /** تأكيد ملكية البريد المضاف بالرمز الواصل إليه. */
+  @Post('email/confirm')
+  @HttpCode(200)
+  async confirmEmail(@Body() body: ConfirmEmailBody) {
+    const email = (body?.email ?? '').trim();
+    const code = (body?.code ?? '').trim();
+    if (email.length === 0 || code.length === 0) {
+      throw DomainException.badRequest('البريد ورمز التحقق مطلوبان');
+    }
+    return this.authn.confirmAccountEmail(email, code);
   }
 
   /** الخطوة الأولى لتغيير الرقم: كلمة المرور ثم رمز يصل الرقم الجديد. */

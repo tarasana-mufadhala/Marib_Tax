@@ -92,6 +92,38 @@ class AuthRepository {
     return session;
   }
 
+  /// استعادة كلمة المرور بالبريد — لمن لا تصله الرسائل النصية.
+  Future<void> requestEmailPasswordReset(String email) async {
+    await _api.post(
+      '/auth/password/reset/email/request',
+      body: {'email': email},
+      authenticated: false,
+    );
+  }
+
+  Future<void> confirmEmailPasswordReset({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) async {
+    await _api.post(
+      '/auth/password/reset/email/confirm',
+      body: {'email': email, 'code': code, 'newPassword': newPassword},
+      authenticated: false,
+    );
+  }
+
+  /// تأكيد ملكية بريد أُضيف إلى الحساب بالرمز الواصل إليه.
+  Future<void> confirmAccountEmail({
+    required String email,
+    required String code,
+  }) async {
+    await _api.post('/account/email/confirm', body: {
+      'email': email,
+      'code': code,
+    });
+  }
+
   /// FR-002: نسيت كلمة المرور — إرسال رمز لرقم مسجَّل.
   Future<void> requestPasswordReset(YemeniPhone phone) async {
     await _api.post(

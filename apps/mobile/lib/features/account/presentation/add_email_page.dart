@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../../app/theme.dart';
 import '../../../core/api/api_exception.dart';
+import '../../../core/design/otp_field.dart';
 import '../../../core/design/widgets.dart';
 import '../data/account_repository.dart';
 
@@ -26,6 +27,7 @@ class _AddEmailPageState extends State<AddEmailPage> {
 
   bool _busy = false;
   bool _sent = false;
+  String _code = '';
   String? _error;
 
   @override
@@ -70,6 +72,44 @@ class _AddEmailPageState extends State<AddEmailPage> {
     }
   }
 
+  Future<void> _confirm() async {
+    if (_code.length != 6) {
+      setState(() => _error = 'الرمز يتكون من 6 أرقام');
+      return;
+    }
+
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      await context.read<AccountRepository>().confirmEmail(
+            email: _emailController.text.trim(),
+            code: _code,
+          );
+      if (!mounted) return;
+      setState(() => _busy = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم تأكيد بريدك الإلكتروني')),
+      );
+      Navigator.of(context).pop(true);
+    } on ApiException catch (error) {
+      if (mounted) {
+        setState(() {
+          _error = error.message;
+          _busy = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _error = 'تعذّر تأكيد البريد، حاول لاحقاً';
+          _busy = false;
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -88,28 +128,34 @@ class _AddEmailPageState extends State<AddEmailPage> {
     );
   }
 
+  /// إدخال الرمز الواصل للبريد.
+  ///
+  /// كان التأكيد برابط يفتحه المستخدم في المتصفح، وهو يخالف نمط بقية
+  /// التطبيق — التسجيل والدخول وتغيير الهاتف كلها برمز من ست خانات.
   Widget _sentView() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const SizedBox(height: 30),
-        Container(
-          height: 68,
-          width: 68,
-          alignment: Alignment.center,
-          decoration: const BoxDecoration(
-            color: AppTheme.primarySoft,
-            shape: BoxShape.circle,
-          ),
-          child: const Icon(
-            Icons.mark_email_unread_outlined,
-            size: 32,
-            color: AppTheme.primary,
+        const SizedBox(height: 16),
+        Center(
+          child: Container(
+            height: 62,
+            width: 62,
+            alignment: Alignment.center,
+            decoration: const BoxDecoration(
+              color: AppTheme.primarySoft,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.mark_email_unread_outlined,
+              size: 30,
+              color: AppTheme.primary,
+            ),
           ),
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 16),
         const Text(
-          'أُرسلت رسالة تأكيد',
+          'أدخل رمز التأكيد',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 18,
@@ -117,21 +163,55 @@ class _AddEmailPageState extends State<AddEmailPage> {
             color: AppTheme.text,
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         Text(
-          'افتح الرسالة التي وصلت ${_emailController.text.trim()} وأكّد البريد.\n'
-          'لا يُفعَّل البريد قبل تأكيدك إياه.',
+          'أرسلنا رمزاً من ستة أرقام إلى ${_emailController.text.trim()}',
           textAlign: TextAlign.center,
           style: const TextStyle(
             fontSize: 13.5,
-            height: 1.8,
+            height: 1.7,
             color: AppTheme.secondary,
           ),
         ),
         const SizedBox(height: 24),
-        FilledButton(
-          onPressed: () => Navigator.of(context).pop(true),
-          child: const Text('حسناً'),
+        if (_error != null) ErrorBanner(message: _error!),
+        OtpField(
+          onChanged: (value) {
+            _code = value;
+            if (_error != null) setState(() => _error = null);
+          },
+          onCompleted: (_) => _confirm(),
+        ),
+        const SizedBox(height: 24),
+        BusyButton(label: 'تأكيد البريد', busy: _busy, onPressed: _confirm),
+        const SizedBox(height: 8),
+        TextButton(
+          onPressed: _busy
+              ? null
+              : () => setState(() {
+                    _sent = false;
+                    _code = '';
+                    _error = null;
+                  }),
+          child: const Text('تعديل البريد'),
+        ),
+        const SizedBox(height: 16),
+        Container(
+          padding: const EdgeInsets.all(13),
+          decoration: BoxDecoration(
+            color: AppTheme.surface,
+            borderRadius: BorderRadius.circular(AppTheme.cardRadius),
+            border: Border.all(color: AppTheme.border),
+          ),
+          child: const Text(
+            'إن لم تجد الرسالة في صندوق الوارد، راجع مجلد الرسائل غير '
+            'المرغوب فيها. لا يُفعَّل البريد قبل تأكيدك إياه.',
+            style: TextStyle(
+              fontSize: 12.5,
+              height: 1.7,
+              color: AppTheme.secondary,
+            ),
+          ),
         ),
       ],
     );

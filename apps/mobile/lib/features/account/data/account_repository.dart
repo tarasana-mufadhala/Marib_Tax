@@ -173,6 +173,17 @@ class AccountRepository {
     });
   }
 
+  /// تأكيد ملكية البريد المضاف بالرمز الواصل إليه.
+  Future<void> confirmEmail({
+    required String email,
+    required String code,
+  }) async {
+    await _api.post('/account/email/confirm', body: {
+      'email': email,
+      'code': code,
+    });
+  }
+
   /// تغيير الرقم على خطوتين: كلمة المرور ثم رمز يصل الرقم الجديد.
   Future<void> requestPhoneChange({
     required String newPhoneNumber,

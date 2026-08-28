@@ -151,6 +151,38 @@ class AuthController extends ChangeNotifier {
   /// البريد الذي أُرسل إليه الرمز، لعرضه في شاشة التحقق.
   String? get pendingEmail => _pendingEmail;
 
+  /// يطلب رمز استعادة على البريد ويحفظه لخطوة التأكيد.
+  Future<bool> requestEmailPasswordReset(String rawEmail) async {
+    final email = rawEmail.trim().toLowerCase();
+    if (!RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email)) {
+      _fail('أدخل بريداً إلكترونياً صحيحاً');
+      return false;
+    }
+    return _run(() async {
+      await _repository.requestEmailPasswordReset(email);
+      _pendingEmail = email;
+    });
+  }
+
+  Future<bool> confirmEmailPasswordReset(
+    String code,
+    String newPassword,
+  ) async {
+    final email = _pendingEmail;
+    if (email == null) {
+      _fail('اطلب الرمز أولاً');
+      return false;
+    }
+    return _run(() async {
+      await _repository.confirmEmailPasswordReset(
+        email: email,
+        code: code,
+        newPassword: newPassword,
+      );
+      _pendingEmail = null;
+    });
+  }
+
   Future<bool> requestPasswordReset(String rawPhone) async {
     final phone = YemeniPhone.tryParse(rawPhone);
     if (phone == null) {

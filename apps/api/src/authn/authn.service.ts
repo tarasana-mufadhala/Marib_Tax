@@ -511,6 +511,169 @@ export class AuthnService {
   }
 
   // ---------------------------------------------------------------------------
+  // استعادة كلمة المرور بالبريد
+  // ---------------------------------------------------------------------------
+
+  /**
+   * يرسل رمز استعادة إلى بريد الحساب.
+   *
+   * الاستعادة كانت بالهاتف وحده، فمن لا تصله الرسائل النصية وفَقَد كلمة
+   * مروره يبقى عالقاً ولو كان له بريد مضاف. هذا المسار مخرجه.
+   *
+   * الرد ثابت سواء كان البريد مسجَّلاً أم لا: تمييزهما يحوّل النقطة إلى
+   * أداة تعداد لبُرد المستخدمين. أما عطل الخدمة نفسها فيُقال صراحةً.
+   */
+  async requestEmailPasswordReset(
+    emailAddress: string,
+  ): Promise<{ sent: boolean }> {
+    const email = String(emailAddress ?? '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw DomainException.badRequest('أدخل بريداً إلكترونياً صحيحاً');
+    }
+
+    if (this.emailOtpRateLimited(email)) {
+      recordAuthEvent(
+        this.db,
+        'otp_rate_limited',
+        email,
+        'تجاوز حد طلبات استعادة كلمة المرور بالبريد',
+        'email',
+      );
+      throw DomainException.badRequest(
+        'طلبت الرمز مرات كثيرة. انتظر دقيقة ثم أعد المحاولة.',
+      );
+    }
+
+    const res = await fetch(`${this.supabaseUrl}/auth/v1/recover`, {
+      method: 'POST',
+      headers: this.adminHeaders(),
+      body: JSON.stringify({ email }),
+    });
+
+    if (!res.ok) {
+      const providerIssue = await this.providerConfigurationIssue(res);
+      if (providerIssue) {
+        this.logger.error(`تعذّر إرسال رمز الاستعادة: ${providerIssue.reason}`);
+        throw DomainException.unavailable(providerIssue.message);
+      }
+      const issue = await this.mailerIssue(res);
+      if (issue) {
+        this.logger.error(`تعذّر إرسال رمز الاستعادة: ${issue.reason}`);
+        throw DomainException.unavailable(issue.message);
+      }
+      this.logger.debug('طلب استعادة لعنوان غير مسجَّل');
+    }
+
+    recordAuthEvent(
+      this.db,
+      'password_reset_requested',
+      email,
+      'استعادة بالبريد',
+      'email',
+    );
+    return { sent: true };
+  }
+
+  /** يتحقق من رمز الاستعادة ويضبط كلمة المرور الجديدة. */
+  async confirmEmailPasswordReset(
+    emailAddress: string,
+    code: string,
+    newPassword: string,
+  ): Promise<{ success: boolean }> {
+    const email = String(emailAddress ?? '').trim().toLowerCase();
+    const token = String(code ?? '').trim();
+    if (token.length === 0) {
+      throw DomainException.badRequest('رمز التحقق مطلوب');
+    }
+
+    if (!this.securityService.validatePasswordStrength(newPassword)) {
+      throw DomainException.badRequest(
+        'كلمة المرور يجب أن تكون 8 أحرف فأكثر وتجمع بين حروف كبيرة وصغيرة وأرقام ورموز',
+      );
+    }
+
+    // التحقق أولاً ثم الضبط: لو ضُبطت كلمة المرور قبل التحقق لصار الرمز
+    // الخاطئ قادراً على تغييرها.
+    const authUserId = await this.verifyEmailToken(email, token, 'recovery');
+
+    await this.updateAuthUserPassword(authUserId, newPassword);
+    this.emailOtpRequests.delete(email);
+
+    recordAuthEvent(
+      this.db,
+      'password_reset_succeeded',
+      email,
+      'استعادة بالبريد',
+      'email',
+    );
+    return { success: true };
+  }
+
+  /**
+   * يؤكد ملكية بريد أُضيف إلى حساب قائم برمز يصله.
+   *
+   * GoTrue يرسل رابطاً افتراضياً؛ الرمز أوفق للتطبيق ويوحّد التجربة مع
+   * التسجيل والدخول وتغيير الهاتف — وكلها برمز من ست خانات.
+   */
+  async confirmAccountEmail(
+    emailAddress: string,
+    code: string,
+  ): Promise<{ confirmed: boolean }> {
+    const email = String(emailAddress ?? '').trim().toLowerCase();
+    const token = String(code ?? '').trim();
+    if (token.length === 0) {
+      throw DomainException.badRequest('رمز التحقق مطلوب');
+    }
+
+    await this.verifyEmailToken(email, token, 'email_change');
+
+    recordAuthEvent(
+      this.db,
+      'email_confirmed',
+      email,
+      'تأكيد ملكية بريد مضاف',
+      'email',
+    );
+    return { confirmed: true };
+  }
+
+  /**
+   * تحقّق مشترك من رموز البريد، ويعيد معرّف حساب GoTrue.
+   *
+   * `type` يحدد أي رمز يقبله GoTrue: `recovery` للاستعادة، و`email_change`
+   * لتأكيد بريد مضاف، و`email` للدخول. خلطها يجعل رمز غرض يعمل في غيره.
+   */
+  private async verifyEmailToken(
+    email: string,
+    token: string,
+    type: 'recovery' | 'email_change' | 'email',
+  ): Promise<string> {
+    const res = await fetch(`${this.supabaseUrl}/auth/v1/verify`, {
+      method: 'POST',
+      headers: this.adminHeaders(),
+      body: JSON.stringify({ email, token, type }),
+    });
+
+    if (!res.ok) {
+      recordAuthEvent(
+        this.db,
+        'otp_failed',
+        email,
+        `رمز بريد غير صحيح (${type})`,
+        'email',
+      );
+      throw DomainException.forbidden('رمز التحقق غير صحيح أو انتهت صلاحيته');
+    }
+
+    const payload = (await res.json()) as { user?: { id?: string } };
+    const authUserId = payload.user?.id ?? '';
+    if (authUserId === '') {
+      throw DomainException.unavailable('تعذّر إتمام العملية، حاول لاحقاً');
+    }
+    return authUserId;
+  }
+
+  // ---------------------------------------------------------------------------
   // تغيير رقم الهاتف
   // ---------------------------------------------------------------------------
 
@@ -685,6 +848,8 @@ export class AuthnService {
       throw DomainException.forbidden('رمز التحقق غير صحيح أو انتهت صلاحيته');
     }
 
+    // الدخول وحده يحتاج الجلسة؛ الاستعادة وتأكيد البريد يكتفيان بالمعرّف،
+    // ولذلك يبقى هذا المسار مستقلاً عن `verifyEmailToken`.
     const payload = (await res.json()) as {
       access_token?: string;
       user?: { id?: string };
