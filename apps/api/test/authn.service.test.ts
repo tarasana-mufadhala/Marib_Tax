@@ -70,6 +70,27 @@ function stubGoTrue() {
       return new Response(
         JSON.stringify({
           access_token: `header.${Buffer.from(JSON.stringify({ sub: user.id })).toString('base64')}.sig`,
+          refresh_token: `refresh-${user.id}`,
+          expires_in: 3600,
+          user: { id: user.id, phone: user.phone },
+        }),
+        { status: 200 },
+      );
+    }
+
+    if (method === 'POST' && url.includes('/auth/v1/token?grant_type=refresh_token')) {
+      // GoTrue يدوّر رمز التجديد عند كل استعمال: الرمز القديم يبطل فوراً،
+      // ولذلك يقبل هذا المحاكي الرمز الحالي وحده ثم يُصدر غيره.
+      const sent = (body as { refresh_token?: string }).refresh_token ?? '';
+      const user = users.find((u) => `refresh-${u.id}` === sent);
+      if (!user) {
+        return new Response(JSON.stringify({ error_code: 'invalid_grant' }), { status: 400 });
+      }
+      return new Response(
+        JSON.stringify({
+          access_token: `header.${Buffer.from(JSON.stringify({ sub: user.id })).toString('base64')}.renewed`,
+          refresh_token: `refresh-${user.id}`,
+          expires_in: 3600,
           user: { id: user.id, phone: user.phone },
         }),
         { status: 200 },
@@ -349,5 +370,92 @@ describe('AuthnService & OtpService & SecurityService', () => {
     await expect(
       authnService.login('+967772222222', 'WhateverPass1!'),
     ).rejects.toThrow(/Invalid phone number or password/i);
+  });
+
+  /**
+   * رمز الوصول عمره ساعة. بلا تجديد يُخرَج المكلف من التطبيق كل ساعة في
+   * منتصف عمله، ولذلك تُحرس هذه المسارات: الدخول يُسلّم رمز تجديد، والتجديد
+   * يُصدر جلسة، والرمز الباطل أو الحساب المعطَّل وحدهما يوجبان دخولاً جديداً.
+   */
+  describe('تجديد الجلسة', () => {
+    async function registeredTaxpayer(): Promise<{
+      authnService: AuthnService;
+      usersService: UsersService;
+      phone: string;
+      password: string;
+    }> {
+      stubGoTrue();
+      const usersService = new UsersService(new UsersMemoryRepository());
+      const otpService = new OtpService();
+      const authnService = new AuthnService(
+        usersService,
+        new SecurityService(new SecurityMemoryRepository()),
+        otpService,
+        configService,
+      );
+
+      const phone = '+967773334444';
+      const password = 'StrongPassword123!';
+      await authnService.requestRegistrationOtp(phone);
+      const code = (otpService as unknown as TestOtpService).store.get(phone)!.code;
+      const { verificationToken } = await authnService.verifyRegistrationOtp(
+        phone,
+        code,
+      );
+      await authnService.register(phone, verificationToken, password, 'مكلف');
+
+      return { authnService, usersService, phone, password };
+    }
+
+    it('الدخول يُسلّم رمز تجديد وعمر الجلسة، لا رمز وصول وحده', async () => {
+      const { authnService, phone, password } = await registeredTaxpayer();
+
+      const session = await authnService.login(phone, password);
+
+      expect(session.refreshToken.length).toBeGreaterThan(0);
+      expect(session.expiresInSeconds).toBe(3600);
+      expect(session.tokenType).toBe('Bearer');
+    });
+
+    it('رمز التجديد يُصدر رمز وصول جديداً بلا كلمة مرور', async () => {
+      const { authnService, phone, password } = await registeredTaxpayer();
+      const session = await authnService.login(phone, password);
+
+      const renewed = await authnService.refreshSession(session.refreshToken);
+
+      expect(renewed.accessToken).not.toBe(session.accessToken);
+      expect(renewed.userProfileId).toBe(session.userProfileId);
+      expect(renewed.refreshToken.length).toBeGreaterThan(0);
+    });
+
+    it('رمز تجديد باطل يُرفض بـ 401 لا بخطأ خادم', async () => {
+      const { authnService } = await registeredTaxpayer();
+
+      await expect(
+        authnService.refreshSession('refresh-does-not-exist'),
+      ).rejects.toThrow(/Session expired/i);
+    });
+
+    it('رمز تجديد فارغ يُرفض قبل أي نداء للمزوّد', async () => {
+      const { authnService } = await registeredTaxpayer();
+
+      await expect(authnService.refreshSession('   ')).rejects.toThrow(
+        /Refresh token is required/i,
+      );
+    });
+
+    it('حساب عُطِّل بعد إصدار الجلسة لا تُجدَّد جلسته', async () => {
+      const { authnService, usersService, phone, password } =
+        await registeredTaxpayer();
+      const session = await authnService.login(phone, password);
+
+      // التعطيل يقع بعد الإصدار: التجديد هو ما يُعيد فحص الصلاحية، وإلا
+      // بقي الموقوف داخل حسابه ما دام يجدّد.
+      await usersService.updateUserProfile(session.userProfileId, undefined, false);
+
+      await expect(
+        authnService.refreshSession(session.refreshToken),
+      ).rejects.toThrow(/no longer active/i);
+    });
   });
 });

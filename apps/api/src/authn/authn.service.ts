@@ -20,6 +20,25 @@ interface GoTrueUser {
   phone?: string;
 }
 
+/**
+ * الجلسة كما تُسلَّم للعميل.
+ *
+ * رمز الوصول قصير العمر بطبعه (ساعة لدى GoTrue)، فتسليمه وحده يعني إخراج
+ * المكلف من التطبيق كل ساعة. رمز التجديد هو ما يجعل الجلسة تدوم بلا أن
+ * يُطيل أحدٌ عمر رمز الوصول نفسه.
+ */
+export interface IssuedSession {
+  accessToken: string;
+  refreshToken: string;
+  /** عمر رمز الوصول بالثواني، ليجدّد العميل قبل انتهائه لا بعده. */
+  expiresInSeconds: number;
+  tokenType: 'Bearer';
+  userProfileId: string;
+}
+
+/** عمر افتراضي حين لا يذكره GoTrue في رده. */
+const DEFAULT_ACCESS_TOKEN_TTL_SECONDS = 3600;
+
 interface LoginLockoutState {
   failedAttempts: number;
   lockoutUntil: Date | null;
@@ -235,7 +254,7 @@ export class AuthnService {
   async login(
     phoneNumber: string,
     password: string,
-  ): Promise<{ accessToken: string; userProfileId: string }> {
+  ): Promise<IssuedSession> {
     const phone = this.normalizePhoneNumber(phoneNumber);
     return this.passwordGrant({
       identifier: phone,
@@ -252,7 +271,7 @@ export class AuthnService {
   async loginWithEmail(
     emailAddress: string,
     password: string,
-  ): Promise<{ accessToken: string; userProfileId: string }> {
+  ): Promise<IssuedSession> {
     const email = String(emailAddress ?? '').trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw new BadRequestException('A valid email address is required.');
@@ -317,7 +336,7 @@ export class AuthnService {
     channel: 'password' | 'email';
     credentials: Record<string, string>;
     invalidMessage: string;
-  }): Promise<{ accessToken: string; userProfileId: string }> {
+  }): Promise<IssuedSession> {
     const { identifier, channel, credentials, invalidMessage } = params;
 
     const now = new Date();
@@ -399,6 +418,8 @@ export class AuthnService {
 
     const data = (await res.json()) as {
       access_token: string;
+      refresh_token?: string;
+      expires_in?: number;
       user: GoTrueUser;
     };
 
@@ -409,7 +430,84 @@ export class AuthnService {
 
     return {
       accessToken: data.access_token,
+      refreshToken: data.refresh_token ?? '',
+      expiresInSeconds: data.expires_in ?? DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
+      tokenType: 'Bearer',
       userProfileId: profile.id,
+    };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Session refresh
+  // ---------------------------------------------------------------------------
+
+  /**
+   * يجدّد الجلسة برمز التجديد بدل مطالبة المكلف بكلمة مروره كل ساعة.
+   *
+   * الفشل هنا يعني أن رمز التجديد نفسه بطل (خروج، أو تدوير الرمز، أو مضيّ
+   * مدته)، وعندها فقط يعود المكلف إلى شاشة الدخول. لا يُسجَّل الرمز في أي
+   * سجل: هو مفتاح جلسة كامل.
+   */
+  async refreshSession(refreshToken: string): Promise<IssuedSession> {
+    const token = String(refreshToken ?? '').trim();
+    if (token.length === 0) {
+      throw new UnauthorizedException('Refresh token is required.');
+    }
+
+    const res = await fetch(
+      `${this.supabaseUrl}/auth/v1/token?grant_type=refresh_token`,
+      {
+        method: 'POST',
+        headers: {
+          apikey: this.serviceRoleKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ refresh_token: token }),
+      },
+    );
+
+    if (!res.ok) {
+      const providerIssue = await this.providerConfigurationIssue(res);
+      if (providerIssue !== null) {
+        this.logger.error(
+          `تعذّر تجديد الجلسة لعطل في إعداد مزود الهوية: ${providerIssue.reason}`,
+        );
+        throw DomainException.unavailable(
+          providerIssue.message,
+          'AUTH_PROVIDER_UNAVAILABLE',
+        );
+      }
+      // رمز تجديد باطل ليس عطلاً: المكلف يعيد الدخول، ولا يُحتسب قفلاً.
+      throw new UnauthorizedException('Session expired. Please sign in again.');
+    }
+
+    const data = (await res.json()) as {
+      access_token?: string;
+      refresh_token?: string;
+      expires_in?: number;
+      user?: GoTrueUser;
+    };
+
+    const accessToken = data.access_token ?? '';
+    const authUserId = data.user?.id ?? '';
+    if (accessToken === '' || authUserId === '') {
+      throw DomainException.unavailable('تعذّر تجديد الجلسة، حاول لاحقاً');
+    }
+
+    const actor = await this.usersService
+      .findUserByAuthUserId(authUserId)
+      .catch(() => null);
+    // حساب عُطِّل بعد إصدار الجلسة لا تُجدَّد جلسته: التجديد يعيد فحص الصلاحية.
+    if (!actor || !actor.isActive) {
+      throw new UnauthorizedException('Account is no longer active.');
+    }
+
+    return {
+      accessToken,
+      refreshToken: data.refresh_token ?? token,
+      expiresInSeconds: data.expires_in ?? DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
+      tokenType: 'Bearer',
+      userProfileId: actor.id,
     };
   }
 
@@ -824,7 +922,7 @@ export class AuthnService {
   async verifyEmailOtp(
     emailAddress: string,
     code: string,
-  ): Promise<{ accessToken: string; userProfileId: string }> {
+  ): Promise<IssuedSession> {
     const email = String(emailAddress ?? '').trim().toLowerCase();
     const token = String(code ?? '').trim();
     if (token.length === 0) {
@@ -852,6 +950,8 @@ export class AuthnService {
     // ولذلك يبقى هذا المسار مستقلاً عن `verifyEmailToken`.
     const payload = (await res.json()) as {
       access_token?: string;
+      refresh_token?: string;
+      expires_in?: number;
       user?: { id?: string };
     };
     const accessToken = payload.access_token ?? '';
@@ -868,7 +968,13 @@ export class AuthnService {
     }
 
     recordAuthEvent(this.db, 'login_succeeded', email, 'دخول برمز بريد', 'email');
-    return { accessToken, userProfileId: actor.id };
+    return {
+      accessToken,
+      refreshToken: payload.refresh_token ?? '',
+      expiresInSeconds: payload.expires_in ?? DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
+      tokenType: 'Bearer',
+      userProfileId: actor.id,
+    };
   }
 
   /**

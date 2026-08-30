@@ -1,6 +1,6 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { PublicEndpoint } from '../authz/authorization.decorators.js';
-import { AuthnService } from './authn.service.js';
+import { AuthnService, type IssuedSession } from './authn.service.js';
 
 @Controller('api/v1/auth')
 @PublicEndpoint()
@@ -43,7 +43,7 @@ export class AuthnController {
   verifyEmailOtp(
     @Body('email') email: string,
     @Body('code') code: string,
-  ): Promise<{ accessToken: string; userProfileId: string }> {
+  ): Promise<IssuedSession> {
     return this.authnService.verifyEmailOtp(email, code);
   }
 
@@ -95,7 +95,7 @@ export class AuthnController {
   login(
     @Body('phoneNumber') phoneNumber: string,
     @Body('password') password: string,
-  ): Promise<{ accessToken: string; userProfileId: string }> {
+  ): Promise<IssuedSession> {
     return this.authnService.login(phoneNumber, password);
   }
 
@@ -104,8 +104,20 @@ export class AuthnController {
   loginWithEmail(
     @Body('email') email: string,
     @Body('password') password: string,
-  ): Promise<{ accessToken: string; userProfileId: string }> {
+  ): Promise<IssuedSession> {
     return this.authnService.loginWithEmail(email, password);
+  }
+
+  /**
+   * تجديد الجلسة برمز التجديد.
+   *
+   * نقطة عامة عمداً: رمز الوصول المنتهي لا يصلح لحراسة تجديد نفسه، ورمز
+   * التجديد وحده هو ما يُثبت الجلسة.
+   */
+  @Post('refresh')
+  @HttpCode(200)
+  refresh(@Body('refreshToken') refreshToken: string): Promise<IssuedSession> {
+    return this.authnService.refreshSession(refreshToken);
   }
 
   @Post('password/reset/request')
