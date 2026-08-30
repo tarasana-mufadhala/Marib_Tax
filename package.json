@@ -2,7 +2,7 @@
   "name": "marib-tax",
   "private": true,
   "description": "Marib Tax System monorepo — repository foundation only; no runtime application dependencies.",
-  "packageManager": "pnpm@11.13.0",
+  "packageManager": "pnpm@11.24.0",
   "scripts": {
     "validate:foundation": "bash scripts/validate-foundation.sh",
     "validate:openapi": "redocly lint --config redocly.yaml packages/contracts/openapi/marib-tax.v1.yaml",
