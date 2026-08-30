@@ -6,6 +6,10 @@
 # التسجيل واستعادة كلمة المرور بشكل متقطّع. الواجهتان وحدهما على Vercel.
 #
 # الأسرار كلها `sync: false` — تُدخَل في لوحة Render ولا تُودَع في المستودع.
+#
+# بلا `corepack enable`: مسار `/usr/bin` على Render للقراءة فقط، فيفشل
+# بـEROFS عند محاولته استبدال رابط pnpm. Render يوفّر pnpm من تلقائه
+# اعتماداً على حقل `packageManager` في package.json.
 services:
   - type: web
     name: marib-tax-api
@@ -14,7 +18,6 @@ services:
     region: frankfurt
     rootDir: .
     buildCommand: >-
-      corepack enable &&
       pnpm install --frozen-lockfile &&
       pnpm --filter @marib-tax/contracts build &&
       pnpm --filter @marib-tax/api build
@@ -54,7 +57,6 @@ services:
     region: frankfurt
     rootDir: .
     buildCommand: >-
-      corepack enable &&
       pnpm install --frozen-lockfile &&
       pnpm --filter @marib-tax/contracts build &&
       pnpm --filter @marib-tax/worker build
