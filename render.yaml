@@ -1,0 +1,68 @@
+# مخطّط نشر تجريبي للـ API والـ worker على Render.
+#
+# لماذا خادم دائم لا Vercel: `OtpService` يحفظ رموز التحقق في ذاكرة العملية
+# (`Map`) ولا يوجد جدول OTP في القاعدة، فطلب الرمز والتحقق منه يجب أن يقعا
+# على العملية نفسها. Vercel serverless يوزّع الطلبات على نسخ مستقلة، فيفشل
+# التسجيل واستعادة كلمة المرور بشكل متقطّع. الواجهتان وحدهما على Vercel.
+#
+# الأسرار كلها `sync: false` — تُدخَل في لوحة Render ولا تُودَع في المستودع.
+services:
+  - type: web
+    name: marib-tax-api
+    runtime: node
+    plan: free
+    region: frankfurt
+    rootDir: .
+    buildCommand: >-
+      corepack enable &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @marib-tax/contracts build &&
+      pnpm --filter @marib-tax/api build
+    startCommand: node apps/api/dist/main.js
+    # `/health` بلا مقدّمة: HealthController معرّف بـ @Controller() فارغ.
+    healthCheckPath: /health
+    envVars:
+      # ⚠ ليست production عمداً في التجربة: `DEV_OTP_CODE` يُتجاهَل في
+      # الإنتاج، وبلا Twilio/Meta مضبوطَين لا تصل رموز التحقق أصلاً فيتعذّر
+      # إنشاء أي حساب. اجعلها production فور ربط مزوّد رسائل حقيقي.
+      - key: NODE_ENV
+        value: development
+      - key: LOG_LEVEL
+        value: info
+      # مطلوبان: AuthnService و HybridAccessTokenVerifier يرميان عند غيابهما.
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_JWT_SECRET
+        sync: false
+      # وصلة القاعدة. استعمل مجمّع الاتصالات (Session Pooler) من Supabase
+      # لا الوصلة المباشرة — الخطة المجانية تُعيد تدوير العمليات كثيراً.
+      - key: DATABASE_URL
+        sync: false
+      # رمز تحقق ثابت للتجربة قبل ربط مزوّد الرسائل. ستة أرقام.
+      # يجب ألا يُضبط إطلاقاً بعد الانتقال إلى الإنتاج.
+      - key: DEV_OTP_CODE
+        sync: false
+
+  # الـ worker معطّل افتراضياً (`WORKER_ENABLED`)، فلا يُنشر إلا عند الحاجة
+  # إلى معالجة صندوق الصادر والإشعارات. احذف هذا القسم إن لم تجرّبها.
+  - type: worker
+    name: marib-tax-worker
+    runtime: node
+    plan: free
+    region: frankfurt
+    rootDir: .
+    buildCommand: >-
+      corepack enable &&
+      pnpm install --frozen-lockfile &&
+      pnpm --filter @marib-tax/contracts build &&
+      pnpm --filter @marib-tax/worker build
+    startCommand: node apps/worker/dist/main.js
+    envVars:
+      - key: NODE_ENV
+        value: development
+      - key: WORKER_ENABLED
+        value: 'true'
+      - key: DATABASE_URL
+        sync: false

@@ -1,0 +1,91 @@
+name: Build taxpayer APK
+
+# بناء يدوي لا آلي: كل نسخة تُبنى بعنوان خادم صريح يُمرَّر وقت البناء،
+# فلا تُنتَج نسخة «تُوزَّع» وهي تشير إلى مضيف المطوّر بلا أن ينتبه أحد.
+on:
+  workflow_dispatch:
+    inputs:
+      api_base_url:
+        description: >-
+          عنوان الـ API كاملاً بصيغة https (مثال: https://api.example.gov.ye/api/v1).
+          أندرويد 9+ يحجب http الصريح، فعنوان http ستفشل كل نداءاته على الجهاز.
+        required: true
+        type: string
+      build_mode:
+        description: 'نمط البناء'
+        required: true
+        default: release
+        type: choice
+        options: [release, debug]
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # يُرفض عنوان http مبكراً: اكتشافه بعد التوزيع يعني نسخة لا تعمل
+      # في يد المكلف، وسببها غير ظاهر له ولا للمكتب.
+      - name: Reject cleartext API URL
+        run: |
+          url='${{ inputs.api_base_url }}'
+          if [[ "$url" != https://* ]]; then
+            echo "::error::عنوان الـ API يجب أن يبدأ بـ https:// — أندرويد يحجب http الصريح افتراضياً. الوارد: $url"
+            exit 1
+          fi
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.38.7'
+          channel: stable
+          cache: true
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Test
+        run: flutter test --no-pub
+
+      - name: Build APK
+        run: |
+          flutter build apk \
+            --${{ inputs.build_mode }} \
+            --no-pub \
+            --dart-define=API_BASE_URL='${{ inputs.api_base_url }}'
+
+      - name: Report signing identity
+        run: |
+          apk=$(find build/app/outputs/flutter-apk -name '*.apk' | head -1)
+          echo "APK: $apk ($(du -h "$apk" | cut -f1))"
+          # نسخة الإصدار موقّعة بمفتاح التصحيح ما دام signingConfig في
+          # build.gradle.kts لم يُضبط بعد. تُثبَّت وتُجرَّب، ولا تصلح لمتجر
+          # Play، وأي توقيع حقيقي لاحق يوجب إزالة المثبَّتة أولاً.
+          if [[ '${{ inputs.build_mode }}' == 'release' ]]; then
+            echo "::warning::نسخة إصدار موقّعة بمفتاح التصحيح (debug keystore). صالحة للتجريب الداخلي فقط، لا للنشر على Play."
+          fi
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: marib-tax-${{ inputs.build_mode }}-apk
+          path: apps/mobile/build/app/outputs/flutter-apk/*.apk
+          if-no-files-found: error
+          retention-days: 14
