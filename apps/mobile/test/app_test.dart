@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:marib_tax_mobile/app/app.dart';
+import 'package:marib_tax_mobile/core/security/biometric_service.dart';
 import 'package:marib_tax_mobile/core/storage/token_store.dart';
 
 import 'support/fake_api.dart';
@@ -10,7 +11,11 @@ void main() {
       (tester) async {
     final store = InMemoryTokenStore();
     await tester.pumpWidget(
-      MaribTaxApp(tokenStore: store, apiClient: fakeApiClient(store)),
+      MaribTaxApp(
+        tokenStore: store,
+        apiClient: fakeApiClient(store),
+        biometrics: FakeBiometricService(),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -28,7 +33,11 @@ void main() {
     await store.write('stored-token');
 
     await tester.pumpWidget(
-      MaribTaxApp(tokenStore: store, apiClient: fakeApiClient(store)),
+      MaribTaxApp(
+        tokenStore: store,
+        apiClient: fakeApiClient(store),
+        biometrics: FakeBiometricService(),
+      ),
     );
     await tester.pumpAndSettle();
 

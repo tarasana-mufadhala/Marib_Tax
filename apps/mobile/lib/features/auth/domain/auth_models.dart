@@ -118,15 +118,29 @@ class TaxpayerProfile {
       );
 }
 
-/// جلسة مصادقة ناجحة.
+/// جلسة مصادقة ناجحة: رمز وصول قصير العمر، ورمز تجديد يُبقيها حيّة.
 class AuthSession {
-  const AuthSession({required this.accessToken, required this.userProfileId});
+  const AuthSession({
+    required this.accessToken,
+    required this.userProfileId,
+    this.refreshToken,
+  });
 
   final String accessToken;
   final String userProfileId;
 
-  factory AuthSession.fromJson(Map<String, dynamic> json) => AuthSession(
-        accessToken: json['accessToken'] as String,
-        userProfileId: json['userProfileId'] as String,
-      );
+  /// قد يغيب إن كان الخادم أقدم من إضافة التجديد؛ عندها تسلك الجلسة
+  /// سلوكها القديم وتنتهي بانتهاء رمز الوصول.
+  final String? refreshToken;
+
+  bool get isRenewable => (refreshToken ?? '').isNotEmpty;
+
+  factory AuthSession.fromJson(Map<String, dynamic> json) {
+    final refresh = json['refreshToken']?.toString() ?? '';
+    return AuthSession(
+      accessToken: json['accessToken'] as String,
+      userProfileId: json['userProfileId'] as String,
+      refreshToken: refresh.isEmpty ? null : refresh,
+    );
+  }
 }

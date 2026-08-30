@@ -3,12 +3,14 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import '../core/api/api_client.dart';
+import '../core/security/biometric_service.dart';
 import '../core/storage/draft_store.dart';
 import '../core/storage/token_store.dart';
 import '../features/auth/data/auth_repository.dart';
 import '../features/auth/presentation/auth_controller.dart';
 import '../features/auth/presentation/email_otp_page.dart';
 import '../features/auth/presentation/forgot_password_page.dart';
+import '../features/auth/presentation/lock_page.dart';
 import '../features/auth/presentation/login_page.dart';
 import '../features/auth/presentation/register_details_page.dart';
 import '../features/auth/presentation/request_credentials_page.dart';
@@ -32,11 +34,13 @@ class MaribTaxApp extends StatefulWidget {
     this.tokenStore,
     this.apiClient,
     this.draftStore,
+    this.biometrics,
   });
 
   final TokenStore? tokenStore;
   final ApiClient? apiClient;
   final DraftStore? draftStore;
+  final BiometricService? biometrics;
 
   @override
   State<MaribTaxApp> createState() => _MaribTaxAppState();
@@ -52,14 +56,17 @@ class _MaribTaxAppState extends State<MaribTaxApp> {
   late final BalaghRepository _balaghs;
   late final AccountRepository _account;
   late final DraftStore _drafts;
+  late final BiometricService _biometrics;
 
   @override
   void initState() {
     super.initState();
     _tokenStore = widget.tokenStore ?? SecureTokenStore();
     _api = widget.apiClient ?? ApiClient(tokenStore: _tokenStore);
+    _biometrics = widget.biometrics ?? LocalAuthBiometricService();
     _auth = AuthController(
       repository: AuthRepository(api: _api, tokenStore: _tokenStore),
+      biometrics: _biometrics,
     );
     _home = HomeRepository(api: _api);
     _services = ServiceRepository(api: _api);
@@ -67,7 +74,9 @@ class _MaribTaxAppState extends State<MaribTaxApp> {
     _balaghs = BalaghRepository(api: _api);
     _account = AccountRepository(api: _api);
     _drafts = widget.draftStore ?? SecureDraftStore();
-    // انتهاء الجلسة من أي نداء يُعيد التطبيق لشاشة الدخول فوراً.
+    // رمز الوصول المنتهي يُجدَّد بصمت أولاً؛ ولا يُخرَج المكلف إلا إن بطل
+    // رمز التجديد نفسه. الترتيب مقصود: بلا التجديد تنتهي الجلسة كل ساعة.
+    _api.onRefreshSession = _auth.renewSession;
     _api.onUnauthenticated = _auth.onSessionExpired;
     _auth.restoreSession();
   }
@@ -83,6 +92,7 @@ class _MaribTaxAppState extends State<MaribTaxApp> {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider<AuthController>.value(value: _auth),
+        Provider<BiometricService>.value(value: _biometrics),
         Provider<HomeRepository>.value(value: _home),
         Provider<ServiceRepository>.value(value: _services),
         Provider<ContentRepository>.value(value: _content),
@@ -124,11 +134,15 @@ class _RootGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final status = context.watch<AuthController>().status;
-    return switch (status) {
+    final auth = context.watch<AuthController>();
+    return switch (auth.status) {
       AuthStatus.unknown => const SplashPage(),
       AuthStatus.signedIn => const AppShell(),
-      AuthStatus.signedOut => const WelcomePage(),
+      AuthStatus.locked => const LockPage(),
+      // مكلف انتهت جلسته لا يُعاد إلى شاشة التعريف بالمكتب — هو يعرفه —
+      // بل إلى شاشة الدخول مباشرة، ومعها سبب خروجه.
+      AuthStatus.signedOut =>
+        auth.notice == null ? const WelcomePage() : const LoginPage(),
     };
   }
 }

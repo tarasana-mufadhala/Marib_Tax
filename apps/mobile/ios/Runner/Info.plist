@@ -45,5 +45,8 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<!-- يظهر للمستخدم عند أول طلب لبصمة الوجه. غيابه يُسقط التطبيق على iOS. -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>يُستخدم التعرف على الوجه لتسجيل دخولك إلى حسابك لدى مكتب الضرائب بمحافظة مأرب دون كتابة كلمة المرور.</string>
 </dict>
 </plist>

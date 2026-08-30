@@ -85,6 +85,13 @@ class _LoginPageState extends State<LoginPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // خبر انتهاء الجلسة قبل الخطأ وبلون مختلف: أحدهما
+                      // إعلام والآخر عطل، وخلطهما يجعل الأمر المعتاد مفزعاً.
+                      if (auth.notice != null)
+                        InfoBanner(
+                          message: auth.notice!,
+                          onDismiss: auth.clearNotice,
+                        ),
                       if (auth.errorMessage != null)
                         ErrorBanner(message: auth.errorMessage!),
                       _MethodSwitch(

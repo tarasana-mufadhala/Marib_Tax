@@ -23,8 +23,18 @@ class ApiClient {
   final http.Client _http;
   final String _baseUrl;
 
-  /// يُستدعى عند انتهاء الجلسة (401) ليعيد التطبيق إلى شاشة الدخول.
+  /// يُستدعى عند انتهاء الجلسة نهائياً ليعيد التطبيق إلى شاشة الدخول.
+  /// لا يُستدعى إلا بعد فشل التجديد: انتهاء رمز الوصول وحده أمر متوقّع كل
+  /// ساعة، وإخراج المكلف عنده يقطع عمله بلا سبب.
   void Function()? onUnauthenticated;
+
+  /// يجدّد الجلسة برمز التجديد. يعيد true إن صار في المخزن رمز وصول جديد.
+  Future<bool> Function()? onRefreshSession;
+
+  /// تجديد واحد قيد التنفيذ لا أكثر: الشاشة الواحدة تُطلق عدة نداءات معاً،
+  /// وكلها تصطدم بالـ 401 نفسه. تجديدات متوازية تُبطل رموز بعضها لأن GoTrue
+  /// يدوّر رمز التجديد عند كل استعمال.
+  Future<bool>? _refreshInFlight;
 
   Future<Map<String, dynamic>> getObject(String path) async =>
       _asObject(await _send('GET', path));
@@ -53,6 +63,7 @@ class ApiClient {
     required String contentType,
     Map<String, String> fields = const {},
     String fileField = 'file',
+    bool allowRefresh = true,
   }) async {
     final uri = Uri.parse('$_baseUrl$path');
     final request = http.MultipartRequest('POST', uri)..fields.addAll(fields);
@@ -84,6 +95,20 @@ class ApiClient {
       throw const ApiException('تعذّر رفع الملف، تحقق من اتصالك بالإنترنت');
     }
 
+    // رفع كبير قد يستغرق أكثر من عمر رمز الوصول، فالتجديد وإعادة المحاولة
+    // هنا يحفظان للمكلف ملفاً رُفع بالفعل بدل أن يعيده من الصفر.
+    if (response.statusCode == 401 && allowRefresh && await _tryRefresh()) {
+      return uploadFile(
+        path,
+        bytes: bytes,
+        filename: filename,
+        contentType: contentType,
+        fields: fields,
+        fileField: fileField,
+        allowRefresh: false,
+      );
+    }
+
     return _asObject(await _decode(response));
   }
 
@@ -92,6 +117,7 @@ class ApiClient {
     String path, {
     Map<String, dynamic>? body,
     bool authenticated = true,
+    bool allowRefresh = true,
   }) async {
     final uri = Uri.parse('$_baseUrl$path');
     final headers = <String, String>{'Content-Type': 'application/json'};
@@ -115,15 +141,47 @@ class ApiClient {
       throw const ApiException('تعذّر الاتصال بالخادم، تحقق من اتصالك بالإنترنت');
     }
 
-    return _decode(response);
+    // رمز الوصول انتهى: يُجدَّد بصمت وتُعاد المحاولة مرة واحدة. المكلف لا
+    // يرى شيئاً، ولا يُطلب منه دخول جديد ما دام رمز التجديد صالحاً.
+    if (response.statusCode == 401 &&
+        authenticated &&
+        allowRefresh &&
+        await _tryRefresh()) {
+      return _send(
+        method,
+        path,
+        body: body,
+        authenticated: authenticated,
+        allowRefresh: false,
+      );
+    }
+
+    return _decode(response, authenticated: authenticated);
+  }
+
+  /// يجدّد الجلسة مرة واحدة مهما تزامنت النداءات المصطدمة بالـ 401.
+  Future<bool> _tryRefresh() async {
+    final refresh = onRefreshSession;
+    if (refresh == null) return false;
+    // النداءات المتزامنة تنتظر التجديد الجاري بدل إطلاق تجديد ثانٍ يُبطله.
+    return _refreshInFlight ??= refresh().whenComplete(() {
+      _refreshInFlight = null;
+    });
   }
 
   /// معالجة موحّدة للرد: 401 يُنهي الجلسة، وبقية الأخطاء تصير [ApiException].
-  Future<dynamic> _decode(http.Response response) async {
+  Future<dynamic> _decode(
+    http.Response response, {
+    bool authenticated = true,
+  }) async {
     if (response.statusCode == 401) {
-      // الجلسة غير صالحة: نمسح الرمز حتى لا يُعاد إرساله، ونُبلّغ الواجهة.
-      await _tokenStore.clear();
-      onUnauthenticated?.call();
+      // 401 على نقطة عامة (دخول بكلمة مرور خاطئة) ليس انتهاء جلسة: مسح
+      // الرمز عنده يُخرج مكلفاً داخلَ حسابه أصلاً لأنه أخطأ في نموذج آخر.
+      if (authenticated) {
+        // الجلسة غير صالحة ولا التجديد أنقذها: نمسح الرمزين ونُبلّغ الواجهة.
+        await _tokenStore.clear();
+        onUnauthenticated?.call();
+      }
       throw ApiException(
         _messageOf(response) ?? 'انتهت جلستك، يرجى تسجيل الدخول من جديد',
         statusCode: 401,

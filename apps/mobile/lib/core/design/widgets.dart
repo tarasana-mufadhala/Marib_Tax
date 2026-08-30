@@ -294,6 +294,59 @@ class ErrorBanner extends StatelessWidget {
   }
 }
 
+/// شريط خبر محايد فوق النماذج.
+///
+/// مقصود ألّا يشبه [ErrorBanner]: «انتهت مدة الجلسة» ليس خطأ ارتكبه المكلف،
+/// وصبغه بالأحمر يجعل الأمر المعتاد يبدو عطلاً في كل مرة.
+class InfoBanner extends StatelessWidget {
+  const InfoBanner({super.key, required this.message, this.onDismiss});
+
+  final String message;
+  final VoidCallback? onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.fromLTRB(13, 11, 6, 11),
+      decoration: BoxDecoration(
+        color: AppTheme.primarySoft,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFFCFE3DC)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.info_outline, color: AppTheme.primary, size: 19),
+          const SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              message,
+              style: const TextStyle(
+                color: AppTheme.primaryDark,
+                fontSize: 13,
+                height: 1.5,
+              ),
+            ),
+          ),
+          if (onDismiss != null)
+            InkWell(
+              onTap: onDismiss,
+              borderRadius: BorderRadius.circular(20),
+              child: const Padding(
+                padding: EdgeInsets.all(6),
+                child: Icon(Icons.close, size: 16, color: AppTheme.secondary),
+              ),
+            )
+          else
+            const SizedBox(width: 7),
+        ],
+      ),
+    );
+  }
+}
+
 /// زر يعرض مؤشر تحميل بدل نصه، ويمنع النقر المزدوج.
 class BusyButton extends StatelessWidget {
   const BusyButton({

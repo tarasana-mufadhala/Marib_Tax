@@ -101,6 +101,8 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
             const SizedBox(height: AppTheme.cardGap),
+            const _BiometricRow(),
+            const SizedBox(height: AppTheme.cardGap),
             NavRow(
               icon: Icons.phone_iphone_outlined,
               title: 'تغيير رقم الهاتف',
@@ -157,6 +159,90 @@ class _ProfilePageState extends State<ProfilePage> {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// مفتاح الدخول بالبصمة. لا يُعرض أصلاً على جهاز لا يدعمها أو لا بصمة
+/// مسجَّلة عليه: خيارٌ لا يعمل أسوأ من غيابه.
+class _BiometricRow extends StatefulWidget {
+  const _BiometricRow();
+
+  @override
+  State<_BiometricRow> createState() => _BiometricRowState();
+}
+
+class _BiometricRowState extends State<_BiometricRow> {
+  bool _supported = false;
+  bool _enabled = false;
+  bool _loading = true;
+  bool _busy = false;
+  String _label = 'البصمة';
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final auth = context.read<AuthController>();
+    final supported = await auth.biometricsAvailable();
+    final enabled = await auth.biometricsEnabled();
+    final label = await auth.biometricLabel();
+    if (!mounted) return;
+    setState(() {
+      _supported = supported;
+      _enabled = enabled;
+      _label = label;
+      _loading = false;
+    });
+  }
+
+  Future<void> _toggle(bool value) async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final auth = context.read<AuthController>();
+
+    if (value) {
+      // التفعيل يتطلب بصمة ناجحة الآن: مفتاحٌ يُفتح بلا إثبات ليس قفلاً.
+      final ok = await auth.enableBiometrics();
+      if (!mounted) return;
+      setState(() {
+        _enabled = ok;
+        _busy = false;
+      });
+      if (!ok && auth.errorMessage != null) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(auth.errorMessage!)));
+        auth.clearError();
+      }
+      return;
+    }
+
+    await auth.disableBiometrics();
+    if (!mounted) return;
+    setState(() {
+      _enabled = false;
+      _busy = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_loading || !_supported) return const SizedBox.shrink();
+
+    return NavRow(
+      icon: Icons.fingerprint,
+      title: 'الدخول بـ$_label',
+      subtitle: _enabled
+          ? 'مفعّل — يُطلب عند فتح التطبيق'
+          : 'ادخل حسابك دون كتابة كلمة المرور',
+      onTap: _busy ? null : () => _toggle(!_enabled),
+      trailing: Switch(
+        value: _enabled,
+        onChanged: _busy ? null : _toggle,
       ),
     );
   }

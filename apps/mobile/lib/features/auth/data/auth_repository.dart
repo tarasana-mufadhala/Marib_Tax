@@ -1,4 +1,5 @@
 import '../../../core/api/api_client.dart';
+import '../../../core/api/api_exception.dart';
 import '../../../core/storage/token_store.dart';
 import '../domain/auth_models.dart';
 import '../domain/yemeni_phone.dart';
@@ -61,9 +62,45 @@ class AuthRepository {
       body: {'phoneNumber': phone.e164, 'password': password},
       authenticated: false,
     );
-    final session = AuthSession.fromJson(json);
+    return _persist(AuthSession.fromJson(json));
+  }
+
+  /// يحفظ رمزَي الجلسة معاً. كل مسار دخول يمر من هنا حتى لا يُنسى رمز
+  /// التجديد في مسار فينتهي عمل المكلف فيه كل ساعة دون غيره.
+  Future<AuthSession> _persist(AuthSession session) async {
     await _tokenStore.write(session.accessToken);
+    if (session.refreshToken != null) {
+      await _tokenStore.writeRefresh(session.refreshToken!);
+    }
     return session;
+  }
+
+  /// يستبدل برمز التجديد رمز وصول جديداً. يعيد false إن بطل رمز التجديد
+  /// نفسه — وعندها فقط يلزم دخول جديد.
+  Future<bool> refreshSession() async {
+    final refreshToken = await _tokenStore.readRefresh();
+    if (refreshToken == null || refreshToken.isEmpty) return false;
+
+    try {
+      final json = await _api.post(
+        '/auth/refresh',
+        body: {'refreshToken': refreshToken},
+        authenticated: false,
+      );
+      final session = AuthSession.fromJson(json);
+      if (session.accessToken.isEmpty) return false;
+      await _persist(session);
+      return true;
+    } on ApiException catch (error) {
+      // انقطاع الشبكة ليس بطلان جلسة: لا نمسح رمز التجديد لعطل مؤقت،
+      // وإلا أخرجنا المكلف من حسابه كلما ضعف الاتصال.
+      if (error.statusCode == null) rethrow;
+      return false;
+    } on TypeError {
+      // رد بشكل غير متوقّع (خادم أقدم لا يعرف التجديد): يُعامل كتعذّر
+      // تجديد، فيعود المكلف للدخول بدل أن يعلق على جلسة لا تعمل.
+      return false;
+    }
   }
 
   /// رمز دخول يصل البريد — بديل لرقم الهاتف.
@@ -87,9 +124,7 @@ class AuthRepository {
       body: {'email': email, 'code': code},
       authenticated: false,
     );
-    final session = AuthSession.fromJson(json);
-    await _tokenStore.write(session.accessToken);
-    return session;
+    return _persist(AuthSession.fromJson(json));
   }
 
   /// استعادة كلمة المرور بالبريد — لمن لا تصله الرسائل النصية.
@@ -190,8 +225,19 @@ class AuthRepository {
 
   Future<void> logout() => _tokenStore.clear();
 
+  /// جلسة قائمة إن بقي رمز وصول أو رمز تجديد. رمز الوصول وحده قد يكون منتهياً،
+  /// لكن أول نداء يُجدّده بصمت — أهون من شاشة دخول عند كل فتح للتطبيق.
   Future<bool> hasSession() async {
     final token = await _tokenStore.read();
-    return token != null && token.isNotEmpty;
+    if (token != null && token.isNotEmpty) return true;
+    final refresh = await _tokenStore.readRefresh();
+    return refresh != null && refresh.isNotEmpty;
+  }
+
+  /// هل تملك الجلسة رمز تجديد؟ الدخول بالبصمة يقوم عليه: البصمة تُثبت
+  /// الشخص، ورمز التجديد وحده هو ما يُصدر جلسة جديدة.
+  Future<bool> canRenewSession() async {
+    final refresh = await _tokenStore.readRefresh();
+    return refresh != null && refresh.isNotEmpty;
   }
 }

@@ -1,7 +1,10 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
+import 'package:marib_tax_mobile/core/api/api_exception.dart';
+import 'package:marib_tax_mobile/core/security/biometric_service.dart';
 import 'package:marib_tax_mobile/core/storage/token_store.dart';
 import 'package:marib_tax_mobile/features/auth/data/auth_repository.dart';
 import 'package:marib_tax_mobile/features/auth/domain/auth_models.dart';
@@ -218,7 +221,16 @@ void main() {
       expect(await store.read(), isNull);
     });
 
-    test('انتهاء الجلسة يُخرج المستخدم برسالة واضحة', () async {
+    test('الدخول يحفظ رمز التجديد أيضاً، وإلا انتهت الجلسة بعد ساعة', () async {
+      final store = InMemoryTokenStore();
+      final controller = buildController(store);
+
+      await controller.login('771234567', 'Marib@2026');
+
+      expect(await store.readRefresh(), 'issued-refresh-token');
+    });
+
+    test('انتهاء الجلسة خبرٌ محايد لا خطأ أحمر', () async {
       final store = InMemoryTokenStore();
       final controller = buildController(store);
       await controller.login('771234567', 'Marib@2026');
@@ -226,7 +238,279 @@ void main() {
       controller.onSessionExpired();
 
       expect(controller.status, AuthStatus.signedOut);
-      expect(controller.errorMessage, contains('انتهت جلستك'));
+      expect(controller.notice, contains('انتهت مدة الجلسة'));
+      // النبرة مقصودة: المكلف لم يُخطئ، فلا يُعرض له شريط خطأ.
+      expect(controller.errorMessage, isNull);
+    });
+
+    test('الخبر يزول عند نجاح الدخول التالي', () async {
+      final store = InMemoryTokenStore();
+      final controller = buildController(store);
+      await controller.login('771234567', 'Marib@2026');
+      controller.onSessionExpired();
+
+      await controller.login('771234567', 'Marib@2026');
+
+      expect(controller.notice, isNull);
+      expect(controller.status, AuthStatus.signedIn);
+    });
+
+    test('الخروج الصريح لا يترك خبراً معلّقاً', () async {
+      final store = InMemoryTokenStore();
+      final controller = buildController(store);
+      await controller.login('771234567', 'Marib@2026');
+      controller.onSessionExpired();
+
+      await controller.logout();
+
+      expect(controller.notice, isNull);
+      expect(await store.readRefresh(), isNull);
+    });
+  });
+
+  group('تجديد الجلسة', () {
+    test('رمز وصول منتهٍ يُجدَّد بصمت ويُعاد النداء بلا إخراج المكلف',
+        () async {
+      final store = InMemoryTokenStore();
+      await store.write('expired-token');
+      await store.writeRefresh('valid-refresh-token');
+
+      var expiredOnce = false;
+      var kickedOut = false;
+      final requests = <http.Request>[];
+      final api = fakeApiClient(store, recorder: requests, overrides: {
+        'GET /api/v1/notifications': (request) {
+          // أول نداء برمز منتهٍ يُرفض، وما بعد التجديد يُقبل.
+          if (request.headers['Authorization'] == 'Bearer expired-token') {
+            expiredOnce = true;
+            return apiError(401, 'AUTHENTICATION_REQUIRED', 'jwt expired');
+          }
+          return jsonResponse([]);
+        },
+      });
+      final controller =
+          AuthController(repository: AuthRepository(api: api, tokenStore: store));
+      api.onRefreshSession = controller.renewSession;
+      api.onUnauthenticated = () => kickedOut = true;
+      await controller.restoreSession();
+
+      final result = await api.getList('/notifications');
+
+      expect(expiredOnce, isTrue);
+      expect(result, isEmpty);
+      expect(kickedOut, isFalse, reason: 'المكلف لا يُخرَج ما دام التجديد نجح');
+      expect(await store.read(), 'renewed-token');
+      expect(controller.status, AuthStatus.signedIn);
+    });
+
+    test('نداءات متزامنة على رمز منتهٍ تُجدّد مرة واحدة', () async {
+      final store = InMemoryTokenStore();
+      await store.write('expired-token');
+      await store.writeRefresh('valid-refresh-token');
+
+      var refreshCalls = 0;
+      final api = fakeApiClient(store, overrides: {
+        'POST /api/v1/auth/refresh': (_) {
+          refreshCalls++;
+          return jsonResponse({
+            'accessToken': 'renewed-token',
+            'refreshToken': 'renewed-refresh-token',
+            'userProfileId': 'profile-1',
+          });
+        },
+        'GET /api/v1/notifications': (request) =>
+            request.headers['Authorization'] == 'Bearer expired-token'
+                ? apiError(401, 'AUTHENTICATION_REQUIRED', 'jwt expired')
+                : jsonResponse([]),
+        'GET /api/v1/requests': (request) =>
+            request.headers['Authorization'] == 'Bearer expired-token'
+                ? apiError(401, 'AUTHENTICATION_REQUIRED', 'jwt expired')
+                : jsonResponse([]),
+      });
+      final controller =
+          AuthController(repository: AuthRepository(api: api, tokenStore: store));
+      api.onRefreshSession = controller.renewSession;
+
+      await Future.wait([
+        api.getList('/notifications'),
+        api.getList('/requests'),
+      ]);
+
+      // تجديدان متوازيان يُبطل أحدهما رمز الآخر لأن الخادم يدوّر الرمز.
+      expect(refreshCalls, 1);
+    });
+
+    test('بطلان رمز التجديد وحده هو ما يُخرج المكلف', () async {
+      final store = InMemoryTokenStore();
+      await store.write('expired-token');
+      await store.writeRefresh('revoked-refresh-token');
+
+      final api = fakeApiClient(store, overrides: {
+        'POST /api/v1/auth/refresh': (_) =>
+            apiError(401, 'AUTHENTICATION_REQUIRED', 'Session expired.'),
+        'GET /api/v1/notifications': (_) =>
+            apiError(401, 'AUTHENTICATION_REQUIRED', 'jwt expired'),
+      });
+      final controller =
+          AuthController(repository: AuthRepository(api: api, tokenStore: store));
+      api.onRefreshSession = controller.renewSession;
+      api.onUnauthenticated = controller.onSessionExpired;
+      await controller.restoreSession();
+
+      await expectLater(
+        api.getList('/notifications'),
+        throwsA(isA<ApiException>()),
+      );
+
+      expect(controller.status, AuthStatus.signedOut);
+      expect(controller.notice, contains('انتهت مدة الجلسة'));
+      expect(await store.readRefresh(), isNull);
+    });
+
+    test('انقطاع الشبكة أثناء التجديد لا يمسح الجلسة', () async {
+      final store = InMemoryTokenStore();
+      await store.write('expired-token');
+      await store.writeRefresh('valid-refresh-token');
+
+      var kickedOut = false;
+      final api = fakeApiClient(store, overrides: {
+        'POST /api/v1/auth/refresh': (_) =>
+            throw SocketException('انقطع الاتصال أثناء التجديد'),
+        'GET /api/v1/notifications': (_) =>
+            apiError(401, 'AUTHENTICATION_REQUIRED', 'jwt expired'),
+      });
+      final controller =
+          AuthController(repository: AuthRepository(api: api, tokenStore: store));
+      api.onRefreshSession = controller.renewSession;
+      api.onUnauthenticated = () => kickedOut = true;
+
+      await expectLater(
+        api.getList('/notifications'),
+        throwsA(isA<ApiException>()),
+      );
+
+      // عطل مؤقت ليس بطلان جلسة: الرمز يبقى ليُجدَّد حين يعود الاتصال.
+      expect(kickedOut, isFalse);
+      expect(await store.readRefresh(), 'valid-refresh-token');
+    });
+  });
+
+  group('الدخول بالبصمة', () {
+    AuthController biometricController(
+      InMemoryTokenStore store,
+      FakeBiometricService biometrics, {
+      Map<String, dynamic> overrides = const {},
+    }) =>
+        AuthController(
+          repository: AuthRepository(
+            api: fakeApiClient(store, overrides: overrides.cast()),
+            tokenStore: store,
+          ),
+          biometrics: biometrics,
+        );
+
+    test('جلسة مقفلة بالبصمة تفتح على شاشة القفل لا على الحساب', () async {
+      final store = InMemoryTokenStore();
+      await store.write('stored');
+      final controller = biometricController(
+        store,
+        FakeBiometricService(enabled: true),
+      );
+
+      await controller.restoreSession();
+
+      expect(controller.status, AuthStatus.locked);
+    });
+
+    test('بصمة صحيحة تفتح القفل وتجدّد الجلسة', () async {
+      final store = InMemoryTokenStore();
+      await store.write('expired-token');
+      await store.writeRefresh('valid-refresh-token');
+      final biometrics = FakeBiometricService(enabled: true);
+      final controller = biometricController(store, biometrics);
+      await controller.restoreSession();
+
+      expect(await controller.unlockWithBiometrics(), isTrue);
+
+      expect(biometrics.prompts, 1);
+      expect(controller.status, AuthStatus.signedIn);
+      expect(await store.read(), 'renewed-token');
+    });
+
+    test('إلغاء البصمة يُبقي القفل ولا يعرض خطأ', () async {
+      final store = InMemoryTokenStore();
+      await store.write('stored');
+      await store.writeRefresh('valid-refresh-token');
+      final controller = biometricController(
+        store,
+        FakeBiometricService(
+          enabled: true,
+          result: BiometricResult.cancelled,
+        ),
+      );
+      await controller.restoreSession();
+
+      expect(await controller.unlockWithBiometrics(), isFalse);
+      expect(controller.status, AuthStatus.locked);
+      expect(controller.errorMessage, isNull);
+    });
+
+    test('جهاز فقد بصماته لا يحبس صاحبه خارج حسابه', () async {
+      final store = InMemoryTokenStore();
+      await store.write('stored');
+      // مفعّل في التفضيلات، لكن الجهاز لم يعد يدعمه.
+      final biometrics = FakeBiometricService(enabled: true, available: false);
+      final controller = biometricController(store, biometrics);
+
+      await controller.restoreSession();
+
+      expect(controller.status, AuthStatus.signedIn);
+      expect(await biometrics.isEnabled(), isFalse,
+          reason: 'يُطفأ التفضيل بدل أن يبقى قفلاً بلا مفتاح');
+    });
+
+    test('لا يُفعَّل القفل قبل بصمة ناجحة', () async {
+      final store = InMemoryTokenStore();
+      await store.writeRefresh('valid-refresh-token');
+      final biometrics =
+          FakeBiometricService(result: BiometricResult.cancelled);
+      final controller = biometricController(store, biometrics);
+
+      expect(await controller.enableBiometrics(), isFalse);
+      expect(await biometrics.isEnabled(), isFalse);
+    });
+
+    test('لا يُفعَّل القفل على جلسة غير قابلة للتجديد', () async {
+      final store = InMemoryTokenStore();
+      await store.write('access-only');
+      final biometrics = FakeBiometricService();
+      final controller = biometricController(store, biometrics);
+
+      expect(await controller.enableBiometrics(), isFalse);
+      expect(controller.errorMessage, contains('كلمة المرور'));
+      expect(biometrics.prompts, 0, reason: 'لا تُطلب بصمة لقفل بلا مفتاح');
+    });
+
+    test('الخروج يُطفئ قفل البصمة', () async {
+      final store = InMemoryTokenStore();
+      final biometrics = FakeBiometricService(enabled: true);
+      final controller = biometricController(store, biometrics);
+      await controller.login('771234567', 'Marib@2026');
+
+      await controller.logout();
+
+      expect(await biometrics.isEnabled(), isFalse);
+    });
+
+    test('بلا خدمة بصمة يبقى السلوك كما كان', () async {
+      final store = InMemoryTokenStore();
+      await store.write('stored');
+      final controller = buildController(store);
+
+      await controller.restoreSession();
+
+      expect(controller.status, AuthStatus.signedIn);
+      expect(await controller.biometricsAvailable(), isFalse);
     });
   });
 

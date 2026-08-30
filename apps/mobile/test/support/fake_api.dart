@@ -28,6 +28,16 @@ MockClient fakeHttpClient({
       'POST /api/v1/auth/register' => _json({'userProfileId': 'profile-1'}, 201),
       'POST /api/v1/auth/login' => _json({
           'accessToken': 'issued-token',
+          'refreshToken': 'issued-refresh-token',
+          'expiresInSeconds': 3600,
+          'tokenType': 'Bearer',
+          'userProfileId': 'profile-1',
+        }),
+      'POST /api/v1/auth/refresh' => _json({
+          'accessToken': 'renewed-token',
+          'refreshToken': 'renewed-refresh-token',
+          'expiresInSeconds': 3600,
+          'tokenType': 'Bearer',
           'userProfileId': 'profile-1',
         }),
       'POST /api/v1/auth/password/reset/request' =>

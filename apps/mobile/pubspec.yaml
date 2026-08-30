@@ -41,8 +41,10 @@ dependencies:
   http: ^1.2.2
   # لتحديد نوع المحتوى في رفع الملفات multipart
   http_parser: ^4.1.2
-  # تخزين رمز الجلسة في Keystore/Keychain — لا SharedPreferences للأسرار
+  # تخزين رمزَي الجلسة في Keystore/Keychain — لا SharedPreferences للأسرار
   flutter_secure_storage: ^9.2.4
+  # الدخول بالبصمة (إصبع/وجه) عبر واجهة المصادقة الحيوية في النظام
+  local_auth: ^2.3.0
   # إدارة الحالة
   provider: ^6.1.2
   # اختيار الملفات والصور للمرفقات
