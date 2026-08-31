@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button, Input, ShieldCheckIcon } from '@marib-tax/web-ui';
 import { loginWithEmail } from '@/lib/auth';
 import { OfficeLogo } from '@/components/OfficeLogo';
+import { WEBSITE_URL } from '@/lib/app-urls';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -91,7 +92,7 @@ export default function LoginPage() {
 
             <div className="pt-4 text-center border-t border-slate-100">
               <a
-                href="http://localhost:3002"
+                href={WEBSITE_URL}
                 className="inline-flex items-center gap-1 text-xs font-bold text-[var(--usr-primary)] hover:text-[var(--usr-primary-dark)] hover:underline"
               >
                 <span>← العودة إلى الموقع العام للمكلفين</span>

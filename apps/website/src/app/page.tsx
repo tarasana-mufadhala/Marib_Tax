@@ -32,6 +32,7 @@ import {
 import { publicApi } from '@/lib/api-client';
 import type { Announcement, TaxService, PublicFaq, PublicStats } from '@/lib/api-client';
 import { getServiceVectorIcon } from '@/lib/icon-helper';
+import { ADMIN_LOGIN_URL } from '@/lib/app-urls';
 
 const springTransition = { type: 'spring' as const, stiffness: 120, damping: 18 };
 
@@ -458,7 +459,7 @@ export default function HomePage() {
                   <p className="text-[11px] text-slate-300">تسجيل الدخول لموظفي ولجان المكتب</p>
                 </div>
                 <a
-                  href="http://localhost:3001/login"
+                  href={ADMIN_LOGIN_URL}
                   target="_blank"
                   rel="noopener noreferrer"
                 >

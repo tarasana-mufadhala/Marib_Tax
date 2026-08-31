@@ -19,6 +19,7 @@ import {
 import { publicApi } from '@/lib/api-client';
 import type { TaxService } from '@/lib/api-client';
 import { getServiceVectorIcon } from '@/lib/icon-helper';
+import { ADMIN_LOGIN_URL } from '@/lib/app-urls';
 
 const FALLBACK_SERVICES: TaxService[] = [
   {
@@ -113,7 +114,7 @@ export default async function ServicesPage() {
               كافة المعاملات تدار وفق لوائح مصلحة الضرائب بالجمهورية اليمنية، ويمكن التقديم عليها مباشرة عبر صالة خدمة المكلفين بالفرع أو عبر المنظومة الرقمية.
             </p>
           </div>
-          <a href="http://localhost:3001/login" target="_blank" rel="noopener noreferrer" className="shrink-0 hidden sm:inline-block">
+          <a href={ADMIN_LOGIN_URL} target="_blank" rel="noopener noreferrer" className="shrink-0 hidden sm:inline-block">
             <Button variant="gold" size="sm" className="font-bold">
               دخول البوابة
             </Button>
@@ -189,7 +190,7 @@ export default async function ServicesPage() {
 
                 <div className="pt-4 mt-6 border-t border-slate-100 flex items-center gap-3">
                   <a
-                    href="http://localhost:3001/login"
+                    href={ADMIN_LOGIN_URL}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full"

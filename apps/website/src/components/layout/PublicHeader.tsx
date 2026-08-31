@@ -22,6 +22,7 @@ import {
   ShieldCheckIcon,
 } from '@marib-tax/web-ui';
 import { OfficeLogo } from '@/components/OfficeLogo';
+import { ADMIN_LOGIN_URL } from '@/lib/app-urls';
 
 export function PublicHeader() {
   const pathname = usePathname();
@@ -240,7 +241,7 @@ export function PublicHeader() {
         {/* Action Buttons & Mobile Toggle */}
         <div className="flex items-center gap-2.5">
           <a
-            href="http://localhost:3001/login"
+            href={ADMIN_LOGIN_URL}
             target="_blank"
             rel="noopener noreferrer"
             className="hidden sm:inline-flex"
@@ -311,7 +312,7 @@ export function PublicHeader() {
 
           <div className="pt-3 border-t border-slate-100 flex flex-col gap-2.5">
             <a
-              href="http://localhost:3001/login"
+              href={ADMIN_LOGIN_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full"

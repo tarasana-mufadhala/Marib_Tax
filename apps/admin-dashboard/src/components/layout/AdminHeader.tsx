@@ -6,6 +6,7 @@ import { Button } from '@marib-tax/web-ui';
 import { Globe, LogOut, ShieldCheck } from 'lucide-react';
 import { fetchCurrentUser, logout, type CurrentUser } from '@/lib/auth';
 import { OfficeLogo } from '@/components/OfficeLogo';
+import { WEBSITE_URL } from '@/lib/app-urls';
 
 export function AdminHeader() {
   const router = useRouter();
@@ -47,7 +48,7 @@ export function AdminHeader() {
         </div>
 
         {/* Public Website Button */}
-        <a href="http://localhost:3002" target="_blank" rel="noopener noreferrer">
+        <a href={WEBSITE_URL} target="_blank" rel="noopener noreferrer">
           <Button variant="outline" size="sm" className="gap-1.5 font-bold shadow-2xs bg-white border-slate-200 text-slate-700 hover:bg-slate-50">
             <Globe size={15} className="text-emerald-600" />
             <span>الموقع العام 🌐</span>
