@@ -6,6 +6,7 @@ import {
   type ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
@@ -52,6 +53,8 @@ const errorByStatus: Readonly<
 
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(ApiExceptionFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const context = host.switchToHttp();
     const request = context.getRequest<Request>();
@@ -77,6 +80,20 @@ export class ApiExceptionFilter implements ExceptionFilter {
               traceId,
             },
           };
+
+    // عطل الخادم يُسجَّل بجانبه لا في رد المستخدم: بلا هذا يختفي كل خطأ 500
+    // بلا أثر، فيُرى «حدث خطأ غير متوقع» وحده ولا يُعرف سببه إطلاقاً.
+    // يُربط بالرد عبر traceId. أخطاء 4xx متوقّعة فلا تُضجّ السجل.
+    if (status >= 500) {
+      const detail =
+        exception instanceof Error
+          ? `${exception.name}: ${exception.message}`
+          : String(exception);
+      this.logger.error(
+        `[${traceId}] ${request.method} ${request.url} → ${status} — ${detail}`,
+        exception instanceof Error ? exception.stack : undefined,
+      );
+    }
 
     response.setHeader('x-request-id', traceId);
     response.status(status).json(envelope);
