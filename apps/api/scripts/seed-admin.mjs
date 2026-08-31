@@ -8,10 +8,19 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import pg from 'pg';
 
+// متغيّرات البيئة أولاً ثم ملف `.env` — بهذا الترتيب يعمل السكربت على
+// مستضيف لا ملف `.env` فيه (Render وما شابهه) كما يعمل على جهاز المطوّر.
+// كان يقرأ الملف وحده، فيسقط بـENOENT في أي بيئة منشورة.
 const envPath = path.resolve(process.cwd(), '../../.env');
-const env = fs.readFileSync(envPath, 'utf8');
+let fileEnv = '';
+try {
+  fileEnv = fs.readFileSync(envPath, 'utf8');
+} catch {
+  // لا ملف `.env` — بيئة منشورة تُمرّر الإعدادات كمتغيّرات.
+}
 const get = (k) => {
-  const l = env.split(/\r?\n/).find((x) => x.startsWith(k + '='));
+  if (process.env[k]) return process.env[k];
+  const l = fileEnv.split(/\r?\n/).find((x) => x.startsWith(k + '='));
   return l ? l.split('=').slice(1).join('=').trim().replace(/^["']|["']$/g, '') : null;
 };
 
