@@ -882,7 +882,8 @@ paths:
           description: Payment confirmed
           content:
             application/json:
-              schema: { $ref: '#/components/schemas/PaymentConfirmationResponse' }
+              schema:
+                { $ref: '#/components/schemas/PaymentConfirmationResponse' }
         '422': { $ref: '#/components/responses/ValidationFailed' }
   /health:
     get:
@@ -1385,7 +1386,11 @@ components:
       additionalProperties: false
       required: [balaghType, schemaVersion, formData]
       properties:
-        balaghType: { type: string, enum: [FR-201, FR-202, FR-203, FR-204, FR-205, FR-206] }
+        balaghType:
+          {
+            type: string,
+            enum: [FR-201, FR-202, FR-203, FR-204, FR-205, FR-206],
+          }
         schemaVersion: { type: string, const: 1.0.0 }
         formData: { type: object }
     EditBalaghDraft:
@@ -1397,12 +1402,41 @@ components:
     BalaghResponse:
       type: object
       additionalProperties: false
-      required: [id, publicRef, status, balaghType, schemaVersion, formData, ownerActorId, createdAt, updatedAt]
+      required:
+        [
+          id,
+          publicRef,
+          status,
+          balaghType,
+          schemaVersion,
+          formData,
+          ownerActorId,
+          createdAt,
+          updatedAt,
+        ]
       properties:
         id: { $ref: '#/components/schemas/Uuid' }
         publicRef: { type: [string, 'null'] }
-        status: { type: string, enum: [draft, submitted, under_review, field_visit_scheduled, field_visit_completed, approved, rejected, archived] }
-        balaghType: { type: string, enum: [FR-201, FR-202, FR-203, FR-204, FR-205, FR-206] }
+        status:
+          {
+            type: string,
+            enum:
+              [
+                draft,
+                submitted,
+                under_review,
+                field_visit_scheduled,
+                field_visit_completed,
+                approved,
+                rejected,
+                archived,
+              ],
+          }
+        balaghType:
+          {
+            type: string,
+            enum: [FR-201, FR-202, FR-203, FR-204, FR-205, FR-206],
+          }
         schemaVersion: { type: string, const: 1.0.0 }
         formData: { type: object }
         ownerActorId: { $ref: '#/components/schemas/Uuid' }
@@ -1442,7 +1476,24 @@ components:
     FieldVisitResponse:
       type: object
       additionalProperties: false
-      required: [id, publicRef, serviceRequestId, balaghId, statusCode, actualStartedAt, actualEndedAt, locationSnapshot, notes, cancellationReason, createdByStaffProfileId, createdByProfileId, updatedAt, updatedByProfileId, archivedAt]
+      required:
+        [
+          id,
+          publicRef,
+          serviceRequestId,
+          balaghId,
+          statusCode,
+          actualStartedAt,
+          actualEndedAt,
+          locationSnapshot,
+          notes,
+          cancellationReason,
+          createdByStaffProfileId,
+          createdByProfileId,
+          updatedAt,
+          updatedByProfileId,
+          archivedAt,
+        ]
       properties:
         id: { $ref: '#/components/schemas/Uuid' }
         publicRef: { type: [string, 'null'] }
@@ -1462,7 +1513,15 @@ components:
     FieldVisitResultResponse:
       type: object
       additionalProperties: false
-      required: [id, fieldVisitId, resultSummary, resultCode, recordedAt, recordedByStaffProfileId]
+      required:
+        [
+          id,
+          fieldVisitId,
+          resultSummary,
+          resultCode,
+          recordedAt,
+          recordedByStaffProfileId,
+        ]
       properties:
         id: { $ref: '#/components/schemas/Uuid' }
         fieldVisitId: { $ref: '#/components/schemas/Uuid' }
@@ -1484,13 +1543,26 @@ components:
       additionalProperties: false
       required: [reason]
       properties:
-        revisedOutcomeCode: { type: [string, 'null'], enum: [approved, rejected] }
+        revisedOutcomeCode:
+          { type: [string, 'null'], enum: [approved, rejected] }
         revisionSummary: { type: [string, 'null'] }
         reason: { type: string, minLength: 1 }
     DecisionResponse:
       type: object
       additionalProperties: false
-      required: [id, serviceRequestId, outcomeCode, decisionSummary, basisText, decidedAt, decidedByStaffProfileId, createdAt, createdByProfileId, correlationId]
+      required:
+        [
+          id,
+          serviceRequestId,
+          outcomeCode,
+          decisionSummary,
+          basisText,
+          decidedAt,
+          decidedByStaffProfileId,
+          createdAt,
+          createdByProfileId,
+          correlationId,
+        ]
       properties:
         id: { $ref: '#/components/schemas/Uuid' }
         serviceRequestId: { $ref: '#/components/schemas/Uuid' }
@@ -1505,12 +1577,25 @@ components:
     DecisionRevisionResponse:
       type: object
       additionalProperties: false
-      required: [id, decisionRecordId, revisionNumber, revisedOutcomeCode, revisionSummary, revisedAt, revisedByStaffProfileId, reason, correlationId, createdAt]
+      required:
+        [
+          id,
+          decisionRecordId,
+          revisionNumber,
+          revisedOutcomeCode,
+          revisionSummary,
+          revisedAt,
+          revisedByStaffProfileId,
+          reason,
+          correlationId,
+          createdAt,
+        ]
       properties:
         id: { $ref: '#/components/schemas/Uuid' }
         decisionRecordId: { $ref: '#/components/schemas/Uuid' }
         revisionNumber: { type: integer, minimum: 1 }
-        revisedOutcomeCode: { type: [string, 'null'], enum: [approved, rejected] }
+        revisedOutcomeCode:
+          { type: [string, 'null'], enum: [approved, rejected] }
         revisionSummary: { type: [string, 'null'] }
         revisedAt: { type: string, format: date-time }
         revisedByStaffProfileId: { $ref: '#/components/schemas/Uuid' }
@@ -1552,7 +1637,23 @@ components:
     PaymentDueResponse:
       type: object
       additionalProperties: false
-      required: [id, publicRef, serviceRequestId, balaghId, amount, currencyCode, statusCode, assessedAt, createdAt, createdByProfileId, updatedAt, updatedByProfileId, correlationId, archivedAt]
+      required:
+        [
+          id,
+          publicRef,
+          serviceRequestId,
+          balaghId,
+          amount,
+          currencyCode,
+          statusCode,
+          assessedAt,
+          createdAt,
+          createdByProfileId,
+          updatedAt,
+          updatedByProfileId,
+          correlationId,
+          archivedAt,
+        ]
       properties:
         id: { $ref: '#/components/schemas/Uuid' }
         publicRef: { type: [string, 'null'] }
@@ -1560,7 +1661,8 @@ components:
         balaghId: { type: [string, 'null'], format: uuid }
         amount: { type: number }
         currencyCode: { type: string, const: YER }
-        statusCode: { type: string, enum: [PENDING, PAID, CANCELLED, CORRECTED] }
+        statusCode:
+          { type: string, enum: [PENDING, PAID, CANCELLED, CORRECTED] }
         assessedAt: { type: [string, 'null'], format: date-time }
         createdAt: { type: string, format: date-time }
         createdByProfileId: { type: [string, 'null'], format: uuid }
@@ -1571,14 +1673,28 @@ components:
     PaymentReceiptResponse:
       type: object
       additionalProperties: false
-      required: [id, publicRef, paymentDueId, amount, currencyCode, acceptanceStatusCode, replacesReceiptId, createdAt, createdByProfileId, updatedAt, updatedByProfileId]
+      required:
+        [
+          id,
+          publicRef,
+          paymentDueId,
+          amount,
+          currencyCode,
+          acceptanceStatusCode,
+          replacesReceiptId,
+          createdAt,
+          createdByProfileId,
+          updatedAt,
+          updatedByProfileId,
+        ]
       properties:
         id: { $ref: '#/components/schemas/Uuid' }
         publicRef: { type: [string, 'null'] }
         paymentDueId: { $ref: '#/components/schemas/Uuid' }
         amount: { type: number }
         currencyCode: { type: string, const: YER }
-        acceptanceStatusCode: { type: string, enum: [UPLOADED, VERIFIED, REJECTED, REPLACED] }
+        acceptanceStatusCode:
+          { type: string, enum: [UPLOADED, VERIFIED, REJECTED, REPLACED] }
         receivedAt: { type: [string, 'null'], format: date-time }
         replacesReceiptId: { type: [string, 'null'], format: uuid }
         createdAt: { type: string, format: date-time }
@@ -1588,7 +1704,8 @@ components:
     PaymentConfirmationResponse:
       type: object
       additionalProperties: false
-      required: [id, paymentReceiptId, confirmedAt, confirmedByStaffProfileId, notes]
+      required:
+        [id, paymentReceiptId, confirmedAt, confirmedByStaffProfileId, notes]
       properties:
         id: { $ref: '#/components/schemas/Uuid' }
         paymentReceiptId: { $ref: '#/components/schemas/Uuid' }

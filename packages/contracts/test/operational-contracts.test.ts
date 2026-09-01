@@ -113,6 +113,21 @@ describe('Operational Contracts - Field Visits', () => {
     };
     expect(() => scheduleFieldVisitSchema.parse(invalidBoth)).toThrow();
   });
+
+  it('validates result recording and cancellation inputs', () => {
+    const result = {
+      resultSummary: 'تمت المعاينة والتحقق من بيانات النشاط.',
+      resultCode: 'VERIFIED',
+      actualStartedAt: '2026-07-31T10:00:00Z',
+      actualEndedAt: '2026-07-31T11:00:00Z',
+    };
+    expect(recordFieldVisitResultSchema.parse(result)).toMatchObject(result);
+
+    const cancellation = { reason: 'تعذر الوصول إلى موقع النشاط.' };
+    expect(cancelFieldVisitSchema.parse(cancellation)).toMatchObject(
+      cancellation,
+    );
+  });
 });
 
 describe('Operational Contracts - Decisions', () => {
@@ -121,12 +136,16 @@ describe('Operational Contracts - Decisions', () => {
       serviceRequestId: '00000000-0000-4000-8000-000000000001',
       outcomeCode: 'approved',
     };
-    expect(recordDecisionSchema.parse(validDecision)).toMatchObject(validDecision);
+    expect(recordDecisionSchema.parse(validDecision)).toMatchObject(
+      validDecision,
+    );
 
     const validRevision = {
       reason: 'Updated proof provided',
     };
-    expect(reviseDecisionSchema.parse(validRevision)).toMatchObject(validRevision);
+    expect(reviseDecisionSchema.parse(validRevision)).toMatchObject(
+      validRevision,
+    );
   });
 });
 
@@ -134,7 +153,7 @@ describe('Operational Contracts - Dues & Payments', () => {
   it('validates due assessment and currency constraints', () => {
     const valid = {
       serviceRequestId: '00000000-0000-4000-8000-000000000001',
-      amount: 150000.50,
+      amount: 150000.5,
       currencyCode: 'YER',
       basisTypeCode: 'tax_audit',
     };
@@ -144,10 +163,31 @@ describe('Operational Contracts - Dues & Payments', () => {
   it('rejects dues with non-YER currency', () => {
     const invalid = {
       serviceRequestId: '00000000-0000-4000-8000-000000000001',
-      amount: 150.00,
+      amount: 150.0,
       currencyCode: 'USD',
       basisTypeCode: 'tax_audit',
     };
     expect(() => assessDueSchema.parse(invalid)).toThrow();
+  });
+
+  it('validates correction, receipt upload, and payment confirmation inputs', () => {
+    const correction = {
+      newAmount: 125000,
+      reason: 'تصحيح مبلغ الاستحقاق قبل السداد.',
+    };
+    expect(correctDueSchema.parse(correction)).toMatchObject(correction);
+
+    const receipt = {
+      amount: 125000,
+      currencyCode: 'YER' as const,
+    };
+    expect(uploadReceiptSchema.parse(receipt)).toMatchObject(receipt);
+
+    const confirmation = {
+      notes: 'تمت مطابقة إثبات السداد التجريبي.',
+    };
+    expect(confirmPaymentSchema.parse(confirmation)).toMatchObject(
+      confirmation,
+    );
   });
 });
