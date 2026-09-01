@@ -12,6 +12,7 @@ import {
   type StoredNotificationOutboxMessage,
   type StoredDeliveryAttempt,
   type StoredNotificationReadState,
+  type StoredDeviceToken,
 } from './notifications.repository.js';
 
 @Injectable()
@@ -205,5 +206,29 @@ export class NotificationsService {
         nextAttemptAt: nextAttemptTime,
       });
     }
+  }
+
+  async registerDeviceToken(input: {
+    userProfileId: string;
+    deviceToken: string;
+    deviceType: string;
+  }): Promise<StoredDeviceToken> {
+    if (!['ios', 'android', 'web'].includes(input.deviceType)) {
+      throw new BadRequestException('Invalid device type. Must be ios, android, or web.');
+    }
+    const token: StoredDeviceToken = {
+      id: randomUUID(),
+      userProfileId: input.userProfileId,
+      deviceToken: input.deviceToken,
+      deviceType: input.deviceType,
+      isActive: true,
+      createdAt: new Date(),
+      updatedAt: null,
+    };
+    return this.repository.registerDeviceToken(token);
+  }
+
+  async unregisterDeviceToken(deviceToken: string): Promise<void> {
+    return this.repository.unregisterDeviceToken(deviceToken);
   }
 }

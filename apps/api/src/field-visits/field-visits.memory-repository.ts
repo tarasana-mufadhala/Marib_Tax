@@ -19,6 +19,11 @@ export class FieldVisitsMemoryRepository implements FieldVisitsRepository {
     return this.visits.get(id) ?? null;
   }
 
+  async listVisits(limit: number): Promise<StoredFieldVisit[]> {
+    await Promise.resolve();
+    return [...this.visits.values()].slice(0, limit);
+  }
+
   async createVisit(visit: StoredFieldVisit): Promise<StoredFieldVisit> {
     await Promise.resolve();
     this.visits.set(visit.id, visit);

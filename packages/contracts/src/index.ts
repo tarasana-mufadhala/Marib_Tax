@@ -9,7 +9,11 @@ export interface ApiFieldError {
 export interface ApiErrorBody {
   code: string;
   message: string;
-  details?: ApiFieldError[];
+  /**
+   * أخطاء حقول، أو بيانات مبنيّة يحتاجها العميل ليتصرف — مثل
+   * `{ missingDocuments: [{ code, label }] }` عند رفض تقديم طلب.
+   */
+  details?: ApiFieldError[] | Record<string, unknown>;
   traceId: string;
 }
 
@@ -50,6 +54,10 @@ export interface ReadinessResponse {
 export const permissionCodes = [
   'taxpayer.profile.read',
   'taxpayer.profile.update',
+  // إدارة ملفات المكلفين: صلاحيتا الموظف. `taxpayer.profile.read/update`
+  // ممنوحتان لكل مكلف لملفه هو، فلا تصلحان لسجل المكلفين كافةً.
+  'taxpayer.admin.read',
+  'taxpayer.admin.status',
   'request.read',
   'request.draft.create',
   'request.draft.edit',
@@ -92,6 +100,13 @@ export const permissionCodes = [
   'report.view',
   'report.export',
   'audit.sensitive.view',
+  'user.read',
+  'user.manage',
+  'role.read',
+  'role.assign',
+  'masterdata.manage',
+  'attachment.read',
+  'attachment.upload',
 ] as const;
 
 export type PermissionCode = (typeof permissionCodes)[number];
@@ -119,6 +134,7 @@ export * from './attachments.js';
 export * from './auth.js';
 export * from './own-data.js';
 export * from './balaghs.js';
+export * from './service-requests.js';
 export * from './field-visits.js';
 export * from './decisions.js';
 export * from './dues.js';

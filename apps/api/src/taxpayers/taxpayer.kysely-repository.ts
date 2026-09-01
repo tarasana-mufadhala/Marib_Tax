@@ -65,6 +65,27 @@ export class TaxpayerKyselyRepository implements TaxpayerRepository {
     );
   }
 
+  async list(limit: number): Promise<StoredTaxpayer[]> {
+    if (this.dbService.isInitialized) {
+      const rows = await this.dbService.db
+        .selectFrom('registry.taxpayers')
+        .selectAll()
+        .orderBy('created_at', 'desc')
+        .limit(limit)
+        .execute();
+      return rows.map((row) => ({
+        id: row.id,
+        publicRef: row.public_ref,
+        displayName: row.display_name,
+        statusCode: row.status_code,
+        createdAt: row.created_at,
+        createdByProfileId: row.created_by_profile_id,
+      }));
+    }
+
+    return [...this.memoryTaxpayers.values()].slice(0, limit);
+  }
+
   async findActiveLinkByProfileId(
     userProfileId: string,
   ): Promise<StoredTaxpayerAccountLink | null> {

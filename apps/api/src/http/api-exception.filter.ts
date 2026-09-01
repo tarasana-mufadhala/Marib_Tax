@@ -6,10 +6,13 @@ import {
   type ExceptionFilter,
   HttpException,
   HttpStatus,
+  Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 
 import type { ApiErrorEnvelope } from '@marib-tax/contracts';
+
+import { DomainException } from './domain-exception.js';
 
 const errorByStatus: Readonly<
   Record<number, { code: string; message: string }>
@@ -50,21 +53,47 @@ const errorByStatus: Readonly<
 
 @Catch()
 export class ApiExceptionFilter implements ExceptionFilter {
+  private readonly logger = new Logger(ApiExceptionFilter.name);
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const context = host.switchToHttp();
     const request = context.getRequest<Request>();
     const response = context.getResponse<Response>();
     const status =
       exception instanceof HttpException ? exception.getStatus() : 500;
-    const safeError = errorByStatus[status] ?? {
-      code: 'INTERNAL_ERROR',
-      message: 'An unexpected error occurred.',
-    };
     const requestedTraceId = request.header('x-request-id');
     const traceId = isSafeTraceId(requestedTraceId)
       ? requestedTraceId
       : randomUUID();
-    const envelope: ApiErrorEnvelope = { error: { ...safeError, traceId } };
+
+    // الرسائل العامة هي الافتراض حتى لا تتسرب تفاصيل داخلية. الاستثناء
+    // الوحيد هو DomainException: رسالته مكتوبة عمداً ليقرأها المستخدم.
+    const envelope: ApiErrorEnvelope =
+      exception instanceof DomainException
+        ? { error: { ...exception.payload, traceId } }
+        : {
+            error: {
+              ...(errorByStatus[status] ?? {
+                code: 'INTERNAL_ERROR',
+                message: 'An unexpected error occurred.',
+              }),
+              traceId,
+            },
+          };
+
+    // عطل الخادم يُسجَّل بجانبه لا في رد المستخدم: بلا هذا يختفي كل خطأ 500
+    // بلا أثر، فيُرى «حدث خطأ غير متوقع» وحده ولا يُعرف سببه إطلاقاً.
+    // يُربط بالرد عبر traceId. أخطاء 4xx متوقّعة فلا تُضجّ السجل.
+    if (status >= 500) {
+      const detail =
+        exception instanceof Error
+          ? `${exception.name}: ${exception.message}`
+          : String(exception);
+      this.logger.error(
+        `[${traceId}] ${request.method} ${request.url} → ${status} — ${detail}`,
+        exception instanceof Error ? exception.stack : undefined,
+      );
+    }
 
     response.setHeader('x-request-id', traceId);
     response.status(status).json(envelope);

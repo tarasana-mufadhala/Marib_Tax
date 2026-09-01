@@ -1,0 +1,165 @@
+@import "tailwindcss";
+
+@layer theme {
+  :root {
+    --font-sans: "Inter", var(--font-almarai, "Almarai"), system-ui, sans-serif;
+    --font-display: "Inter", var(--font-tajawal, "Tajawal"), system-ui, sans-serif;
+  }
+}
+
+:root {
+  /* التصميم فاتح بالكامل («Supabase Light Theme»)، ولا وضع ليلي مبنيّ. لكن
+     غلاف Astryx يحقن `color-scheme: light dark` فيُخبر المتصفح بخلاف ذلك:
+     تنقلب رموز Astryx إلى الداكن — ومنها لون النص الذي يرثه ما لا لون صريح
+     له — بينما تبقى الخلفيات بيضاء، فيصير النص غير مرئي في الوضع الليلي.
+     تُرفع حين يُبنى وضع ليلي حقيقي. */
+  color-scheme: light;
+
+  --radius: 0.5rem;
+
+  /* Supabase Light Theme Tokens */
+  --usr-primary: #059669;
+  --usr-primary-dark: #047857;
+  --usr-primary-deeper: #065f46;
+  --usr-primary-soft: #ecfdf5;
+  --usr-gold: #d99a17;
+  --usr-gold-dark: #b87900;
+  --usr-gold-soft: #fff4da;
+  --usr-bg: #f8fafc;
+  --usr-card: #ffffff;
+  --usr-border: #e2e8f0;
+  --usr-text: #0f172a;
+  --usr-muted: #64748b;
+
+  --background: var(--usr-bg);
+  --foreground: var(--usr-text);
+
+  --surface: var(--usr-card);
+  --surface-foreground: var(--usr-text);
+
+  --card: var(--usr-card);
+  --card-foreground: var(--usr-text);
+  --popover: var(--usr-card);
+  --popover-foreground: var(--usr-text);
+
+  --primary: var(--usr-primary);
+  --primary-foreground: #ffffff;
+  --primary-glow: #10b981;
+
+  --secondary: #f1f5f9;
+  --secondary-foreground: #0f172a;
+
+  --muted: #f8fafc;
+  --muted-foreground: var(--usr-muted);
+
+  --accent: var(--usr-primary);
+  --accent-foreground: #ffffff;
+
+  --border: var(--usr-border);
+  --input: var(--usr-border);
+  --ring: var(--usr-primary);
+
+  --gradient-hero: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    #f8fafc 50%,
+    #f1f5f9 100%
+  );
+  --gradient-gold: linear-gradient(90deg, #059669 0%, #10b981 50%, #059669 100%);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.05), 0 4px 6px -1px rgba(0, 0, 0, 0.03);
+  --shadow-elevated: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
+}
+
+@layer base {
+  * { border-color: var(--border); }
+  html { direction: rtl; }
+  body {
+    background-color: var(--usr-bg);
+    color: var(--usr-text);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    color: #0f172a;
+    font-family: var(--font-display);
+  }
+  input, select, textarea {
+    color: #0f172a !important;
+    background-color: #ffffff !important;
+    border-color: #cbd5e1 !important;
+  }
+  table th {
+    color: #0f172a;
+    background-color: #f1f5f9;
+  }
+  table td {
+    color: #334155;
+  }
+}
+
+.usr-topbar {
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 0.8125rem;
+  padding: 0.5rem 1.5rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.usr-nav-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--usr-card);
+  border-bottom: 1px solid var(--usr-border);
+  padding: 1rem 1.5rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.usr-gold-rule {
+  height: 2px;
+  background: var(--gradient-gold);
+  flex-shrink: 0;
+}
+
+.usr-hero-deep {
+  background: var(--gradient-hero);
+  color: #0f172a;
+  padding: 3.5rem 1.5rem 4rem;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.usr-institutional-card {
+  border-radius: var(--radius);
+  border: 1px solid var(--usr-border);
+  background: var(--usr-card);
+  color: var(--usr-text);
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.usr-feature-card-lite {
+  background: #ffffff;
+  border-radius: var(--radius);
+  border: 1px solid var(--usr-border);
+  box-shadow: var(--shadow-card);
+  transition: all 0.25s ease;
+}
+
+.usr-stat-card {
+  background: var(--usr-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--usr-border);
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--shadow-card);
+}
+
+.usr-page-header {
+  background: var(--gradient-hero);
+  color: #0f172a;
+  padding: 2.5rem 1.5rem 3rem;
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid #e2e8f0;
+}

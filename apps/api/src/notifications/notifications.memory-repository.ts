@@ -7,10 +7,12 @@ import {
   type StoredDeliveryAttempt,
   type StoredNotificationReadState,
   type StoredNotificationOutboxMessage,
+  type StoredDeviceToken,
 } from './notifications.repository.js';
 
 @Injectable()
 export class NotificationsMemoryRepository implements NotificationsRepository {
+  private readonly deviceTokens = new Map<string, StoredDeviceToken>();
   private readonly messages = new Map<string, StoredNotificationMessage>();
   private readonly templates = new Map<string, StoredNotificationTemplate>();
   private readonly configs = new Map<
@@ -173,5 +175,30 @@ export class NotificationsMemoryRepository implements NotificationsRepository {
     const updated = { ...existing, ...updates };
     this.outboxMessages.set(id, updated);
     return updated;
+  }
+
+  async registerDeviceToken(token: StoredDeviceToken): Promise<StoredDeviceToken> {
+    await Promise.resolve();
+    this.deviceTokens.set(token.deviceToken, token);
+    return token;
+  }
+
+  async listDeviceTokensForUser(userProfileId: string): Promise<StoredDeviceToken[]> {
+    await Promise.resolve();
+    return [...this.deviceTokens.values()].filter(
+      (t) => t.userProfileId === userProfileId && t.isActive,
+    );
+  }
+
+  async unregisterDeviceToken(deviceToken: string): Promise<void> {
+    await Promise.resolve();
+    const existing = this.deviceTokens.get(deviceToken);
+    if (existing) {
+      this.deviceTokens.set(deviceToken, {
+        ...existing,
+        isActive: false,
+        updatedAt: new Date(),
+      });
+    }
   }
 }

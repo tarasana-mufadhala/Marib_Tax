@@ -6,6 +6,7 @@ import {
   type StoredDueCorrection,
   type StoredPaymentReceipt,
   type StoredPaymentConfirmation,
+  type StoredFinancialCorrection,
 } from './dues-payments.repository.js';
 
 @Injectable()
@@ -15,6 +16,7 @@ export class DuesPaymentsMemoryRepository implements DuesPaymentsRepository {
   private readonly corrections: StoredDueCorrection[] = [];
   private readonly receipts = new Map<string, StoredPaymentReceipt>();
   private readonly confirmations: StoredPaymentConfirmation[] = [];
+  private readonly financialCorrections: StoredFinancialCorrection[] = [];
 
   async findDueById(id: string): Promise<StoredPaymentDue | null> {
     await Promise.resolve();
@@ -118,5 +120,13 @@ export class DuesPaymentsMemoryRepository implements DuesPaymentsRepository {
     await Promise.resolve();
     this.confirmations.push(conf);
     return conf;
+  }
+
+  async createFinancialCorrection(
+    correction: StoredFinancialCorrection,
+  ): Promise<StoredFinancialCorrection> {
+    await Promise.resolve();
+    this.financialCorrections.push(correction);
+    return correction;
   }
 }

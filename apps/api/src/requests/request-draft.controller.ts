@@ -8,6 +8,8 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
+  Req,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import {
@@ -20,7 +22,15 @@ import {
   RequirePredicates,
 } from '../authz/authorization.decorators.js';
 import { CURRENT_ACTOR } from '../authn/authentication.contracts.js';
+import {
+  VERIFIED_ACTOR,
+  type AuthenticatedRequest,
+} from '../authn/bearer-actor-context.resolver.js';
 import { RequestDraftService } from './request-draft.service.js';
+import {
+  RequestsQueryService,
+  type ServiceRequestListItem,
+} from './requests-query.service.js';
 
 export interface CurrentActorPort {
   requireActorId(): string;
@@ -30,9 +40,29 @@ export interface CurrentActorPort {
 export class RequestDraftController {
   constructor(
     private readonly service: RequestDraftService,
+    private readonly queryService: RequestsQueryService,
     @Inject(CURRENT_ACTOR)
     private readonly actors: CurrentActorPort,
   ) {}
+
+  /**
+   * سرد الطلبات. المكلف لا يرى إلا طلباته؛ الموظف — ومَن يملك `request.review`
+   * تحديداً — يرى الجميع. بلا هذا التقييد يستطيع أي مكلف تعداد طلبات الآخرين
+   * بأسمائهم وأرقامهم الضريبية.
+   */
+  @Get()
+  @RequirePermission('request.read')
+  list(
+    @Req() request: AuthenticatedRequest,
+    @Query('limit') limit?: string,
+  ): Promise<ServiceRequestListItem[]> {
+    const actor = request[VERIFIED_ACTOR];
+    const isStaff = actor?.permissions.includes('request.review') ?? false;
+    return this.queryService.listRequests(
+      limit ? Number(limit) : undefined,
+      isStaff ? undefined : this.actors.requireActorId(),
+    );
+  }
 
   @Post()
   @RequirePermission('request.draft.create')

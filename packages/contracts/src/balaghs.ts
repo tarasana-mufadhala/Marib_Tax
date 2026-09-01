@@ -128,6 +128,30 @@ export const balaghTypeSchema = z.enum([
 
 export type BalaghType = z.infer<typeof balaghTypeSchema>;
 
+/**
+ * مخطط بيانات كل نوع بلاغ على حدة.
+ *
+ * `formData` أدناه اتحاد مفتوح، فهو وحده لا يمنع بلاغاً مُعلناً من نوع أن
+ * يحمل بيانات نوع آخر — والفرق جوهري: FR-206 يُعالَج داخل المكتب بينما
+ * FR-201 يستوجب نزولاً ميدانياً. تُستعمل هذه الخريطة للتحقق من التطابق.
+ */
+export const balaghSchemasByType = {
+  'FR-201': balagh201Schema,
+  'FR-202': balagh202Schema,
+  'FR-203': balagh203Schema,
+  'FR-204': balagh204Schema,
+  'FR-205': balagh205Schema,
+  'FR-206': balagh206Schema,
+} as const;
+
+/** هل تطابق الحمولة مخطط النوع المُعلن؟ */
+export function balaghFormMatchesType(
+  balaghType: BalaghType,
+  formData: unknown,
+): boolean {
+  return balaghSchemasByType[balaghType].safeParse(formData).success;
+}
+
 export const createBalaghDraftSchema = z
   .object({
     balaghType: balaghTypeSchema,

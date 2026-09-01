@@ -37,9 +37,26 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
+  # عميل HTTP للتخاطب مع الـ API
+  http: ^1.2.2
+  # لتحديد نوع المحتوى في رفع الملفات multipart
+  http_parser: ^4.1.2
+  # تخزين رمزَي الجلسة في Keystore/Keychain — لا SharedPreferences للأسرار
+  flutter_secure_storage: ^9.2.4
+  # الدخول بالبصمة (إصبع/وجه) عبر واجهة المصادقة الحيوية في النظام
+  local_auth: ^2.3.0
+  # إدارة الحالة
+  provider: ^6.1.2
+  # اختيار الملفات والصور للمرفقات
+  file_picker: ^11.0.3
+  image_picker: ^1.1.2
+  url_launcher: ^6.3.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  # توليد أيقونات التطبيق من الشعار الرسمي
+  flutter_launcher_icons: ^0.14.4
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -57,6 +74,9 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  assets:
+    - assets/brand/
 
   # To add assets to your application, add an assets section, like this:
   # assets:
@@ -88,3 +108,14 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+# أيقونة التطبيق من الشعار الرسمي.
+# الشعار بخلفية بيضاء بلا شفافية، فتُستعمل خلفية بيضاء للأيقونة التكيّفية
+# بدل شفافية تُظهر حواف ناشزة.
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/brand/marib-tax-logo.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/brand/marib-tax-logo.png"
+  remove_alpha_ios: true

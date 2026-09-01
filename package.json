@@ -2,18 +2,21 @@
   "name": "marib-tax",
   "private": true,
   "description": "Marib Tax System monorepo — repository foundation only; no runtime application dependencies.",
-  "packageManager": "pnpm@11.13.0",
+  "packageManager": "pnpm@11.24.0",
   "scripts": {
     "validate:foundation": "bash scripts/validate-foundation.sh",
     "validate:openapi": "redocly lint --config redocly.yaml packages/contracts/openapi/marib-tax.v1.yaml",
     "typecheck": "pnpm -r --if-present typecheck",
     "build": "pnpm -r --if-present build",
     "test": "pnpm --filter @marib-tax/contracts build && pnpm -r --if-present test",
-    "lint": "eslint apps/api/src apps/api/test packages/contracts/src packages/contracts/test --max-warnings=0 && pnpm --filter @marib-tax/web lint && pnpm --filter @marib-tax/worker lint",
+    "test:e2e": "pnpm exec playwright test --config apps/api/playwright.config.ts",
+    "test:e2e:ui": "pnpm exec playwright test --config apps/api/playwright.config.ts --ui",
+    "lint": "eslint apps/api/src apps/api/test packages/contracts/src packages/contracts/test --max-warnings=0",
     "format:check": "prettier --check \"{apps,packages}/**/*.{ts,json,yaml}\""
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
+    "@playwright/test": "^1.62.1",
     "@redocly/cli": "2.39.0",
     "@types/node": "24.13.3",
     "eslint": "9.39.5",
@@ -25,5 +28,12 @@
   },
   "engines": {
     "node": ">=20"
+  },
+  "dependencies": {
+    "@astryxdesign/cli": "^0.5.0",
+    "@astryxdesign/core": "^0.5.0",
+    "@astryxdesign/theme-neutral": "^0.5.0",
+    "@stylexjs/stylex": "^0.19.0",
+    "lucide-react": "^1.34.0"
   }
 }

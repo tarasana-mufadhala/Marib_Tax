@@ -4,6 +4,7 @@ import {
   Get,
   Body,
   Param,
+  Query,
   ParseUUIDPipe,
   HttpCode,
   Inject,
@@ -30,6 +31,13 @@ export class FieldVisitsController {
     @Inject(CURRENT_ACTOR)
     private readonly actors: CurrentActorPort,
   ) {}
+
+  @Get()
+  @HttpCode(200)
+  @RequirePermission('field_visit.schedule')
+  list(@Query('limit') limit?: string): Promise<StoredFieldVisit[]> {
+    return this.visitsService.listVisits(limit ? Number(limit) : undefined);
+  }
 
   @Post()
   @HttpCode(201)

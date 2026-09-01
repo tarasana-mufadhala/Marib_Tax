@@ -1,0 +1,201 @@
+@import "tailwindcss";
+
+@layer theme {
+  :root {
+    --font-sans: var(--font-almarai, "Almarai"), "Cairo", system-ui, sans-serif;
+    --font-display: var(--font-tajawal, "Tajawal"), var(--font-almarai, "Almarai"), "Cairo", system-ui, sans-serif;
+  }
+}
+
+:root {
+  /* التصميم فاتح بالكامل: البطاقات بيضاء والنصوص داكنة، ولا يوجد وضع ليلي
+     مبنيّ لهذا الموقع. لكن غلاف Astryx يحقن `color-scheme: light dark` على
+     نفسه، فيُخبر المتصفح أن الموقع يدعم الوضع الليلي: تنقلب رموز Astryx إلى
+     قيمها الداكنة — ومنها `--color-text-primary` الذي يفرضه الغلاف كلون نص
+     يرثه كل ما لا لون صريح له — بينما تبقى خلفيات الموقع بيضاء. فيصير نص
+     فاتح على بطاقة بيضاء = غير مرئي لمن جهازه في الوضع الليلي.
+     `light` صراحةً يمنع الانقلاب. تُرفع حين يُبنى وضع ليلي حقيقي. */
+  color-scheme: light;
+
+  --radius: 0.75rem;
+
+  /* ── Rich Official Yemeni Tax Palette ── */
+  --usr-primary: #0c4a6e;
+  --usr-primary-dark: #073652;
+  --usr-primary-deeper: #032338;
+  --usr-primary-soft: #f0f7fa;
+  --usr-gold: #c58a17;
+  --usr-gold-dark: #9e6d0e;
+  --usr-gold-soft: #fef8eb;
+  --usr-bg: #f8fafc;
+  --usr-card: #ffffff;
+  --usr-border: #e2e8f0;
+  --usr-text: #0f172a;
+  --usr-muted: #64748b;
+
+  --background: var(--usr-bg);
+  --foreground: var(--usr-text);
+
+  --surface: var(--usr-card);
+  --surface-foreground: var(--usr-text);
+
+  --card: var(--usr-card);
+  --card-foreground: var(--usr-text);
+  --popover: var(--usr-card);
+  --popover-foreground: var(--usr-text);
+
+  --primary: var(--usr-primary);
+  --primary-foreground: #ffffff;
+  --primary-glow: #0284c7;
+
+  --secondary: var(--usr-primary-soft);
+  --secondary-foreground: var(--usr-primary-dark);
+
+  --muted: #f1f5f9;
+  --muted-foreground: var(--usr-muted);
+
+  --accent: var(--usr-gold);
+  --accent-foreground: #ffffff;
+
+  --border: var(--usr-border);
+  --input: var(--usr-border);
+  --ring: var(--usr-primary);
+
+  --gradient-hero: linear-gradient(
+    145deg,
+    #032338 0%,
+    #073652 45%,
+    #0c4a6e 100%
+  );
+  --gradient-gold: linear-gradient(90deg, #9e6d0e 0%, #c58a17 50%, #d97706 100%);
+  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.03), 0 0 0 1px rgba(226, 232, 240, 0.8);
+  --shadow-elevated: 0 12px 28px -6px rgba(7, 54, 82, 0.12), 0 4px 12px -2px rgba(7, 54, 82, 0.08);
+}
+
+@layer base {
+  * { border-color: var(--border); }
+  html { direction: rtl; scroll-behavior: smooth; }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer components {
+  .usr-topbar {
+    background: #032338;
+    color: #f8fafc;
+    font-size: 0.8125rem;
+    padding: 0.5rem 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .usr-site-header {
+    border-bottom: 1px solid #e2e8f0;
+    background: #ffffff;
+    box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.05);
+  }
+
+  .usr-gold-rule {
+    height: 3px;
+    background: var(--gradient-gold);
+    flex-shrink: 0;
+  }
+
+  .usr-hero-deep {
+    background: var(--gradient-hero);
+    color: #ffffff;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .usr-page-header {
+    background: var(--gradient-hero);
+    color: #ffffff;
+    padding: 3.5rem 1.5rem 4rem;
+    position: relative;
+    overflow: hidden;
+    border-bottom: 4px solid var(--usr-gold);
+  }
+
+  .usr-page-header::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: 
+      radial-gradient(circle at 85% 15%, rgba(197, 138, 23, 0.18) 0%, transparent 45%),
+      radial-gradient(circle at 15% 85%, rgba(2, 132, 199, 0.22) 0%, transparent 55%);
+    pointer-events: none;
+  }
+
+  .usr-hero-deep::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: 
+      radial-gradient(circle at 85% 15%, rgba(197, 138, 23, 0.18) 0%, transparent 45%),
+      radial-gradient(circle at 15% 85%, rgba(2, 132, 199, 0.22) 0%, transparent 55%),
+      radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .usr-institutional-card {
+    border-radius: var(--radius);
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: var(--shadow-card);
+  }
+
+  .usr-institutional-card:hover {
+    border-color: #c58a17;
+    box-shadow: var(--shadow-elevated);
+    transform: translateY(-2px);
+  }
+
+  .usr-feature-card-lite {
+    position: relative;
+    border-radius: var(--radius);
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+    box-shadow: var(--shadow-card);
+    transition: all 0.25s ease-in-out;
+    overflow: hidden;
+  }
+
+  .usr-feature-card-lite::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--gradient-gold);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .usr-feature-card-lite:hover::before {
+    opacity: 1;
+  }
+
+  .usr-feature-card-lite:hover {
+    box-shadow: var(--shadow-elevated);
+    border-color: #cbd5e1;
+    transform: translateY(-3px);
+  }
+
+  .usr-auth-card {
+    border-radius: 1rem;
+    border: 1px solid rgba(226, 232, 240, 0.9);
+    background: #ffffff;
+    box-shadow: 0 20px 40px -15px rgba(3, 35, 56, 0.15);
+    overflow: hidden;
+  }
+}

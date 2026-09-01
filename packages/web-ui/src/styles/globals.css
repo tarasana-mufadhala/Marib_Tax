@@ -1,0 +1,273 @@
+@import "tailwindcss";
+
+@layer theme {
+  :root {
+    --font-sans: var(--font-almarai, "Almarai"), "Cairo", Helvetica, Arial, Lucida, sans-serif;
+    --font-display: var(--font-tajawal, "Tajawal"), var(--font-almarai, "Almarai"), "Cairo", Helvetica, Arial, Lucida, sans-serif;
+  }
+}
+
+
+
+:root {
+  --radius: 0.625rem;
+
+  /* ── USR exact palette (Phase 1.6B-2) ── */
+  --usr-primary: #105B7D;
+  --usr-primary-dark: #0B4964;
+  --usr-primary-deeper: #08384E;
+  --usr-primary-soft: #E8F2F5;
+  --usr-gold: #D99A17;
+  --usr-gold-dark: #B87900;
+  --usr-gold-soft: #FFF4DA;
+  --usr-bg: #F7F8FA;
+  --usr-card: #FFFFFF;
+  --usr-border: #DDE6EA;
+  --usr-text: #102333;
+  --usr-muted: #667985;
+
+  /* Semantic tokens ← USR */
+  --background: var(--usr-bg);
+  --foreground: var(--usr-text);
+
+  --surface: var(--usr-card);
+  --surface-foreground: var(--usr-text);
+
+  --card: var(--usr-card);
+  --card-foreground: var(--usr-text);
+  --popover: var(--usr-card);
+  --popover-foreground: var(--usr-text);
+
+  --primary: var(--usr-primary);
+  --primary-foreground: #FFFFFF;
+  --primary-glow: #1A7AA3;
+
+  --secondary: var(--usr-primary-soft);
+  --secondary-foreground: var(--usr-primary-dark);
+
+  --muted: #EEF1F4;
+  --muted-foreground: var(--usr-muted);
+
+  --accent: var(--usr-gold);
+  --accent-foreground: var(--usr-primary-deeper);
+
+  --destructive: #C53030;
+  --destructive-foreground: #FFFFFF;
+  --success: #2F855A;
+  --success-foreground: #FFFFFF;
+  --warning: var(--usr-gold);
+  --warning-foreground: var(--usr-primary-deeper);
+
+  --border: var(--usr-border);
+  --input: var(--usr-border);
+  --ring: var(--usr-primary);
+
+  --sidebar: var(--usr-primary-deeper);
+  --sidebar-foreground: #F7FAFC;
+  --sidebar-accent: var(--usr-primary);
+  --sidebar-accent-foreground: #FFFFFF;
+  --sidebar-border: var(--usr-primary-dark);
+
+  --gradient-hero: linear-gradient(
+    135deg,
+    var(--usr-primary-deeper) 0%,
+    var(--usr-primary-dark) 40%,
+    var(--usr-primary) 100%
+  );
+  --gradient-gold: linear-gradient(90deg, var(--usr-gold-dark) 0%, var(--usr-gold) 50%, var(--usr-gold-dark) 100%);
+  --shadow-card: 0 1px 3px rgb(16 35 51 / 0.06), 0 8px 24px rgb(16 35 51 / 0.08);
+  --shadow-elevated: 0 4px 16px rgb(16 35 51 / 0.1), 0 24px 48px rgb(16 35 51 / 0.12);
+}
+
+.dark {
+  --background: oklch(0.18 0.025 245);
+  --foreground: oklch(0.96 0.012 85);
+  --surface: oklch(0.22 0.030 245);
+  --surface-foreground: oklch(0.96 0.012 85);
+  --card: oklch(0.22 0.030 245);
+  --card-foreground: oklch(0.96 0.012 85);
+  --popover: oklch(0.22 0.030 245);
+  --popover-foreground: oklch(0.96 0.012 85);
+  --primary: oklch(0.70 0.12 220);
+  --primary-foreground: oklch(0.18 0.025 245);
+  --primary-glow: oklch(0.78 0.11 215);
+  --secondary: oklch(0.28 0.04 240);
+  --secondary-foreground: oklch(0.96 0.012 85);
+  --muted: oklch(0.26 0.03 240);
+  --muted-foreground: oklch(0.72 0.02 240);
+  --accent: oklch(0.78 0.13 75);
+  --accent-foreground: oklch(0.22 0.04 60);
+  --destructive: oklch(0.68 0.20 25);
+  --destructive-foreground: oklch(0.96 0.012 85);
+  --success: oklch(0.70 0.14 155);
+  --success-foreground: oklch(0.18 0.025 245);
+  --warning: oklch(0.80 0.15 65);
+  --warning-foreground: oklch(0.22 0.04 60);
+  --border: oklch(0.30 0.03 240);
+  --input: oklch(0.28 0.03 240);
+  --ring: oklch(0.70 0.12 220);
+  --sidebar: oklch(0.20 0.030 245);
+  --sidebar-foreground: oklch(0.96 0.012 85);
+  --sidebar-accent: oklch(0.28 0.04 240);
+  --sidebar-accent-foreground: oklch(0.99 0.005 85);
+  --sidebar-border: oklch(0.26 0.03 240);
+}
+
+@layer base {
+  * { border-color: var(--border); }
+  html { direction: rtl; }
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    font-feature-settings: "kern", "liga", "ss01";
+    -webkit-font-smoothing: antialiased;
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    letter-spacing: -0.01em;
+  }
+}
+
+@layer components {
+  .usr-topbar {
+    background: var(--usr-primary-deeper);
+    color: #fff;
+    font-size: 0.8125rem;
+    padding: 0.5rem 1.5rem;
+  }
+
+  .usr-nav-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    background: var(--usr-card);
+    border-bottom: 1px solid var(--usr-border);
+    padding: 1rem 1.5rem;
+    box-shadow: 0 1px 0 rgb(16 35 51 / 0.04);
+  }
+
+  .usr-nav-brand-text {
+    min-width: 0;
+  }
+
+  .usr-nav-university {
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+    font-weight: 800;
+    line-height: 1.25;
+    color: var(--usr-primary-dark);
+  }
+
+  .usr-nav-platform {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--usr-muted);
+    margin-top: 0.125rem;
+  }
+
+  .usr-site-header {
+    border-bottom: 1px solid var(--usr-border);
+    background: var(--surface);
+    box-shadow: 0 2px 8px rgb(16 35 51 / 0.06);
+  }
+
+  .usr-gold-rule {
+    height: 4px;
+    background: var(--gradient-gold);
+    flex-shrink: 0;
+  }
+
+  .usr-hero-deep {
+    background: var(--gradient-hero);
+    color: #fff;
+    padding: 3.5rem 1.5rem 4rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .usr-institutional-card {
+    border-radius: var(--radius);
+    border: 1px solid var(--usr-border);
+    background: var(--usr-card);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: var(--shadow-card);
+  }
+
+  .usr-institutional-card:hover {
+    border-color: var(--usr-primary);
+    box-shadow: var(--shadow-elevated);
+    transform: translateY(-3px);
+  }
+
+  .usr-feature-card-lite {
+    position: relative;
+    border-radius: var(--radius);
+    border: 1px solid var(--usr-border);
+    background: var(--usr-card);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-card);
+    transition: all 0.25s ease-in-out;
+    overflow: hidden;
+  }
+
+  .usr-feature-card-lite::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--gradient-gold);
+  }
+
+  .usr-feature-card-lite:hover {
+    box-shadow: var(--shadow-elevated);
+    border-color: var(--usr-gold);
+    transform: translateY(-3px);
+  }
+
+  .usr-auth-card {
+    border-radius: var(--radius);
+    border: 1px solid var(--usr-border);
+    background: var(--usr-card);
+    box-shadow: var(--shadow-elevated);
+    overflow: hidden;
+  }
+
+  .usr-auth-card-header {
+    background: var(--gradient-hero);
+    color: white;
+    padding: 2rem 1.5rem;
+    text-align: center;
+    border-bottom: 4px solid var(--usr-gold);
+  }
+
+  .usr-dashboard-header {
+    background: var(--usr-card);
+    border-bottom: 1px solid var(--usr-border);
+    padding: 1.25rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  }
+
+  .usr-page-header {
+    background: var(--gradient-hero);
+    color: #fff;
+    padding: 3rem 1.5rem 3.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .usr-page-header::after {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--gradient-gold);
+  }
+}
