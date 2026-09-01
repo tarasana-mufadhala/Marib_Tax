@@ -122,4 +122,39 @@ jobs:
         run: pnpm exec playwright install --with-deps chromium
 
       - name: Run Playwright Web E2E
-        run: pnpm test:e2e:web
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p test-results
+
+          (
+            cd apps/web
+            exec node \
+              --require ../../tests/e2e/web/node-memory-shim.cjs \
+              ./node_modules/next/dist/bin/next \
+              dev --hostname 127.0.0.1 --port 3100
+          ) >test-results/playwright-next-server.log 2>&1 &
+          server_pid=$!
+
+          cleanup() {
+            kill "$server_pid" 2>/dev/null || true
+            wait "$server_pid" 2>/dev/null || true
+            rm -f apps/web/.next/dev/lock
+          }
+          trap cleanup EXIT
+
+          ready=false
+          for _attempt in $(seq 1 60); do
+            if curl --silent --fail http://127.0.0.1:3100/ >/dev/null; then
+              ready=true
+              break
+            fi
+            sleep 0.5
+          done
+
+          if [[ "$ready" != true ]]; then
+            sed -n '1,200p' test-results/playwright-next-server.log
+            exit 1
+          fi
+
+          PLAYWRIGHT_REUSE_SERVER=true pnpm test:e2e:web
