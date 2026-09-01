@@ -174,9 +174,11 @@ if ! command -v git >/dev/null 2>&1; then
 else
   # Collect tracked files null-safely (filenames may contain newlines)
   TRACKED=()
+  coproc TRACKED_SOURCE { git ls-files -z; }
+  TRACKED_SOURCE_FD="${TRACKED_SOURCE[0]}"
   while IFS= read -r -d '' path; do
     TRACKED+=("$path")
-  done < <(git ls-files -z)
+  done <&"$TRACKED_SOURCE_FD"
 
   ENV_VIOLATIONS=()
   SECRET_NAME_VIOLATIONS=()
@@ -258,9 +260,11 @@ if ! command -v git >/dev/null 2>&1; then
   fail "git is required for filename and text hygiene checks"
 else
   TRACKED_HYGIENE=()
+  coproc TRACKED_HYGIENE_SOURCE { git ls-files -z; }
+  TRACKED_HYGIENE_SOURCE_FD="${TRACKED_HYGIENE_SOURCE[0]}"
   while IFS= read -r -d '' path; do
     TRACKED_HYGIENE+=("$path")
-  done < <(git ls-files -z)
+  done <&"$TRACKED_HYGIENE_SOURCE_FD"
 
   CONTROL_NAME_VIOLATIONS=()
   MALFORMED_ROOT_VIOLATIONS=()
@@ -320,7 +324,15 @@ else
 
   # Deduplicate malformed list
   if [[ ${#MALFORMED_ROOT_VIOLATIONS[@]} -gt 0 ]]; then
-    mapfile -t MALFORMED_ROOT_VIOLATIONS < <(printf '%s\n' "${MALFORMED_ROOT_VIOLATIONS[@]}" | sort -u)
+    UNIQUE_MALFORMED_ROOT_VIOLATIONS=()
+    declare -A SEEN_MALFORMED_ROOT_VIOLATIONS=()
+    for path in "${MALFORMED_ROOT_VIOLATIONS[@]}"; do
+      if [[ -z "${SEEN_MALFORMED_ROOT_VIOLATIONS[$path]+seen}" ]]; then
+        UNIQUE_MALFORMED_ROOT_VIOLATIONS+=("$path")
+        SEEN_MALFORMED_ROOT_VIOLATIONS["$path"]=1
+      fi
+    done
+    MALFORMED_ROOT_VIOLATIONS=("${UNIQUE_MALFORMED_ROOT_VIOLATIONS[@]}")
   fi
 
   if [[ ${#CONTROL_NAME_VIOLATIONS[@]} -eq 0 ]]; then

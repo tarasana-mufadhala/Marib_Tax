@@ -104,3 +104,57 @@ jobs:
       - name: Build Android debug APK
         if: steps.flutter-changes.outputs.changed == 'true'
         run: flutter build apk --debug --no-pub
+
+  web-e2e:
+    name: Playwright Web E2E
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run Playwright Web E2E
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p test-results
+
+          (
+            cd apps/web
+            exec node \
+              --require ../../tests/e2e/web/node-memory-shim.cjs \
+              ./node_modules/next/dist/bin/next \
+              dev --hostname 127.0.0.1 --port 3100
+          ) >test-results/playwright-next-server.log 2>&1 &
+          server_pid=$!
+
+          cleanup() {
+            kill "$server_pid" 2>/dev/null || true
+            wait "$server_pid" 2>/dev/null || true
+            rm -f apps/web/.next/dev/lock
+          }
+          trap cleanup EXIT
+
+          ready=false
+          for _attempt in $(seq 1 60); do
+            if curl --silent --fail http://127.0.0.1:3100/ >/dev/null; then
+              ready=true
+              break
+            fi
+            sleep 0.5
+          done
+
+          if [[ "$ready" != true ]]; then
+            sed -n '1,200p' test-results/playwright-next-server.log
+            exit 1
+          fi
+
+          PLAYWRIGHT_REUSE_SERVER=true pnpm test:e2e:web

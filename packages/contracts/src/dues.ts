@@ -8,24 +8,50 @@ const optionalText = z
   .optional()
   .transform((value) => value ?? null);
 
-export const dueStatusSchema = z.enum(['PENDING', 'PAID', 'CANCELLED', 'CORRECTED']);
+export const dueStatusSchema = z.enum([
+  'PENDING',
+  'PAID',
+  'CANCELLED',
+  'CORRECTED',
+]);
 export type DueStatus = z.infer<typeof dueStatusSchema>;
 
-export const receiptStatusSchema = z.enum(['UPLOADED', 'VERIFIED', 'REJECTED', 'REPLACED']);
+export const receiptStatusSchema = z.enum([
+  'UPLOADED',
+  'VERIFIED',
+  'REJECTED',
+  'REPLACED',
+]);
 export type ReceiptStatus = z.infer<typeof receiptStatusSchema>;
 
-export const confirmationStatusSchema = z.enum(['PENDING', 'CONFIRMED', 'REJECTED']);
+export const confirmationStatusSchema = z.enum([
+  'PENDING',
+  'CONFIRMED',
+  'REJECTED',
+]);
 export type ConfirmationStatus = z.infer<typeof confirmationStatusSchema>;
 
 export const assessDueSchema = z
   .object({
-    serviceRequestId: z.uuid().nullable().optional().transform((value) => value ?? null),
-    balaghId: z.uuid().nullable().optional().transform((value) => value ?? null),
+    serviceRequestId: z
+      .uuid()
+      .nullable()
+      .optional()
+      .transform((value) => value ?? null),
+    balaghId: z
+      .uuid()
+      .nullable()
+      .optional()
+      .transform((value) => value ?? null),
     amount: z.number().multipleOf(0.01),
     currencyCode: z.literal('YER'),
     basisTypeCode: z.string().trim().min(1),
     documentReference: optionalText,
-    attachmentId: z.uuid().nullable().optional().transform((value) => value ?? null),
+    attachmentId: z
+      .uuid()
+      .nullable()
+      .optional()
+      .transform((value) => value ?? null),
   })
   .strict()
   .superRefine((data, ctx) => {
@@ -34,7 +60,8 @@ export const assessDueSchema = z
     if ((hasRequest && hasBalagh) || (!hasRequest && !hasBalagh)) {
       ctx.addIssue({
         code: 'custom',
-        message: 'Exact-one parent context (serviceRequestId XOR balaghId) is required.',
+        message:
+          'Exact-one parent context (serviceRequestId XOR balaghId) is required.',
       });
     }
   });
@@ -54,7 +81,11 @@ export const uploadReceiptSchema = z
   .object({
     amount: z.number().multipleOf(0.01),
     currencyCode: z.literal('YER'),
-    replacesReceiptId: z.uuid().nullable().optional().transform((value) => value ?? null),
+    replacesReceiptId: z
+      .uuid()
+      .nullable()
+      .optional()
+      .transform((value) => value ?? null),
   })
   .strict();
 
@@ -106,7 +137,9 @@ export const paymentReceiptResponseSchema = z
   })
   .strict();
 
-export type PaymentReceiptResponse = z.infer<typeof paymentReceiptResponseSchema>;
+export type PaymentReceiptResponse = z.infer<
+  typeof paymentReceiptResponseSchema
+>;
 
 export const paymentConfirmationResponseSchema = z
   .object({
@@ -118,4 +151,6 @@ export const paymentConfirmationResponseSchema = z
   })
   .strict();
 
-export type PaymentConfirmationResponse = z.infer<typeof paymentConfirmationResponseSchema>;
+export type PaymentConfirmationResponse = z.infer<
+  typeof paymentConfirmationResponseSchema
+>;

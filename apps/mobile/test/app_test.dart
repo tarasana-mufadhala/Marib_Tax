@@ -7,7 +7,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(const MaribTaxApp());
-    expect(find.text('إضافة مرفق'), findsOneWidget);
+    expect(find.text('مرحباً بك في تطبيق المكلفين'), findsOneWidget);
     final direction = tester.widget<Directionality>(
       find.byType(Directionality).first,
     );
