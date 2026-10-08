@@ -1,3 +1,4 @@
+import { UsersService } from '../src/users/users.service.js';
 /* eslint-disable */
 import type { INestApplication } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
@@ -487,6 +488,13 @@ describe('AG-3 Backend E2E Operational Flows (FR-101, FR-102, FR-201, Overpaymen
         MockBalaghatController,
       ],
       providers: [
+        {
+          provide: UsersService,
+          useValue: {
+            findStaffByUserProfileId: (): Promise<{ id: string; isActive: boolean }> =>
+              Promise.resolve({ id: actorId, isActive: true }),
+          },
+        },
         TaxpayerService,
         { provide: TAXPAYER_REPOSITORY, useClass: TaxpayerMemoryRepository },
         ActivitiesBranchesService,

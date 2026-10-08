@@ -4,9 +4,10 @@ import { FieldVisitsController } from './field-visits.controller.js';
 import { FIELD_VISITS_REPOSITORY } from './field-visits.repository.js';
 import { FieldVisitsKyselyRepository } from './field-visits.kysely-repository.js';
 import { AuthnModule } from '../authn/authn.module.js';
+import { UsersModule } from '../users/users.module.js';
 
 @Module({
-  imports: [AuthnModule],
+  imports: [AuthnModule, UsersModule],
   controllers: [FieldVisitsController],
   providers: [
     FieldVisitsService,

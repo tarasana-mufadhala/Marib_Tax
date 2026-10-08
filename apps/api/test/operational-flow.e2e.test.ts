@@ -1,3 +1,4 @@
+import { UsersService } from '../src/users/users.service.js';
 import type { INestApplication } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
@@ -110,6 +111,13 @@ describe('operational modules E2E flows (visits, decisions, dues, payments, noti
         NotificationsController,
       ],
       providers: [
+        {
+          provide: UsersService,
+          useValue: {
+            findStaffByUserProfileId: (): Promise<{ id: string; isActive: boolean }> =>
+              Promise.resolve({ id: actorId, isActive: true }),
+          },
+        },
         FieldVisitsService,
         {
           provide: FIELD_VISITS_REPOSITORY,
