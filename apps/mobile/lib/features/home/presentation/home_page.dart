@@ -6,6 +6,7 @@ import '../../../app/theme.dart';
 import '../../../core/design/widgets.dart';
 import '../../account/data/account_repository.dart';
 import '../../balaghs/presentation/balaghs_page.dart';
+import '../../services/data/service_repository.dart';
 import '../../services/presentation/service_launcher.dart';
 import '../../services/presentation/services_page.dart';
 import '../data/home_repository.dart';
@@ -28,10 +29,25 @@ class _HomePageState extends State<HomePage> {
   late Future<List<Announcement>> _announcements;
   late Future<Set<String>> _activeServiceCodes;
 
+  // الرئيسية تبقى حيّة؛ تُبرز الخدمة التي قُدّم فيها طلب جديد دون سحب للتحديث.
+  late final ValueNotifier<int> _submissions =
+      context.read<ServiceRepository>().submissions;
+
   @override
   void initState() {
     super.initState();
     _load();
+    _submissions.addListener(_onSubmitted);
+  }
+
+  @override
+  void dispose() {
+    _submissions.removeListener(_onSubmitted);
+    super.dispose();
+  }
+
+  void _onSubmitted() {
+    if (mounted) setState(_load);
   }
 
   void _load() {

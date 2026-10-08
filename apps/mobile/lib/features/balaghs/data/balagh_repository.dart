@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/api/api_client.dart';
 
 /// نشاط تجاري مسجَّل للمكلف — يختار منه في بلاغات الإيقاف والتفعيل.
@@ -42,6 +44,9 @@ class BalaghRepository {
 
   final ApiClient _api;
 
+  /// يزداد بعد كل بلاغ يُقدَّم بنجاح، لتعيد «طلباتي» تحميل قائمتها.
+  final ValueNotifier<int> submissions = ValueNotifier(0);
+
   Future<List<BalaghSummary>> mine() async {
     final rows = await _api.getList('/balaghs');
     return rows
@@ -80,6 +85,7 @@ class BalaghRepository {
     });
     final id = (created['id'] ?? '').toString();
     final submitted = await _api.post('/balaghs/$id/submit');
+    submissions.value++;
     return BalaghSummary.fromJson(submitted);
   }
 }

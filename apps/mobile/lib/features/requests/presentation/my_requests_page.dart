@@ -9,6 +9,7 @@ import '../../balaghs/domain/balagh_forms.dart';
 import '../../balaghs/presentation/balaghs_page.dart';
 import '../../home/data/home_repository.dart';
 import '../../home/domain/home_models.dart';
+import '../../services/data/service_repository.dart';
 import '../../services/presentation/services_page.dart';
 import 'request_details_page.dart';
 
@@ -54,10 +55,21 @@ class _MyRequestsPageState extends State<MyRequestsPage>
   late Future<List<BalaghSummary>> _balaghs;
   RequestFilter _filter = RequestFilter.all;
 
+  // التبويب يبقى حيّاً، فيُعاد التحميل حين يُقدَّم طلب أو بلاغ جديد فقط.
+  late final Listenable _submissions = Listenable.merge([
+    context.read<ServiceRepository>().submissions,
+    context.read<BalaghRepository>().submissions,
+  ]);
+
   @override
   void initState() {
     super.initState();
     _load();
+    _submissions.addListener(_onSubmitted);
+  }
+
+  void _onSubmitted() {
+    if (mounted) setState(_load);
   }
 
   void _load() {
@@ -67,6 +79,7 @@ class _MyRequestsPageState extends State<MyRequestsPage>
 
   @override
   void dispose() {
+    _submissions.removeListener(_onSubmitted);
     _tabs.dispose();
     super.dispose();
   }
