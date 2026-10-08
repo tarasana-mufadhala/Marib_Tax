@@ -74,6 +74,8 @@ describe('A2 Core Modules E2E flows (Taxpayers, Activities, Properties, LegalEnt
           actorId,
           permissions: [
             'taxpayer.profile.read',
+            'taxpayer.admin.read',
+            'taxpayer.admin.status',
             'taxpayer.profile.update',
             'request.read',
             'request.review',
