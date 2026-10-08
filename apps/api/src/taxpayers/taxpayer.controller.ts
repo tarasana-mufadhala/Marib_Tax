@@ -28,7 +28,7 @@ export class TaxpayerController {
 
   @Post()
   @HttpCode(201)
-  @RequirePermission('taxpayer.profile.update')
+  @RequirePermission('taxpayer.admin.status')
   create(
     @Body()
     body: {
@@ -42,28 +42,28 @@ export class TaxpayerController {
 
   @Get()
   @HttpCode(200)
-  @RequirePermission('taxpayer.profile.read')
+  @RequirePermission('taxpayer.admin.read')
   list(@Query('limit') limit?: string): Promise<StoredTaxpayer[]> {
     return this.service.listTaxpayers(limit ? Number(limit) : undefined);
   }
 
   @Get('search')
   @HttpCode(200)
-  @RequirePermission('taxpayer.profile.read')
+  @RequirePermission('taxpayer.admin.read')
   search(@Query('q') q: string): Promise<StoredTaxpayer[]> {
     return this.service.searchTaxpayers(q);
   }
 
   @Get(':id')
   @HttpCode(200)
-  @RequirePermission('taxpayer.profile.read')
+  @RequirePermission('taxpayer.admin.read')
   get(@Param('id', new ParseUUIDPipe()) id: string): Promise<StoredTaxpayer> {
     return this.service.findTaxpayer(id);
   }
 
   @Post('links')
   @HttpCode(201)
-  @RequirePermission('taxpayer.profile.update')
+  @RequirePermission('taxpayer.admin.status')
   link(
     @Body()
     body: {
@@ -78,7 +78,7 @@ export class TaxpayerController {
 
   @Get('profiles/:profileId/link')
   @HttpCode(200)
-  @RequirePermission('taxpayer.profile.read')
+  @RequirePermission('taxpayer.admin.read')
   getLink(
     @Param('profileId', new ParseUUIDPipe()) profileId: string,
   ): Promise<StoredTaxpayerAccountLink | null> {
