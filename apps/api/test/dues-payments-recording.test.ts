@@ -94,17 +94,14 @@ describe('اشتقاق حالة المستحق من المدفوعات', () => {
     ).rejects.toThrow();
   });
 
-  it('يقبل الزيادة عن المتبقي ويعتبر المستحق مسدَّداً', async () => {
-    // الفائض قرار محاسبي يُعالَج رصيداً؛ المهم ألا يبقى المستحق «غير مسدَّد».
+  it('يرفض الزيادة عن المتبقي ويبقى المستحق على حاله', async () => {
     const { service, dueId } = await dueOf(1000);
 
-    const after = await service.recordPayment(
-      dueId,
-      { amount: 1500, notes: null },
-      ACTOR,
-    );
+    await expect(
+      service.recordPayment(dueId, { amount: 1500, notes: null }, ACTOR),
+    ).rejects.toMatchObject({ status: 409 });
 
-    expect(after.statusCode).toBe(DUE_STATUSES.paid);
+    expect((await service.getDue(dueId)).statusCode).toBe(DUE_STATUSES.unpaid);
   });
 });
 

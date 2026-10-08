@@ -1,4 +1,8 @@
-import { Controller, Get, Param, Patch, Post, Delete, Body, Req } from '@nestjs/common';
+import { randomUUID } from 'node:crypto';
+import { Controller, Get, Param, ParseUUIDPipe, Patch, Post, Delete, Body, Req } from '@nestjs/common';
+import { ALLOWED_TRANSITIONS } from '../workflow/workflow.service.js';
+import { DomainException } from '../http/domain-exception.js';
+import { DUE_STATUSES } from '../dues-payments/dues-payments.repository.js';
 import { ConfigService } from '@nestjs/config';
 import { sql } from 'kysely';
 import {
@@ -756,43 +760,88 @@ export class AdminController {
     }
   }
 
+  /**
+   * حالة المستحق تُشتق من المدفوعات (`POST /dues/:id/payments`) أو تُكتب
+   * بالإلغاء المُعلَّل (`POST /dues/:id/cancel`)؛ لا قاعدة تسمح بتعيينها
+   * يدوياً، فتُرفض هنا بدل أن تُكتب بلا سند في الدفتر.
+   */
   @RequirePermission('payment.confirm')
   @Patch('dues/:id/status')
   async updateDueStatus(
-    @Param('id') id: string,
-    @Body() body: { status: string },
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() body: { status?: string },
   ) {
-    if (!this.db.isInitialized) return { id, ...body };
-    try {
-      const result = await this.db.db
-        .updateTable('dues.payment_dues' as any)
-        .set({ status_code: body.status, updated_at: new Date() } as any)
-        .where('id' as any, '=', id)
-        .returningAll()
-        .executeTakeFirst();
-      return result || { id, ...body };
-    } catch {
-      return { id, ...body };
+    if (!this.db.isInitialized) {
+      throw DomainException.unavailable('قاعدة البيانات غير متاحة');
     }
+    const status = (body.status ?? '').trim();
+    if (!(Object.values(DUE_STATUSES) as string[]).includes(status)) {
+      throw DomainException.badRequest('حالة المستحق غير معروفة');
+    }
+    const due = await (this.db.db
+      .selectFrom('dues.payment_dues' as any) as any)
+      .select(['status_code'])
+      .where('id', '=', id)
+      .executeTakeFirst();
+    if (!due) throw DomainException.notFound('المستحق غير موجود');
+    throw DomainException.conflict(
+      'لا تُعدَّل حالة المستحق يدوياً: تُشتق من تسجيل السداد، أو تُلغى بسبب مكتوب',
+    );
   }
 
+  /**
+   * تغيير حالة طلب: الحالات المعتمدة وانتقالاتها فقط (نفس جدول WorkflowService)،
+   * والتغيير وسطر السجل في معاملة واحدة. الأخطاء تُرفع ولا تُبتلع.
+   */
   @RequirePermission('request.review')
   @Patch('requests/:id/status')
   async updateRequestStatus(
-    @Param('id') id: string,
-    @Body() body: { status: string; notes?: string },
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() body: { status?: string; notes?: string },
+    @Req() request: AuthenticatedRequest,
   ) {
-    if (!this.db.isInitialized) return { id, ...body };
-    try {
-      const result = await this.db.db
-        .updateTable('requests.service_requests' as any)
-        .set({ status_code: body.status, updated_at: new Date() } as any)
-        .where('id' as any, '=', id)
-        .returningAll()
-        .executeTakeFirst();
-      return result || { id, ...body };
-    } catch {
-      return { id, ...body };
+    if (!this.db.isInitialized) {
+      throw DomainException.unavailable('قاعدة البيانات غير متاحة');
     }
+    const target = (body.status ?? '').trim();
+    const knownStates = new Set(Object.values(ALLOWED_TRANSITIONS).flat());
+    if (!knownStates.has(target)) {
+      throw DomainException.badRequest('حالة الطلب غير معروفة');
+    }
+    const actorId = request[VERIFIED_ACTOR]?.actorId ?? null;
+    return this.db.db.transaction().execute(async (trx) => {
+      const current = await (trx
+        .selectFrom('requests.service_requests' as any) as any)
+        .select(['status_code'])
+        .where('id', '=', id)
+        .forUpdate()
+        .executeTakeFirst();
+      if (!current) throw DomainException.notFound('الطلب غير موجود');
+      const from = String(current.status_code);
+      if (!ALLOWED_TRANSITIONS[from]?.includes(target)) {
+        throw DomainException.conflict(
+          `لا يمكن الانتقال من «${from}» إلى «${target}»`,
+        );
+      }
+      const now = new Date();
+      const updated = await (trx
+        .updateTable('requests.service_requests' as any) as any)
+        .set({ status_code: target, updated_at: now })
+        .where('id', '=', id)
+        .returningAll()
+        .executeTakeFirstOrThrow();
+      await (trx.insertInto('requests.request_status_histories' as any) as any)
+        .values({
+          id: randomUUID(),
+          service_request_id: id,
+          changed_at: now,
+          changed_by_profile_id: actorId,
+          from_status_code: from,
+          to_status_code: target,
+          reason: body.notes?.trim() || null,
+        })
+        .execute();
+      return updated;
+    });
   }
 }
