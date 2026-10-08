@@ -28,7 +28,8 @@ class AccountActivity {
   String get statusLabel => switch (statusCode) {
         'active' => 'نشط',
         'stopped' || 'suspended' => 'موقوف',
-        'under_review' => 'قيد المراجعة',
+        // النشاط المسجَّل حديثاً يبدأ «pending» حتى يعتمده المكتب.
+        'pending' || 'under_review' => 'قيد المراجعة',
         _ => statusCode ?? '—',
       };
 }

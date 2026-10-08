@@ -32,7 +32,7 @@ class _OtpFieldState extends State<OtpField> {
   );
   late final List<FocusNode> _nodes = List.generate(
     widget.length,
-    (_) => FocusNode(),
+    (i) => FocusNode(onKeyEvent: (_, event) => _onKey(i, event)),
   );
 
   @override
@@ -48,16 +48,49 @@ class _OtpFieldState extends State<OtpField> {
 
   String get _value => _controllers.map((c) => c.text).join();
 
-  void _onDigit(int index, String digit) {
-    if (digit.isNotEmpty && index < widget.length - 1) {
-      _nodes[index + 1].requestFocus();
+  /// لصق الرمز أو ملؤه تلقائياً يصل كاملاً إلى خانة واحدة، فيُوزَّع على
+  /// الخانات من هذه فصاعداً بدل أن يُقصّ إلى رقمه الأول.
+  void _onDigit(int index, String input) {
+    var start = index;
+    var digits = input;
+    // الكتابة فوق رقم موجود تعطي رقمين: الجديد يحلّ محلّ القديم.
+    if (digits.length == 2) digits = digits.substring(1);
+    // الرمز كاملاً (وربما معه رقم الخانة السابق) يبدأ من الخانة الأولى.
+    if (digits.length >= widget.length) {
+      start = 0;
+      digits = digits.substring(digits.length - widget.length);
     }
+    var last = start;
+    for (var j = 0; j < digits.length && start + j < widget.length; j++) {
+      last = start + j;
+      final digit = digits[j];
+      _controllers[last].value = TextEditingValue(
+        text: digit,
+        selection: const TextSelection.collapsed(offset: 1),
+      );
+    }
+
     final value = _value;
     widget.onChanged(value);
     if (value.length == widget.length) {
-      _nodes[index].unfocus();
+      _nodes[last].unfocus();
       widget.onCompleted?.call(value);
+    } else if (digits.isNotEmpty && last < widget.length - 1) {
+      _nodes[last + 1].requestFocus();
     }
+  }
+
+  /// الحذف من خانة فارغة يرجع للسابقة ويمسحها، وإلا علق المستخدم.
+  KeyEventResult _onKey(int index, KeyEvent event) {
+    final isBackspace = event is! KeyUpEvent &&
+        event.logicalKey == LogicalKeyboardKey.backspace;
+    if (!isBackspace || index == 0 || _controllers[index].text.isNotEmpty) {
+      return KeyEventResult.ignored;
+    }
+    _controllers[index - 1].clear();
+    _nodes[index - 1].requestFocus();
+    widget.onChanged(_value);
+    return KeyEventResult.handled;
   }
 
   @override
@@ -76,9 +109,11 @@ class _OtpFieldState extends State<OtpField> {
               child: TextField(
                 controller: _controllers[i],
                 focusNode: _nodes[i],
+                autofocus: i == 0,
                 textAlign: TextAlign.center,
                 keyboardType: TextInputType.number,
-                maxLength: 1,
+                // لا حدّ بخانة واحدة: الحدّ يقصّ الرمز الملصوق، و_onDigit يوزّعه.
+                autofillHints: i == 0 ? const [AutofillHints.oneTimeCode] : null,
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
@@ -90,7 +125,6 @@ class _OtpFieldState extends State<OtpField> {
                 ),
                 inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                 onChanged: (digit) => _onDigit(i, digit),
-                // الحذف من خانة فارغة يرجع للسابقة، وإلا علق المستخدم.
                 onTapOutside: (_) => FocusScope.of(context).unfocus(),
               ),
             ),

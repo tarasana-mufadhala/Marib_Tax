@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../core/api/api_client.dart';
 import '../domain/service_models.dart';
 
@@ -75,6 +77,14 @@ class ServiceRepository {
     );
   }
 
-  Future<ServiceRequest> submit(String id) async =>
-      ServiceRequest.fromJson(await _api.post('/service-requests/$id/submit'));
+  /// يزداد بعد كل تقديم ناجح، لتعيد «طلباتي» والرئيسية تحميل قوائمها:
+  /// التبويبات تبقى حيّة فلا تعيد التحميل من تلقاء نفسها.
+  final ValueNotifier<int> submissions = ValueNotifier(0);
+
+  Future<ServiceRequest> submit(String id) async {
+    final submitted =
+        ServiceRequest.fromJson(await _api.post('/service-requests/$id/submit'));
+    submissions.value++;
+    return submitted;
+  }
 }
