@@ -6,7 +6,7 @@ import {
   RECEIPT_STATUSES,
 } from '../src/dues-payments/dues-payments.repository.js';
 import { DuesPaymentsService } from '../src/dues-payments/dues-payments.service.js';
-import type { StoredFinancialCorrection } from '../src/dues-payments/dues-payments.repository.js';
+import { ConflictException } from '@nestjs/common';
 
 const TAXPAYER_ID = '33333333-3333-3333-3333-333333333333';
 
@@ -109,56 +109,54 @@ describe('DuesPaymentsService', () => {
     expect((await service.getDue(due.id)).statusCode).toBe(DUE_STATUSES.paid);
   });
 
-  it('allows overpayment and records credit balance surplus as financial corrections', async () => {
-    const repository = new DuesPaymentsMemoryRepository();
-    const service = new DuesPaymentsService(repository);
+  describe('overpayment is rejected', () => {
+    async function setup() {
+      const repository = new DuesPaymentsMemoryRepository();
+      const service = new DuesPaymentsService(repository);
+      const actorId = randomUUID();
+      const due = await service.assessDue(
+        {
+          taxpayerId: TAXPAYER_ID,
+          serviceRequestId: randomUUID(),
+          balaghId: null,
+          amount: 10000.0,
+          currencyCode: 'YER',
+          basisTypeCode: 'tax_assessment',
+          documentReference: 'DOC-OVERPAY-1',
+          attachmentId: null,
+        },
+        actorId,
+      );
+      return { service, due, actorId };
+    }
 
-    const serviceRequestId = randomUUID();
-    const actorId = randomUUID();
+    it('refuses to confirm a receipt larger than the due and leaves it unverified', async () => {
+      const { service, due, actorId } = await setup();
+      const receipt = await service.uploadReceipt(
+        due.id,
+        { amount: 12000.0, currencyCode: 'YER', replacesReceiptId: null },
+        actorId,
+      );
+      await expect(
+        service.confirmPayment(receipt.id, { notes: null }, actorId),
+      ).rejects.toThrow(ConflictException);
+      expect((await service.getDue(due.id)).statusCode).not.toBe(
+        DUE_STATUSES.paid,
+      );
+    });
 
-    const due = await service.assessDue(
-      {
-        taxpayerId: TAXPAYER_ID,
-        serviceRequestId,
-        balaghId: null,
-        amount: 10000.0,
-        currencyCode: 'YER',
-        basisTypeCode: 'tax_assessment',
-        documentReference: 'DOC-OVERPAY-1',
-        attachmentId: null,
-      },
-      actorId,
-    );
-
-    // Upload receipt with overpaid amount: 12,000 YER (for a 10,000 YER due)
-    const receipt = await service.uploadReceipt(
-      due.id,
-      {
-        amount: 12000.0,
-        currencyCode: 'YER',
-        replacesReceiptId: null,
-      },
-      actorId,
-    );
-
-    expect(receipt.amount).toBe(12000.0);
-
-    // Confirm receipt (which triggers PAID state and a financial correction for the 2,000 YER surplus)
-    await service.confirmPayment(
-      receipt.id,
-      { notes: 'دفع زائد مقبول' },
-      actorId,
-    );
-
-    expect((await service.getDue(due.id)).statusCode).toBe(DUE_STATUSES.paid);
-
-    // Verify financial correction is created in repository
-    const allCorrections = (repository as unknown as { financialCorrections: StoredFinancialCorrection[] }).financialCorrections;
-    expect(allCorrections).toHaveLength(1);
-    const corr = allCorrections[0];
-    expect(corr).toBeDefined();
-    expect(corr?.paymentDueId).toBe(due.id);
-    expect(corr?.amount).toBe(2000.0);
-    expect(corr?.correctionType).toBe('overpayment_credit');
+    it('recordPayment rejects an amount above the remainder without storing a receipt', async () => {
+      const { service, due, actorId } = await setup();
+      await service.recordPayment(due.id, { amount: 4000, notes: null }, actorId);
+      await expect(
+        service.recordPayment(due.id, { amount: 6000.01, notes: null }, actorId),
+      ).rejects.toThrow(ConflictException);
+      const paid = await service.recordPayment(
+        due.id,
+        { amount: 6000, notes: null },
+        actorId,
+      );
+      expect(paid.statusCode).toBe(DUE_STATUSES.paid);
+    });
   });
 });

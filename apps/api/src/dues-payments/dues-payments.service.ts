@@ -273,6 +273,8 @@ export class DuesPaymentsService {
       throw new ConflictException('هذا المستحق مسدَّد بالكامل');
     }
 
+    await this.assertWithinRemaining(due, input.amount);
+
     const receipt = await this.uploadReceipt(
       dueId,
       { amount: input.amount, currencyCode: 'YER', replacesReceiptId: null },
@@ -341,6 +343,30 @@ export class DuesPaymentsService {
     });
   }
 
+  /**
+   * المبلغ المقبوض لا يتجاوز المتبقي على المستحق. قبول الزائد كان يُسجَّل
+   * قبضاً مؤكَّداً ثم يفشل بعده، فيبقى الدفتر أكبر من المستحق.
+   */
+  private async assertWithinRemaining(
+    due: StoredPaymentDue,
+    amount: number,
+  ): Promise<void> {
+    const receipts = await this.repository.listReceiptsForDue(due.id);
+    const paid = receipts
+      .filter(
+        (r) =>
+          r.acceptanceStatusCode.trim().toLowerCase() ===
+          RECEIPT_STATUSES.verified,
+      )
+      .reduce((sum, r) => sum + r.amount, 0);
+    const remaining = Math.round((due.amount - paid) * 100) / 100;
+    if (amount > remaining) {
+      throw new ConflictException(
+        `المبلغ أكبر من المتبقي على المستحق (${remaining})`,
+      );
+    }
+  }
+
   async confirmPayment(
     receiptId: string,
     input: {
@@ -362,6 +388,12 @@ export class DuesPaymentsService {
         `Receipt has already been "${receipt.acceptanceStatusCode}".`,
       );
     }
+
+    const dueToPay = await this.repository.findDueById(receipt.paymentDueId);
+    if (!dueToPay) {
+      throw new NotFoundException('Associated payment due not found.');
+    }
+    await this.assertWithinRemaining(dueToPay, receipt.amount);
 
     // Update receipt status to VERIFIED
     await this.repository.updateReceipt(receiptId, {
@@ -401,21 +433,6 @@ export class DuesPaymentsService {
         statusCode: nextStatus,
         updatedAt: new Date(),
       });
-    }
-
-    // Record credit balance / surplus logic if any
-    if (totalPaid > due.amount) {
-      const surplus = totalPaid - due.amount;
-      const creditCorrection = {
-        id: randomUUID(),
-        paymentDueId: due.id,
-        correctionType: 'overpayment_credit',
-        amount: Math.round(surplus * 100) / 100,
-        currencyCode: 'YER',
-        notes: `رصيد دائن ناتج عن دفع زائد بمبلغ ${surplus} ريال يمني للطلب/البلاغ.`,
-        createdAt: new Date(),
-      };
-      await this.repository.createFinancialCorrection(creditCorrection);
     }
 
     // Create confirmation record
