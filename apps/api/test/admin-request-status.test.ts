@@ -117,3 +117,43 @@ describe('PATCH /admin/requests/:id/status', () => {
     ).rejects.toMatchObject({ status: 404 });
   });
 });
+
+describe('PATCH /admin/dues/:id/status', () => {
+  function dueController(exists: boolean): AdminController {
+    const db = {
+      isInitialized: true,
+      db: {
+        selectFrom: () => ({
+          select: () => ({
+            where: () => ({
+              executeTakeFirst: (): Promise<unknown> =>
+                Promise.resolve(exists ? { status_code: 'unpaid' } : undefined),
+            }),
+          }),
+        }),
+      },
+    };
+    return new AdminController(db as never, {} as never);
+  }
+
+  it('يرفض حالة غير معروفة بـ400', async () => {
+    await expect(
+      dueController(true).updateDueStatus(ID, { status: 'bogus' }),
+    ).rejects.toMatchObject({ status: 400 });
+  });
+
+  it('يرد 404 لمستحق غير موجود', async () => {
+    await expect(
+      dueController(false).updateDueStatus(ID, { status: 'paid' }),
+    ).rejects.toMatchObject({ status: 404 });
+  });
+
+  it.each(['paid', 'partially_paid', 'unpaid', 'cancelled'])(
+    'يرفض تعيين %s يدوياً بـ409 بلا كتابة',
+    async (status) => {
+      await expect(
+        dueController(true).updateDueStatus(ID, { status }),
+      ).rejects.toMatchObject({ status: 409 });
+    },
+  );
+});

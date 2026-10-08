@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Controller, Get, Param, ParseUUIDPipe, Patch, Post, Delete, Body, Req } from '@nestjs/common';
 import { ALLOWED_TRANSITIONS } from '../workflow/workflow.service.js';
 import { DomainException } from '../http/domain-exception.js';
+import { DUE_STATUSES } from '../dues-payments/dues-payments.repository.js';
 import { ConfigService } from '@nestjs/config';
 import { sql } from 'kysely';
 import {
@@ -759,24 +760,33 @@ export class AdminController {
     }
   }
 
+  /**
+   * حالة المستحق تُشتق من المدفوعات (`POST /dues/:id/payments`) أو تُكتب
+   * بالإلغاء المُعلَّل (`POST /dues/:id/cancel`)؛ لا قاعدة تسمح بتعيينها
+   * يدوياً، فتُرفض هنا بدل أن تُكتب بلا سند في الدفتر.
+   */
   @RequirePermission('payment.confirm')
   @Patch('dues/:id/status')
   async updateDueStatus(
-    @Param('id') id: string,
-    @Body() body: { status: string },
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() body: { status?: string },
   ) {
-    if (!this.db.isInitialized) return { id, ...body };
-    try {
-      const result = await this.db.db
-        .updateTable('dues.payment_dues' as any)
-        .set({ status_code: body.status, updated_at: new Date() } as any)
-        .where('id' as any, '=', id)
-        .returningAll()
-        .executeTakeFirst();
-      return result || { id, ...body };
-    } catch {
-      return { id, ...body };
+    if (!this.db.isInitialized) {
+      throw DomainException.unavailable('قاعدة البيانات غير متاحة');
     }
+    const status = (body.status ?? '').trim();
+    if (!(Object.values(DUE_STATUSES) as string[]).includes(status)) {
+      throw DomainException.badRequest('حالة المستحق غير معروفة');
+    }
+    const due = await (this.db.db
+      .selectFrom('dues.payment_dues' as any) as any)
+      .select(['status_code'])
+      .where('id', '=', id)
+      .executeTakeFirst();
+    if (!due) throw DomainException.notFound('المستحق غير موجود');
+    throw DomainException.conflict(
+      'لا تُعدَّل حالة المستحق يدوياً: تُشتق من تسجيل السداد، أو تُلغى بسبب مكتوب',
+    );
   }
 
   /**
