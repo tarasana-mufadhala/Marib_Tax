@@ -22,6 +22,29 @@ import {
   type ActivitiesBranchesRepository,
 } from '../activities-branches/activities-branches.repository.js';
 
+/** الانتقالات المسموحة بين حالات الطلب — مرجع واحد للخدمة ولنقطة الإدارة. */
+export const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+    draft: ['submitted'],
+    submitted: ['under_review'],
+    under_review: [
+      'need_more_info',
+      'field_visit_scheduled',
+      'payment_required',
+      'approved',
+      'rejected',
+    ],
+    need_more_info: ['under_review'],
+    field_visit_scheduled: ['field_visit_completed'],
+    field_visit_completed: ['under_review'],
+    payment_required: ['under_review'],
+    approved: ['ready_for_pickup'],
+    ready_for_pickup: ['completed'],
+    completed: ['archived'],
+    archived: ['reopened'],
+    rejected: ['reopened'],
+    reopened: ['under_review'],
+};
+
 @Injectable()
 export class WorkflowService {
   constructor(
@@ -47,29 +70,8 @@ export class WorkflowService {
     const currentState = request.statusCode;
 
     // 1. Validate allowed transition
-    const allowedTransitions: Record<string, string[]> = {
-      draft: ['submitted'],
-      submitted: ['under_review'],
-      under_review: [
-        'need_more_info',
-        'field_visit_scheduled',
-        'payment_required',
-        'approved',
-        'rejected',
-      ],
-      need_more_info: ['under_review'],
-      field_visit_scheduled: ['field_visit_completed'],
-      field_visit_completed: ['under_review'],
-      payment_required: ['under_review'],
-      approved: ['ready_for_pickup'],
-      ready_for_pickup: ['completed'],
-      completed: ['archived'],
-      archived: ['reopened'],
-      rejected: ['reopened'],
-      reopened: ['under_review'],
-    };
 
-    const allowed = allowedTransitions[currentState]?.includes(targetState);
+    const allowed = ALLOWED_TRANSITIONS[currentState]?.includes(targetState);
     if (!allowed) {
       throw new ConflictException(
         `Invalid transition from status "${currentState}" to "${targetState}".`,

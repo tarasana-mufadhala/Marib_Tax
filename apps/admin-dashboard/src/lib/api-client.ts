@@ -21,6 +21,13 @@ const REQUEST_STATUS_AR: Record<string, RequestItem['status']> = {
   archived: 'مكتمل',
 };
 
+/** تسمية الزر في اللوحة -> رمز الحالة في الخادم. */
+const REQUEST_STATUS_CODE_BY_LABEL: Record<string, string> = {
+  'تحت_المعالجة': 'under_review',
+  'قيد_النزول': 'field_visit_scheduled',
+  'مكتمل': 'approved',
+};
+
 const mapRequestStatus = (code: string | null | undefined): RequestItem['status'] => {
   if (!code) return 'مقدم';
   const known: RequestItem['status'][] = ['مقدم', 'تحت_المعالجة', 'قيد_النزول', 'بانتظار السداد', 'مكتمل', 'مرفوض'];
@@ -571,9 +578,11 @@ export const api = {
     },
 
     updateRequestStatus: async (requestId: string, status: string, notes?: string) => {
+      // الخادم يقبل رموز الحالة المعتمدة فقط، لا تسميات العرض العربية.
+      const code = REQUEST_STATUS_CODE_BY_LABEL[status] ?? status;
       return await apiRequest<RequestItem>(`/admin/requests/${requestId}/status`, {
         method: 'PATCH',
-        body: JSON.stringify({ status, notes }),
+        body: JSON.stringify({ status: code, notes }),
       });
     },
 
