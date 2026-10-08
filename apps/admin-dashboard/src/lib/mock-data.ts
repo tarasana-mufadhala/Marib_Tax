@@ -19,7 +19,8 @@ export interface RequestItem {
   tin: string;
   serviceType: string;
   submissionDate: string;
-  status: 'مقدم' | 'تحت_المعالجة' | 'قيد_النزول' | 'بانتظار السداد' | 'مكتمل' | 'مرفوض';
+  /** المفاتيح الستة المعروفة، أو تسمية عربية لرمز آخر من سير العمل. */
+  status: 'مقدم' | 'تحت_المعالجة' | 'قيد_النزول' | 'بانتظار السداد' | 'مكتمل' | 'مرفوض' | (string & {});
   assignedEmployee?: string;
   notes?: string;
 }

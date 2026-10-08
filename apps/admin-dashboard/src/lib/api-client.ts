@@ -5,21 +5,36 @@ import type {
   TaxDue,
 } from './mock-data';
 
-const REQUEST_STATUS_AR: Record<string, RequestItem['status']> = {
-  draft: 'مقدم',
+/**
+ * رمز حالة الطلب في الخادم -> قيمة العرض. الست الأولى مفاتيح قديمة تقارنها
+ * الصفحات (تُعرض عبر `displayStatus`)؛ وبقية رموز سير العمل لها تسمية عربية
+ * مباشرة. رمز غير معروف يُعرض كما هو لا كـ«مقدم».
+ */
+const REQUEST_STATUS_AR: Record<string, string> = {
+  draft: 'مسودة',
   submitted: 'مقدم',
   received: 'مقدم',
   under_review: 'تحت_المعالجة',
   info_required: 'تحت_المعالجة',
+  need_more_info: 'بانتظار استكمال البيانات',
   field_visit_pending: 'قيد_النزول',
   field_visit: 'قيد_النزول',
+  field_visit_scheduled: 'قيد_النزول',
+  field_visit_completed: 'اكتملت الزيارة الميدانية',
   payment_required: 'بانتظار السداد',
   attendance_required: 'تحت_المعالجة',
+  approved: 'معتمد',
+  ready_for_pickup: 'جاهز للاستلام',
   completed: 'مكتمل',
   rejected: 'مرفوض',
   cancelled: 'مرفوض',
-  archived: 'مكتمل',
+  archived: 'مؤرشف',
+  reopened: 'أُعيد فتحه',
 };
+
+/** قيمة الحالة كما تُعرض للمستخدم: بلا شرطات سفلية. */
+export const displayStatus = (status: string): string =>
+  status.replace(/_/g, ' ');
 
 /** تسمية الزر في اللوحة -> رمز الحالة في الخادم. */
 const REQUEST_STATUS_CODE_BY_LABEL: Record<string, string> = {
@@ -30,9 +45,9 @@ const REQUEST_STATUS_CODE_BY_LABEL: Record<string, string> = {
 
 const mapRequestStatus = (code: string | null | undefined): RequestItem['status'] => {
   if (!code) return 'مقدم';
-  const known: RequestItem['status'][] = ['مقدم', 'تحت_المعالجة', 'قيد_النزول', 'بانتظار السداد', 'مكتمل', 'مرفوض'];
-  if (known.includes(code as RequestItem['status'])) return code as RequestItem['status'];
-  return REQUEST_STATUS_AR[code.toLowerCase()] ?? 'مقدم';
+  const known: string[] = ['مقدم', 'تحت_المعالجة', 'قيد_النزول', 'بانتظار السداد', 'مكتمل', 'مرفوض'];
+  if (known.includes(code)) return code;
+  return REQUEST_STATUS_AR[code.toLowerCase()] ?? code;
 };
 
 const VISIT_STATUS_AR: Record<string, FieldVisit['status']> = {

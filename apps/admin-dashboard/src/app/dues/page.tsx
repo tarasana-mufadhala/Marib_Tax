@@ -47,8 +47,14 @@ const BASIS_TYPES = [
   { code: 'other', label: 'أخرى' },
 ];
 
+/** أسانيد توجد في بيانات قائمة ولا تُعرض في قائمة الاختيار. */
+const EXTRA_BASIS_LABELS: Record<string, string> = { fee: 'رسوم' };
+
 const basisLabel = (code: string | null): string =>
-  BASIS_TYPES.find((b) => b.code === code)?.label ?? code ?? '—';
+  BASIS_TYPES.find((b) => b.code === code)?.label ??
+  (code ? EXTRA_BASIS_LABELS[code] : undefined) ??
+  code ??
+  '—';
 
 export default function DuesPage() {
   const [dues, setDues] = useState<AdminDue[]>([]);
