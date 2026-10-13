@@ -1,18 +1,22 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { PublicEndpoint } from '../authz/authorization.decorators.js';
 import { AuthnService, type IssuedSession } from './authn.service.js';
+import { SecureRegistrationService } from './secure-registration.service.js';
 
 @Controller('api/v1/auth')
 @PublicEndpoint()
 export class AuthnController {
-  constructor(private readonly authnService: AuthnService) {}
+  constructor(
+    private readonly authnService: AuthnService,
+    private readonly registration: SecureRegistrationService,
+  ) {}
 
   @Post('otp/request')
   @HttpCode(200)
   requestOtp(
     @Body('phoneNumber') phoneNumber: string,
   ): Promise<{ verificationId: string }> {
-    return this.authnService.requestRegistrationOtp(phoneNumber);
+    return this.registration.requestRegistrationOtp(phoneNumber);
   }
 
   @Post('otp/verify')
@@ -21,15 +25,9 @@ export class AuthnController {
     @Body('phoneNumber') phoneNumber: string,
     @Body('code') code: string,
   ): Promise<{ verificationToken: string }> {
-    return this.authnService.verifyRegistrationOtp(phoneNumber, code);
+    return this.registration.verifyRegistrationOtp(phoneNumber, code);
   }
 
-  /**
-   * رمز دخول يصل البريد — بديل لرقم الهاتف لمن لا تصله الرسائل.
-   *
-   * الرد ثابت بصرف النظر عن وجود البريد في القاعدة: تمييز المسجَّل من غيره
-   * يحوّل النقطة إلى أداة تعداد لبُرد المستخدمين.
-   */
   @Post('otp/email/request')
   @HttpCode(200)
   requestEmailOtp(
@@ -47,11 +45,6 @@ export class AuthnController {
     return this.authnService.verifyEmailOtp(email, code);
   }
 
-  /**
-   * استعادة كلمة المرور بالبريد — بديل الهاتف لمن لا تصله الرسائل النصية.
-   *
-   * الرد ثابت سواء كان البريد مسجَّلاً أم لا، كنقطة رمز الدخول.
-   */
   @Post('password/reset/email/request')
   @HttpCode(200)
   requestEmailPasswordReset(
@@ -82,7 +75,7 @@ export class AuthnController {
     @Body('password') password: string,
     @Body('displayName') displayName: string | null = null,
   ): Promise<{ userProfileId: string }> {
-    return this.authnService.register(
+    return this.registration.register(
       phoneNumber,
       verificationToken,
       password,
@@ -108,12 +101,6 @@ export class AuthnController {
     return this.authnService.loginWithEmail(email, password);
   }
 
-  /**
-   * تجديد الجلسة برمز التجديد.
-   *
-   * نقطة عامة عمداً: رمز الوصول المنتهي لا يصلح لحراسة تجديد نفسه، ورمز
-   * التجديد وحده هو ما يُثبت الجلسة.
-   */
   @Post('refresh')
   @HttpCode(200)
   refresh(@Body('refreshToken') refreshToken: string): Promise<IssuedSession> {
