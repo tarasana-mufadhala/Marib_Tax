@@ -11,7 +11,7 @@
     "test": "pnpm --filter @marib-tax/contracts build && pnpm -r --if-present test",
     "test:e2e": "pnpm exec playwright test --config apps/api/playwright.config.ts",
     "test:e2e:ui": "pnpm exec playwright test --config apps/api/playwright.config.ts --ui",
-    "lint": "eslint apps/api/src apps/api/test packages/contracts/src packages/contracts/test --max-warnings=0",
+    "lint": "node scripts/lint-ci.mjs apps/api/src apps/api/test packages/contracts/src packages/contracts/test",
     "format:check": "prettier --check \"{apps,packages}/**/*.{ts,json,yaml}\""
   },
   "devDependencies": {
