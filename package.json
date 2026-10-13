@@ -1,7 +1,7 @@
 {
   "name": "marib-tax",
   "private": true,
-  "description": "Marib Tax System monorepo — repository foundation only; no runtime application dependencies.",
+  "description": "Marib Tax System active application monorepo for web, API, worker, contracts, and supporting tooling.",
   "packageManager": "pnpm@11.24.0",
   "scripts": {
     "validate:foundation": "bash scripts/validate-foundation.sh",
