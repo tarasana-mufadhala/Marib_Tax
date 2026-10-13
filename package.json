@@ -6,13 +6,13 @@
   "scripts": {
     "validate:foundation": "bash scripts/validate-foundation.sh",
     "validate:openapi": "redocly lint --config redocly.yaml packages/contracts/openapi/marib-tax.v1.yaml",
-    "typecheck": "pnpm -r --if-present typecheck",
-    "build": "pnpm -r --if-present build",
-    "test": "pnpm --filter @marib-tax/contracts build && pnpm -r --if-present test",
+    "typecheck": "node scripts/annotate.mjs typecheck pnpm -r --if-present typecheck",
+    "build": "node scripts/annotate.mjs build pnpm -r --if-present build",
+    "test": "node scripts/annotate.mjs test \"pnpm --filter @marib-tax/contracts build && pnpm -r --if-present test\"",
     "test:e2e": "pnpm exec playwright test --config apps/api/playwright.config.ts",
     "test:e2e:ui": "pnpm exec playwright test --config apps/api/playwright.config.ts --ui",
     "lint": "node scripts/lint-ci.mjs apps/api/src apps/api/test packages/contracts/src packages/contracts/test",
-    "format:check": "prettier --check \"{apps,packages}/**/*.{ts,json,yaml}\""
+    "format:check": "node scripts/annotate.mjs format \"prettier --check '{apps,packages}/**/*.{ts,json,yaml}'\""
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
