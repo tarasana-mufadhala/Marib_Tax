@@ -19,9 +19,17 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
 
   onModuleInit(): void {
     const databaseUrl = this.configService.get<string>('DATABASE_URL');
+    const isProduction =
+      this.configService.get<string>('NODE_ENV') === 'production';
+
     if (!databaseUrl) {
+      if (isProduction) {
+        throw new Error(
+          'DATABASE_URL is required in production; refusing to start with in-memory repository fallbacks.',
+        );
+      }
       this.logger.warn(
-        'DATABASE_URL is not set. Database client will not be initialized.',
+        'DATABASE_URL is not set. Database client will not be initialized; local/test repositories may use their in-memory fallback.',
       );
       return;
     }
@@ -31,11 +39,7 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
         connectionString: databaseUrl,
         max: 10,
         idleTimeoutMillis: 30000,
-        // الوصلة إلى القاعدة السحابية بطيئة في بيئة التشغيل الحالية، وخمس
-        // ثوانٍ كانت تُسقط الطلبات تحت أي ضغط (ظهر أثناء استيراد دفعة
-        // مستندات: عشرات الطلبات فشلت بـ «انتهت مهلة الاتصال» لا لخلل فيها).
         connectionTimeoutMillis: 30000,
-        // مهلة استعلام أوسع للسبب نفسه، مع بقاء حدٍّ يقطع ما علِق فعلاً.
         statement_timeout: 60000,
         query_timeout: 60000,
       });
@@ -49,6 +53,9 @@ export class DatabaseService implements OnModuleInit, OnModuleDestroy {
       this.logger.log('Database client successfully initialized.');
     } catch (err) {
       this.logger.error('Failed to initialize database client', err);
+      if (isProduction) {
+        throw err;
+      }
     }
   }
 
