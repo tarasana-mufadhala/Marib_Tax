@@ -64,15 +64,30 @@ function emitAnnotations(lintResults, errors, warnings) {
   // GitHub keeps at most 10 annotations of each level per step.
   const levels = ['error', 'warning', 'notice'];
   const budget = [9, 10, 10];
-  const chunkSize = 3800;
+  // GitHub truncates an annotation message at 4096 characters, so long
+  // per-file lines are split into several "file|entries" pieces.
+  const chunkSize = 3000;
+  const pieces = [];
+  for (const line of lines) {
+    const [file, rest] = line.split('|');
+    let entries = '';
+    for (const entry of rest.split(',')) {
+      if (file.length + entries.length + entry.length + 2 > chunkSize) {
+        pieces.push(`${file}|${entries}`);
+        entries = '';
+      }
+      entries += (entries ? ',' : '') + entry;
+    }
+    if (entries) pieces.push(`${file}|${entries}`);
+  }
   const chunks = [];
   let current = '';
-  for (const line of lines) {
-    if (current.length + line.length + 1 > chunkSize && current) {
+  for (const piece of pieces) {
+    if (current && current.length + piece.length + 1 > chunkSize) {
       chunks.push(current);
       current = '';
     }
-    current += (current ? '\n' : '') + line;
+    current += (current ? '\n' : '') + piece;
   }
   if (current) chunks.push(current);
 
