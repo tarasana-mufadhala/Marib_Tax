@@ -38,7 +38,7 @@ export class AtomicDuesPaymentsService extends DuesPaymentsService {
       return super.recordPayment(dueId, input, actorProfileId);
     }
 
-    await this.requireActiveStaff(actorProfileId);
+    await this.requireActiveStaffActor(actorProfileId);
     if (input.amount <= 0) {
       throw new ConflictException('مبلغ السداد يجب أن يكون أكبر من صفر');
     }
@@ -162,7 +162,7 @@ export class AtomicDuesPaymentsService extends DuesPaymentsService {
       return super.confirmPayment(receiptId, input, actorProfileId);
     }
 
-    await this.requireActiveStaff(actorProfileId);
+    await this.requireActiveStaffActor(actorProfileId);
 
     return this.database.db.transaction().execute(async (trx) => {
       const receipt = await trx
@@ -268,7 +268,7 @@ export class AtomicDuesPaymentsService extends DuesPaymentsService {
     });
   }
 
-  private async requireActiveStaff(actorProfileId: string): Promise<void> {
+  private async requireActiveStaffActor(actorProfileId: string): Promise<void> {
     try {
       const staff = await this.atomicUsers.findStaffByUserProfileId(actorProfileId);
       if (staff?.isActive) return;
