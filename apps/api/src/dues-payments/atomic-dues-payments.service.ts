@@ -4,7 +4,6 @@ import {
   Inject,
   Injectable,
   NotFoundException,
-  Optional,
 } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { DatabaseService } from '../database/database.service.js';
@@ -24,7 +23,7 @@ export class AtomicDuesPaymentsService extends DuesPaymentsService {
   constructor(
     @Inject(DUES_PAYMENTS_REPOSITORY)
     repository: DuesPaymentsRepository,
-    @Optional() private readonly atomicUsers: UsersService | undefined,
+    private readonly atomicUsers: UsersService,
     private readonly database: DatabaseService,
   ) {
     super(repository, atomicUsers);
@@ -270,7 +269,6 @@ export class AtomicDuesPaymentsService extends DuesPaymentsService {
   }
 
   private async requireActiveStaff(actorProfileId: string): Promise<void> {
-    if (!this.atomicUsers) return;
     try {
       const staff = await this.atomicUsers.findStaffByUserProfileId(actorProfileId);
       if (staff?.isActive) return;
