@@ -7,21 +7,12 @@ import {
   balagh205Schema,
   balagh206Schema,
 } from '../src/balaghs.js';
-import {
-  scheduleFieldVisitSchema,
-  recordFieldVisitResultSchema,
-  cancelFieldVisitSchema,
-} from '../src/field-visits.js';
+import { scheduleFieldVisitSchema } from '../src/field-visits.js';
 import {
   recordDecisionSchema,
   reviseDecisionSchema,
 } from '../src/decisions.js';
-import {
-  assessDueSchema,
-  correctDueSchema,
-  uploadReceiptSchema,
-  confirmPaymentSchema,
-} from '../src/dues.js';
+import { assessDueSchema } from '../src/dues.js';
 
 describe('Operational Contracts - Balaghs (FR-201 to FR-206)', () => {
   it('validates FR-201 Stoppage activity', () => {
@@ -133,8 +124,9 @@ describe('Operational Contracts - Decisions', () => {
 describe('Operational Contracts - Dues & Payments', () => {
   it('validates due assessment and currency constraints', () => {
     const valid = {
+      taxpayerId: '00000000-0000-4000-8000-000000000010',
       serviceRequestId: '00000000-0000-4000-8000-000000000001',
-      amount: 150000.50,
+      amount: 150000.5,
       currencyCode: 'YER',
       basisTypeCode: 'tax_audit',
     };
@@ -143,8 +135,9 @@ describe('Operational Contracts - Dues & Payments', () => {
 
   it('rejects dues with non-YER currency', () => {
     const invalid = {
+      taxpayerId: '00000000-0000-4000-8000-000000000010',
       serviceRequestId: '00000000-0000-4000-8000-000000000001',
-      amount: 150.00,
+      amount: 150,
       currencyCode: 'USD',
       basisTypeCode: 'tax_audit',
     };
