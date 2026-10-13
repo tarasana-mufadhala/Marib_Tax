@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Marib Tax System — dependency-free repository foundation validator.
+# Marib Tax System — dependency-free repository baseline validator.
 # No network calls. Does not modify files. Exit 0 on PASS, 1 on FAIL.
 
 set -euo pipefail
@@ -51,9 +51,7 @@ contains_control_char() {
 printf 'Marib Tax System — Foundation Validation\n'
 printf 'Repository root: %s\n' "$ROOT"
 
-# ---------------------------------------------------------------------------
 section "Mandatory foundation files"
-# ---------------------------------------------------------------------------
 
 MANDATORY_FILES=(
   "README.md"
@@ -103,9 +101,7 @@ for f in "${MANDATORY_FILES[@]}"; do
   require_file "$f"
 done
 
-# ---------------------------------------------------------------------------
 section "Required directory README files"
-# ---------------------------------------------------------------------------
 
 README_DIRS=(
   "apps"
@@ -146,33 +142,41 @@ for d in "${README_DIRS[@]}"; do
   require_dir_readme "$d"
 done
 
-# ---------------------------------------------------------------------------
 section "pnpm workspace boundaries"
-# ---------------------------------------------------------------------------
 
 if [[ -f pnpm-workspace.yaml ]]; then
-  if grep -q 'apps/mobile' pnpm-workspace.yaml; then
-    fail "pnpm-workspace.yaml must not include apps/mobile"
+  # The active repository uses a glob for Node applications. A Flutter directory
+  # matched by apps/* is harmless because it has no package.json and is ignored by pnpm.
+  if grep -Eq '^[[:space:]]*-[[:space:]]*["'"']?apps/\*["'"']?[[:space:]]*$' pnpm-workspace.yaml; then
+    pass "pnpm workspace apps/* covers apps/web, apps/api, and apps/worker"
   else
-    pass "pnpm-workspace.yaml excludes apps/mobile"
+    for ws in "apps/web" "apps/api" "apps/worker"; do
+      if grep -Fq "$ws" pnpm-workspace.yaml; then
+        pass "pnpm workspace includes $ws"
+      else
+        fail "pnpm workspace missing $ws (or apps/* glob)"
+      fi
+    done
   fi
-  for ws in "apps/web" "apps/api" "apps/worker" "packages/*"; do
-    if grep -Fq "$ws" pnpm-workspace.yaml; then
-      pass "pnpm workspace includes $ws"
-    else
-      fail "pnpm workspace missing $ws"
-    fi
-  done
+
+  if grep -Fq 'packages/*' pnpm-workspace.yaml; then
+    pass "pnpm workspace includes packages/*"
+  else
+    fail "pnpm workspace missing packages/*"
+  fi
+
+  if [[ -f apps/mobile/package.json ]]; then
+    fail "apps/mobile must remain Flutter-only; unexpected package.json found"
+  else
+    pass "apps/mobile is Flutter-only (no package.json)"
+  fi
 fi
 
-# ---------------------------------------------------------------------------
 section "Tracked secret and credential hygiene"
-# ---------------------------------------------------------------------------
 
 if ! command -v git >/dev/null 2>&1; then
   fail "git is required for tracked-file secret checks"
 else
-  # Collect tracked files null-safely (filenames may contain newlines)
   TRACKED=()
   while IFS= read -r -d '' path; do
     TRACKED+=("$path")
@@ -186,14 +190,12 @@ else
   for path in "${TRACKED[@]}"; do
     base="$(basename "$path")"
 
-    # Tracked .env files other than allowed examples (*.example)
     if [[ "$base" == .env || "$base" == .env.* ]]; then
       if [[ "$base" != *.example ]]; then
         ENV_VIOLATIONS+=("$path")
       fi
     fi
 
-    # Prohibited secret filenames
     case "$base" in
       *.pem|*.key|*.p12|*.pfx|*.jks|*.keystore|id_rsa|id_ed25519|*.mobileprovision)
         SECRET_NAME_VIOLATIONS+=("$path")
@@ -211,7 +213,6 @@ else
       SECRET_NAME_VIOLATIONS+=("$path")
     fi
 
-    # Local Supabase artifacts
     if [[ "$path" == *supabase/.temp/* || "$path" == */.supabase/* || "$path" == *supabase/.branches/* ]]; then
       SUPABASE_LOCAL_VIOLATIONS+=("$path")
     fi
@@ -220,39 +221,29 @@ else
   if [[ ${#ENV_VIOLATIONS[@]} -eq 0 ]]; then
     pass "no prohibited tracked .env files"
   else
-    for v in "${ENV_VIOLATIONS[@]}"; do
-      fail "tracked prohibited env file: $v"
-    done
+    for v in "${ENV_VIOLATIONS[@]}"; do fail "tracked prohibited env file: $v"; done
   fi
 
   if [[ ${#SECRET_NAME_VIOLATIONS[@]} -eq 0 ]]; then
     pass "no tracked private key / keystore filenames"
   else
-    for v in "${SECRET_NAME_VIOLATIONS[@]}"; do
-      fail "tracked secret filename: $v"
-    done
+    for v in "${SECRET_NAME_VIOLATIONS[@]}"; do fail "tracked secret filename: $v"; done
   fi
 
   if [[ ${#CREDENTIAL_VIOLATIONS[@]} -eq 0 ]]; then
     pass "no tracked Firebase / mobile credential files"
   else
-    for v in "${CREDENTIAL_VIOLATIONS[@]}"; do
-      fail "tracked credential file: $v"
-    done
+    for v in "${CREDENTIAL_VIOLATIONS[@]}"; do fail "tracked credential file: $v"; done
   fi
 
   if [[ ${#SUPABASE_LOCAL_VIOLATIONS[@]} -eq 0 ]]; then
     pass "no tracked local Supabase artifacts"
   else
-    for v in "${SUPABASE_LOCAL_VIOLATIONS[@]}"; do
-      fail "tracked local Supabase artifact: $v"
-    done
+    for v in "${SUPABASE_LOCAL_VIOLATIONS[@]}"; do fail "tracked local Supabase artifact: $v"; done
   fi
 fi
 
-# ---------------------------------------------------------------------------
 section "Filename and text hygiene"
-# ---------------------------------------------------------------------------
 
 if ! command -v git >/dev/null 2>&1; then
   fail "git is required for filename and text hygiene checks"
@@ -281,44 +272,28 @@ else
         return 0
         ;;
     esac
-    # Treat extensionless tracked root docs as text when readable
-    if [[ "$file" != */* ]]; then
-      return 0
-    fi
+    if [[ "$file" != */* ]]; then return 0; fi
     return 1
   }
 
   for path in "${TRACKED_HYGIENE[@]}"; do
-    # Control characters in filenames
-    if contains_control_char "$path"; then
-      CONTROL_NAME_VIOLATIONS+=("$path")
-    fi
+    if contains_control_char "$path"; then CONTROL_NAME_VIOLATIONS+=("$path"); fi
 
-    # Malformed / accidental root filenames (PowerShell fragment leftovers, etc.)
     base="$(basename "$path")"
     if [[ "$path" != */* ]]; then
       case "$base" in
-        '= @('|'=('|'@('|')'|']'|'}'|'=')
-          MALFORMED_ROOT_VIOLATIONS+=("$path")
-          ;;
+        '= @('|'=('|'@('|')'|']'|'}'|'=') MALFORMED_ROOT_VIOLATIONS+=("$path") ;;
       esac
-      # Broad catch for root names starting with "= @"
-      if [[ "$base" == '= @'* ]]; then
-        MALFORMED_ROOT_VIOLATIONS+=("$path")
-      fi
+      if [[ "$base" == '= @'* ]]; then MALFORMED_ROOT_VIOLATIONS+=("$path"); fi
     fi
 
-    # ANSI escape sequences in tracked text files (ESC [ ... )
     if [[ -f "$path" ]] && is_probably_text "$path"; then
-      if grep -Iq $'\x1B\[' -- "$path"; then
-        ANSI_VIOLATIONS+=("$path")
-      elif grep -Iq $'\x1B' -- "$path"; then
+      if grep -Iq $'\x1B\[' -- "$path" || grep -Iq $'\x1B' -- "$path"; then
         ANSI_VIOLATIONS+=("$path")
       fi
     fi
   done
 
-  # Deduplicate malformed list
   if [[ ${#MALFORMED_ROOT_VIOLATIONS[@]} -gt 0 ]]; then
     mapfile -t MALFORMED_ROOT_VIOLATIONS < <(printf '%s\n' "${MALFORMED_ROOT_VIOLATIONS[@]}" | sort -u)
   fi
@@ -326,17 +301,13 @@ else
   if [[ ${#CONTROL_NAME_VIOLATIONS[@]} -eq 0 ]]; then
     pass "no tracked filenames with control characters"
   else
-    for v in "${CONTROL_NAME_VIOLATIONS[@]}"; do
-      fail "tracked filename contains control characters: $v"
-    done
+    for v in "${CONTROL_NAME_VIOLATIONS[@]}"; do fail "tracked filename contains control characters: $v"; done
   fi
 
   if [[ ${#MALFORMED_ROOT_VIOLATIONS[@]} -eq 0 ]]; then
     pass "no unexpected malformed root filenames"
   else
-    for v in "${MALFORMED_ROOT_VIOLATIONS[@]}"; do
-      fail "unexpected malformed root filename: $v"
-    done
+    for v in "${MALFORMED_ROOT_VIOLATIONS[@]}"; do fail "unexpected malformed root filename: $v"; done
   fi
 
   if [[ -f SECURITY.md ]]; then
@@ -352,15 +323,11 @@ else
   if [[ ${#ANSI_VIOLATIONS[@]} -eq 0 ]]; then
     pass "no ANSI escape characters in tracked text files"
   else
-    for v in "${ANSI_VIOLATIONS[@]}"; do
-      fail "tracked text file contains ANSI escape characters: $v"
-    done
+    for v in "${ANSI_VIOLATIONS[@]}"; do fail "tracked text file contains ANSI escape characters: $v"; done
   fi
 fi
 
-# ---------------------------------------------------------------------------
-section "package.json foundation constraints"
-# ---------------------------------------------------------------------------
+section "package.json repository constraints"
 
 if [[ -f package.json ]]; then
   if grep -q '"private"[[:space:]]*:[[:space:]]*true' package.json; then
@@ -368,11 +335,14 @@ if [[ -f package.json ]]; then
   else
     fail "package.json must set private: true"
   fi
+
+  # Runtime dependencies are valid now that the repository contains real applications.
   if grep -q '"dependencies"' package.json; then
-    fail "package.json must not declare runtime dependencies at foundation stage"
+    pass "package.json runtime dependencies allowed at application stage"
   else
-    pass "package.json has no runtime dependencies block"
+    pass "package.json has no root runtime dependencies"
   fi
+
   if grep -q 'validate:foundation' package.json; then
     pass "package.json exposes validate:foundation script"
   else
@@ -380,10 +350,7 @@ if [[ -f package.json ]]; then
   fi
 fi
 
-# ---------------------------------------------------------------------------
 section "Report"
-# ---------------------------------------------------------------------------
-
 printf '\n%s\n' '----------------------------------------'
 printf 'PASS: %s\n' "$PASS_COUNT"
 printf 'FAIL: %s\n' "$FAIL_COUNT"
