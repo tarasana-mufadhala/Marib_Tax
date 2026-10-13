@@ -58,6 +58,23 @@ CREATE POLICY taxpayer_documents_insert ON storage.objects
     )
   );
 
+-- 2b. Storage: admin-attachments and public-forms.
+-- All writes to these buckets go through the backend with the service role,
+-- which bypasses RLS (apps/api/src/admin/storage.service.ts). Client roles keep
+-- read access only; the FOR ALL policies would otherwise let any staff member
+-- overwrite or delete administrative attachments and published forms.
+DROP POLICY IF EXISTS admin_attachments_policy ON storage.objects;
+DROP POLICY IF EXISTS admin_attachments_select ON storage.objects;
+CREATE POLICY admin_attachments_select ON storage.objects
+  FOR SELECT TO authenticated
+  USING (
+    bucket_id = 'admin-attachments'
+    AND (identity.is_staff() OR identity.is_manager())
+  );
+
+-- Public forms stay readable through the existing public_forms_read_policy.
+DROP POLICY IF EXISTS public_forms_write_policy ON storage.objects;
+
 -- 3. Audit logs are append-only at the database level.
 CREATE OR REPLACE FUNCTION audit.forbid_mutation()
 RETURNS trigger
