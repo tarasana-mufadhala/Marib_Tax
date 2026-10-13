@@ -1,6 +1,7 @@
 import {
   ConflictException,
   ForbiddenException,
+  Inject,
   Injectable,
   NotFoundException,
   Optional,
@@ -17,15 +18,14 @@ import {
   type StoredPaymentConfirmation,
   type StoredPaymentDue,
 } from './dues-payments.repository.js';
-import { Inject } from '@nestjs/common';
 
 @Injectable()
 export class AtomicDuesPaymentsService extends DuesPaymentsService {
   constructor(
     @Inject(DUES_PAYMENTS_REPOSITORY)
     repository: DuesPaymentsRepository,
-    @Optional() private readonly atomicUsers?: UsersService,
-    private readonly database?: DatabaseService,
+    @Optional() private readonly atomicUsers: UsersService | undefined,
+    private readonly database: DatabaseService,
   ) {
     super(repository, atomicUsers);
   }
@@ -35,7 +35,7 @@ export class AtomicDuesPaymentsService extends DuesPaymentsService {
     input: { amount: number; notes: string | null },
     actorProfileId: string,
   ): Promise<StoredPaymentDue> {
-    if (!this.database?.isInitialized) {
+    if (!this.database.isInitialized) {
       return super.recordPayment(dueId, input, actorProfileId);
     }
 
@@ -159,7 +159,7 @@ export class AtomicDuesPaymentsService extends DuesPaymentsService {
     input: { notes: string | null },
     actorProfileId: string,
   ): Promise<StoredPaymentConfirmation> {
-    if (!this.database?.isInitialized) {
+    if (!this.database.isInitialized) {
       return super.confirmPayment(receiptId, input, actorProfileId);
     }
 
