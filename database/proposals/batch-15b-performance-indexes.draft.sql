@@ -1,3 +1,16 @@
+-- DRAFT — NOT A MIGRATION. Moved out of supabase/migrations on 2026-10-13.
+-- Was: supabase/migrations/20260801120000_create_performance_indexes.sql
+-- Why it was moved:
+--   1. Its version (20260801120000) is already recorded in production for
+--      create_storage_buckets_and_policies, so `db push` would skip it forever.
+--      None of its 31 indexes exist in production.
+--   2. On a fresh database it fails: the two FKs it adds already exist (created by
+--      20260730120000), and three indexes reference columns that do not exist:
+--      dues.payment_receipts.receipt_date, notify.notification_outbox_messages.status_code,
+--      masterdata.commercial_activities.category_code.
+-- To use it: fix those column names, make the constraints idempotent, and add it
+-- as a NEW migration with a fresh timestamp after review.
+--
 -- MARIB-TAX-DB-FOUNDATION-BATCH-15-PERFORMANCE-INDEXES
 -- Add missing performance columns and create composite indexes across all schemas.
 -- All added columns are nullable — backwards-compatible, no data migration.
