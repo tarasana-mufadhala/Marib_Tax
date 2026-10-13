@@ -455,6 +455,8 @@ describe('AG-3 Backend E2E Operational Flows (FR-101, FR-102, FR-201, Overpaymen
           permissions: [
             'taxpayer.profile.read',
             'taxpayer.profile.update',
+            'taxpayer.admin.read',
+            'taxpayer.admin.status',
             'request.draft.create',
             'request.draft.edit',
             'request.read',
