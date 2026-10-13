@@ -1,3 +1,4 @@
+import { ServiceUnavailableException } from '@nestjs/common';
 import { describe, expect, it, vi } from 'vitest';
 import { OtpService } from '../src/authn/otp.service.js';
 
@@ -75,13 +76,14 @@ describe('DEV_OTP_CODE — الشروط التي تعطّله', () => {
     expect(await otp.verifyOtp(PHONE, DEV_CODE)).toBe(false);
   });
 
-  it('معطّل في بيئة الإنتاج ولو كان مضبوطاً', async () => {
+  it('الإنتاج يفشل مغلقاً عند غياب Twilio حتى لو كان رمز التجربة مضبوطاً', async () => {
     const otp = new OtpService(
       configOf({ DEV_OTP_CODE: DEV_CODE, NODE_ENV: 'production' }),
     );
-    await otp.requestOtp(PHONE);
 
-    expect(await otp.verifyOtp(PHONE, DEV_CODE)).toBe(false);
+    await expect(otp.requestOtp(PHONE)).rejects.toBeInstanceOf(
+      ServiceUnavailableException,
+    );
   });
 
   it('معطّل حين يكون Twilio مضبوطاً — التحقق الحقيقي يسبقه', async () => {
