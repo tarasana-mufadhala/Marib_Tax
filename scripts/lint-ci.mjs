@@ -12,20 +12,30 @@ if (patterns.length === 0) {
   process.exit(2);
 }
 
-const eslint = new ESLint({ cwd: process.cwd() });
-const results = await eslint.lintFiles(patterns);
-const formatter = await eslint.loadFormatter('stylish');
-const output = await formatter.format(results);
-if (output) console.log(output);
+const inActions = process.env.GITHUB_ACTIONS === 'true';
 
-const errorCount = results.reduce((n, r) => n + r.errorCount, 0);
-const warningCount = results.reduce((n, r) => n + r.warningCount, 0);
+try {
+  const eslint = new ESLint({ cwd: process.cwd() });
+  const results = await eslint.lintFiles(patterns);
+  const errorCount = results.reduce((n, r) => n + r.errorCount, 0);
+  const warningCount = results.reduce((n, r) => n + r.warningCount, 0);
 
-if (process.env.GITHUB_ACTIONS === 'true' && errorCount + warningCount > 0) {
-  emitAnnotations(results, errorCount, warningCount);
+  // Annotations first, so a very long report below cannot hide them.
+  if (inActions && errorCount + warningCount > 0) {
+    emitAnnotations(results, errorCount, warningCount);
+  }
+
+  const formatter = await eslint.loadFormatter('stylish');
+  const output = await formatter.format(results);
+  if (output) console.log(output);
+
+  process.exitCode = errorCount + warningCount > 0 ? 1 : 0;
+} catch (err) {
+  const detail = err instanceof Error ? (err.stack ?? err.message) : String(err);
+  if (inActions) print('error', 'lint-crashed', detail.slice(0, 3800));
+  console.error(detail);
+  process.exitCode = 2;
 }
-
-process.exit(errorCount + warningCount > 0 ? 1 : 0);
 
 function emitAnnotations(lintResults, errors, warnings) {
   const shortRule = (id) =>
