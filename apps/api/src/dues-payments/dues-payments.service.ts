@@ -375,7 +375,7 @@ export class DuesPaymentsService {
     actorStaffProfileId: string,
   ): Promise<StoredPaymentConfirmation> {
     // 1. Confirmation Authority (OD-15)
-    const staffProfileId = await this.requireActiveStaff(actorStaffProfileId);
+    await this.requireActiveStaff(actorStaffProfileId);
 
     const receipt = await this.repository.findReceiptById(receiptId);
     if (!receipt) {

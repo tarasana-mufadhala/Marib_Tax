@@ -31,6 +31,30 @@ interface PhoneChangeBody {
   code?: string;
 }
 
+interface AccountTaxpayerSummary {
+  taxpayerId: string;
+  taxNumber: string | null;
+  displayName: string | null;
+  statusCode: string | null;
+  legalEntityName: string | null;
+}
+
+interface AccountActivitySummary {
+  id: string;
+  name: string | null;
+  activityType: string | null;
+  statusCode: string | null;
+  address: string | null;
+}
+
+interface AccountOverview {
+  displayName: string | null;
+  phone: string | null;
+  email: string | null;
+  taxpayer: AccountTaxpayerSummary | null;
+  activities: AccountActivitySummary[];
+}
+
 /**
  * شاشة «حسابي» في التطبيق.
  *
@@ -55,7 +79,7 @@ export class AccountController {
 
   /** بيانات صاحب الحساب: هاتفه واسمه ونشاطه التجاري. */
   @Get('me')
-  async me(@Req() request: AuthenticatedRequest) {
+  async me(@Req() request: AuthenticatedRequest): Promise<AccountOverview> {
     const userProfileId = this.actorId(request);
     const profile = await this.users.findUserById(userProfileId);
     const contact = await this.authn.accountContact(profile.authUserId);
@@ -151,7 +175,7 @@ export class AccountController {
   async changePassword(
     @Req() request: AuthenticatedRequest,
     @Body() body: ChangePasswordBody,
-  ) {
+  ): Promise<{ success: boolean }> {
     const current = (body?.currentPassword ?? '').trim();
     const next = (body?.newPassword ?? '').trim();
     if (current.length === 0 || next.length === 0) {
@@ -171,7 +195,7 @@ export class AccountController {
   async addEmail(
     @Req() request: AuthenticatedRequest,
     @Body() body: AddEmailBody,
-  ) {
+  ): Promise<{ pending: boolean }> {
     const email = (body?.email ?? '').trim();
     const password = (body?.currentPassword ?? '').trim();
     if (email.length === 0 || password.length === 0) {
@@ -183,7 +207,9 @@ export class AccountController {
   /** تأكيد ملكية البريد المضاف بالرمز الواصل إليه. */
   @Post('email/confirm')
   @HttpCode(200)
-  async confirmEmail(@Body() body: ConfirmEmailBody) {
+  async confirmEmail(
+    @Body() body: ConfirmEmailBody,
+  ): Promise<{ confirmed: boolean }> {
     const email = (body?.email ?? '').trim();
     const code = (body?.code ?? '').trim();
     if (email.length === 0 || code.length === 0) {
@@ -198,7 +224,7 @@ export class AccountController {
   async requestPhoneChange(
     @Req() request: AuthenticatedRequest,
     @Body() body: PhoneChangeBody,
-  ) {
+  ): Promise<{ verificationId: string }> {
     const phone = (body?.newPhoneNumber ?? '').trim();
     const password = (body?.currentPassword ?? '').trim();
     if (phone.length === 0 || password.length === 0) {
@@ -216,7 +242,7 @@ export class AccountController {
   async confirmPhoneChange(
     @Req() request: AuthenticatedRequest,
     @Body() body: PhoneChangeBody,
-  ) {
+  ): Promise<{ success: boolean }> {
     const phone = (body?.newPhoneNumber ?? '').trim();
     const code = (body?.code ?? '').trim();
     if (phone.length === 0 || code.length === 0) {

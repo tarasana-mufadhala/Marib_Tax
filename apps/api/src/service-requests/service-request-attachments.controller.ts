@@ -48,6 +48,20 @@ interface UploadedFileLike {
   buffer?: Buffer;
 }
 
+interface UploadedAttachmentResult {
+  attachmentId: string;
+  documentCode: string;
+}
+
+interface RequestAttachmentItem {
+  id: string;
+  fileName: string | null;
+  mimeType: string | null;
+  sizeBytes: number;
+  documentCode: string | null;
+  uploadedAt: string | null;
+}
+
 /**
  * مرفقات المكلف على طلباته هو (FR-101..105).
  *
@@ -70,7 +84,7 @@ export class ServiceRequestAttachmentsController {
     @Param('id', new ParseUUIDPipe()) requestId: string,
     @UploadedFile() file: UploadedFileLike,
     @Body('documentCode') documentCodeInput: string,
-  ) {
+  ): Promise<UploadedAttachmentResult> {
     this.assertReady();
     const { status, serviceCode, taxpayerId } = await this.ownedRequest(requestId);
 
@@ -132,7 +146,9 @@ export class ServiceRequestAttachmentsController {
 
   @Get()
   @RequirePermission('attachment.read')
-  async list(@Param('id', new ParseUUIDPipe()) requestId: string) {
+  async list(
+    @Param('id', new ParseUUIDPipe()) requestId: string,
+  ): Promise<RequestAttachmentItem[]> {
     this.assertReady();
     await this.ownedRequest(requestId);
 

@@ -194,7 +194,8 @@ describe('createServiceRequestSchema — مطابقة النموذج لرمز ا
   });
 
   it('حقل إلزامي ناقص يُرفض', () => {
-    const { activityName: _removed, ...rest } = fr101.form;
+    const rest: Partial<typeof fr101.form> = { ...fr101.form };
+    delete rest.activityName;
     const result = createServiceRequestSchema.safeParse({ ...fr101, form: rest });
     expect(result.success).toBe(false);
   });

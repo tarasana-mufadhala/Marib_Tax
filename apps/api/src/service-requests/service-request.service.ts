@@ -9,6 +9,7 @@ import {
   type EditServiceRequest,
   type IdentityDocumentType,
   type ServiceDefinition,
+  type ServiceDocument,
   type ServiceRequestListItem,
   type ServiceRequestResponse,
 } from '@marib-tax/contracts';
@@ -131,7 +132,9 @@ export class ServiceRequestService {
     return toResponse(request);
   }
 
-  private async computeMissing(request: StoredServiceRequest) {
+  private async computeMissing(
+    request: StoredServiceRequest,
+  ): Promise<ServiceDocument[]> {
     const [provided, isCompany] = await Promise.all([
       this.repository.attachedDocumentCodes(request.id),
       this.repository.isCompanyTaxpayer(request.ownerActorId),

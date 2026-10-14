@@ -110,7 +110,11 @@ describe('DuesPaymentsService', () => {
   });
 
   describe('overpayment is rejected', () => {
-    async function setup() {
+    async function setup(): Promise<{
+      service: DuesPaymentsService;
+      due: Awaited<ReturnType<DuesPaymentsService['assessDue']>>;
+      actorId: string;
+    }> {
       const repository = new DuesPaymentsMemoryRepository();
       const service = new DuesPaymentsService(repository);
       const actorId = randomUUID();

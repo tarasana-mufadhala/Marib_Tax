@@ -13,7 +13,7 @@ export function recordAuthEvent(
 ): void {
   if (!db?.isInitialized) return;
   db.db
-    .insertInto('identity.auth_events' as any)
+    .insertInto('identity.auth_events')
     .values({
       id: crypto.randomUUID(),
       event_type: eventType,
@@ -21,7 +21,7 @@ export function recordAuthEvent(
       channel,
       detail: detail ?? null,
       created_at: new Date(),
-    } as any)
+    })
     .execute()
     .catch(() => undefined);
 }

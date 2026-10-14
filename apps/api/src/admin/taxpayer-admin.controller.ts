@@ -48,6 +48,80 @@ interface StatusChangeBody {
   reason?: string;
 }
 
+interface AdminTaxpayerListItem {
+  id: string;
+  taxNumber: string | null;
+  displayName: string;
+  statusCode: string;
+  statusLabel: string;
+  createdAt: Date;
+  phone: string | null;
+  email: string | null;
+  activityCount: number;
+  openRequests: number;
+  allowedTransitions: TaxpayerTransitionOption[];
+}
+
+interface AdminTaxpayerAccount {
+  userProfileId: string;
+  displayName: string | null;
+  phone: string | null;
+  email: string | null;
+  relationship: string;
+  verificationStatus: string;
+  linkedAt: Date;
+}
+
+interface AdminTaxpayerContact {
+  type: string;
+  value: string;
+  isPrimary: boolean;
+}
+
+interface AdminTaxpayerActivity {
+  id: string;
+  publicRef: string | null;
+  name: string | null;
+  activityType: string | null;
+  statusCode: string | null;
+  createdAt: Date;
+  address: string | null;
+  cityCode: string | null;
+  districtCode: string | null;
+}
+
+interface AdminTaxpayerHistoryEntry {
+  fromStatus: string | null;
+  toStatus: string;
+  fromLabel: string | null;
+  toLabel: string;
+  reason: string | null;
+  changedAt: Date;
+  officerName: string | null;
+}
+
+interface AdminTaxpayerDetails {
+  id: string;
+  taxNumber: string | null;
+  displayName: string;
+  statusCode: string;
+  statusLabel: string;
+  legalEntityName: string | null;
+  createdAt: Date;
+  accounts: AdminTaxpayerAccount[];
+  contacts: AdminTaxpayerContact[];
+  activities: AdminTaxpayerActivity[];
+  allowedTransitions: TaxpayerTransitionOption[];
+  history: AdminTaxpayerHistoryEntry[];
+}
+
+interface TaxpayerStatusChangeResult {
+  id: string;
+  fromStatus: string;
+  toStatus: string;
+  statusLabel: string | undefined;
+}
+
 /** انتقال متاح على حالة، بصيغة تعرضها اللوحة أزراراً. */
 export interface TaxpayerTransitionOption {
   code: string;
@@ -143,7 +217,7 @@ export class TaxpayerAdminController {
   async list(
     @Query('status') status?: string,
     @Query('search') search?: string,
-  ) {
+  ): Promise<AdminTaxpayerListItem[]> {
     this.ensureDatabase();
 
     const statusFilter = (status ?? '').trim();
@@ -215,7 +289,9 @@ export class TaxpayerAdminController {
   /** ملف مكلف واحد بتفاصيله وسجل قراراته. */
   @Get(':id')
   @RequirePermission('taxpayer.admin.read')
-  async details(@Param('id', new ParseUUIDPipe()) id: string) {
+  async details(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<AdminTaxpayerDetails> {
     this.ensureDatabase();
 
     const taxpayer = await sql<{
@@ -392,7 +468,7 @@ export class TaxpayerAdminController {
     @Req() request: AuthenticatedRequest,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() body: StatusChangeBody,
-  ) {
+  ): Promise<TaxpayerStatusChangeResult> {
     this.ensureDatabase();
     const actorId = this.actorId(request);
 

@@ -16,16 +16,32 @@ interface MockAuthUser {
   password: string;
 }
 
+interface MockRequestBody {
+  phone?: string;
+  password?: string;
+  refresh_token?: string;
+}
+
+function requestUrl(input: RequestInfo | URL): string {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.toString();
+  return input.url;
+}
+
 /**
  * Minimal in-memory GoTrue stub: covers the endpoints AuthnService uses.
  */
-function stubGoTrue() {
+function stubGoTrue(): { users: MockAuthUser[] } {
   const users: MockAuthUser[] = [];
 
-  vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = String(input);
+  const handle = (input: RequestInfo | URL, init?: RequestInit): Response => {
+    const url = requestUrl(input);
     const method = init?.method ?? 'GET';
-    const body = init?.body ? JSON.parse(String(init.body)) : {};
+    const rawBody = init?.body;
+    const body: MockRequestBody =
+      typeof rawBody === 'string' && rawBody
+        ? (JSON.parse(rawBody) as MockRequestBody)
+        : {};
 
     if (method === 'POST' && url.endsWith('/auth/v1/admin/users')) {
       if (users.some((u) => u.phone === body.phone)) {
@@ -36,7 +52,7 @@ function stubGoTrue() {
         // GoTrue يخزّن الهاتف بلا علامة + — نحاكي ذلك حتى تكشف الاختبارات
         // أي اعتماد على المطابقة النصية المباشرة.
         phone: String(body.phone).replace(/^\+/, ''),
-        password: body.password,
+        password: body.password ?? '',
       };
       users.push(user);
       return new Response(JSON.stringify({ id: user.id, phone: user.phone }), { status: 200 });
@@ -55,12 +71,13 @@ function stubGoTrue() {
       const id = url.split('/auth/v1/admin/users/')[1];
       const user = users.find((u) => u.id === id);
       if (!user) return new Response('{}', { status: 404 });
-      user.password = body.password;
+      user.password = body.password ?? '';
       return new Response(JSON.stringify({ id: user.id }), { status: 200 });
     }
 
     if (method === 'POST' && url.includes('/auth/v1/token?grant_type=password')) {
-      const digits = (value: string) => String(value ?? '').replace(/\D/g, '');
+      const digits = (value: string | undefined): string =>
+        String(value ?? '').replace(/\D/g, '');
       const user = users.find(
         (u) => digits(u.phone) === digits(body.phone) && u.password === body.password,
       );
@@ -81,7 +98,7 @@ function stubGoTrue() {
     if (method === 'POST' && url.includes('/auth/v1/token?grant_type=refresh_token')) {
       // GoTrue يدوّر رمز التجديد عند كل استعمال: الرمز القديم يبطل فوراً،
       // ولذلك يقبل هذا المحاكي الرمز الحالي وحده ثم يُصدر غيره.
-      const sent = (body as { refresh_token?: string }).refresh_token ?? '';
+      const sent = body.refresh_token ?? '';
       const user = users.find((u) => `refresh-${u.id}` === sent);
       if (!user) {
         return new Response(JSON.stringify({ error_code: 'invalid_grant' }), { status: 400 });
@@ -98,7 +115,14 @@ function stubGoTrue() {
     }
 
     throw new Error(`Unhandled mock fetch: ${method} ${url}`);
-  });
+  };
+
+  // كان المحاكي دالة async: نحافظ على أن أي رمي داخله يصير رفضاً للوعد.
+  vi.stubGlobal(
+    'fetch',
+    (input: RequestInfo | URL, init?: RequestInit): Promise<Response> =>
+      Promise.resolve().then(() => handle(input, init)),
+  );
 
   return { users };
 }
@@ -107,7 +131,9 @@ const configValues: Record<string, string> = {
   SUPABASE_URL: 'https://test.supabase.co',
   SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
 };
-const configService = { get: (key: string) => configValues[key] } as never;
+const configService = {
+  get: (key: string): string | undefined => configValues[key],
+} as never;
 
 describe('AuthnService & OtpService & SecurityService', () => {
   afterEach(() => {
@@ -220,11 +246,19 @@ describe('AuthnService & OtpService & SecurityService', () => {
     const db = {
       isInitialized: true,
       db: {
-        insertInto: (table: string) => ({
+        insertInto: (
+          table: string,
+        ): {
           values: (row: Record<string, unknown>) => {
+            execute: () => Promise<undefined>;
+          };
+        } => ({
+          values: (
+            row: Record<string, unknown>,
+          ): { execute: () => Promise<undefined> } => {
             expect(table).toBe('identity.auth_events');
             events.push(row);
-            return { execute: async () => undefined };
+            return { execute: (): Promise<undefined> => Promise.resolve(undefined) };
           },
         }),
       },
@@ -250,7 +284,7 @@ describe('AuthnService & OtpService & SecurityService', () => {
     const { verificationToken } = await authnService.verifyRegistrationOtp(phone, code);
     await authnService.register(phone, verificationToken, password, 'مكلف تجريبي');
 
-    const typesOf = () => events.map((e) => e.event_type);
+    const typesOf = (): unknown[] => events.map((e) => e.event_type);
 
     // 1. دخول ناجح
     await authnService.login(phone, password);
@@ -307,11 +341,11 @@ describe('AuthnService & OtpService & SecurityService', () => {
   it('عطل مزود الهوية لا يُترجَم إلى «كلمة مرور خاطئة»', async () => {
     // GoTrue يرد 422 phone_provider_disabled حين يكون المزود معطّلاً؛
     // ترجمة ذلك إلى فشل مصادقة تُضلّل المستخدم وتُوقع حسابه في القفل بلا ذنب.
-    vi.stubGlobal('fetch', async () =>
-      new Response(
+    vi.stubGlobal('fetch', (): Promise<Response> =>
+      Promise.resolve(new Response(
         JSON.stringify({ code: 422, error_code: 'phone_provider_disabled', msg: 'Phone logins are disabled' }),
         { status: 422 },
-      ));
+      )));
 
     const authnService = new AuthnService(
       new UsersService(new UsersMemoryRepository()),

@@ -88,8 +88,8 @@ describe('TaxpayerController access control', () => {
 
   const call = (method: 'get' | 'post', url: string): request.Test => {
     const server = app.getHttpServer() as Parameters<typeof request>[0];
-    return request(server)
-      [method](url)
+    const agent = request(server);
+    return agent[method](url)
       .set('Authorization', 'Bearer t')
       .send({});
   };

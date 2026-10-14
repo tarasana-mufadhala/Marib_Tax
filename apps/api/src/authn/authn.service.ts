@@ -3,8 +3,6 @@ import {
   Logger,
   Optional,
   BadRequestException,
-  ConflictException,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -14,6 +12,20 @@ import { OtpService } from './otp.service.js';
 import { DatabaseService } from '../database/database.service.js';
 import { recordAuthEvent } from './auth-events.js';
 import { DomainException } from '../http/domain-exception.js';
+
+/** حالة مزوّد البريد كما تقرؤها إعدادات GoTrue. */
+export interface EmailProviderStatus {
+  enabled: boolean;
+  autoConfirm: boolean;
+  signupsDisabled: boolean;
+  note: string;
+}
+
+/** نتيجة الإرسال التجريبي للبريد. */
+export interface TestEmailResult {
+  delivered: boolean;
+  reason: string | null;
+}
 
 interface GoTrueUser {
   id: string;
@@ -1048,12 +1060,7 @@ export class AuthnService {
    * تُقرأ من إعدادات GoTrue مباشرةً لا من متغيّرات بيئتنا: مصدر الحقيقة هو
    * المشروع، وإعداد عندنا يخالفه يعطي طمأنينة كاذبة.
    */
-  async emailProviderStatus(): Promise<{
-    enabled: boolean;
-    autoConfirm: boolean;
-    signupsDisabled: boolean;
-    note: string;
-  }> {
+  async emailProviderStatus(): Promise<EmailProviderStatus> {
     const res = await fetch(`${this.supabaseUrl}/auth/v1/settings`, {
       headers: this.adminHeaders(),
     });
@@ -1088,7 +1095,7 @@ export class AuthnService {
    */
   async sendTestEmail(
     emailAddress: string,
-  ): Promise<{ delivered: boolean; reason: string | null }> {
+  ): Promise<TestEmailResult> {
     const email = String(emailAddress ?? '').trim().toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw DomainException.badRequest('أدخل بريداً إلكترونياً صحيحاً');

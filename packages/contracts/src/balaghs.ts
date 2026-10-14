@@ -190,7 +190,7 @@ export interface BalaghResponse {
   status: 'draft' | 'submitted' | 'under_review' | 'field_visit_scheduled' | 'field_visit_completed' | 'approved' | 'rejected' | 'archived';
   balaghType: BalaghType;
   schemaVersion: '1.0.0';
-  formData: any;
+  formData: unknown;
   ownerActorId: string;
   createdAt: string;
   updatedAt: string;

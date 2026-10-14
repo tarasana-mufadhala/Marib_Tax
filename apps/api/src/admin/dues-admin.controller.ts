@@ -11,6 +11,48 @@ const STATUS_LABELS: Record<string, string> = {
   cancelled: 'ملغى',
 };
 
+interface AdminDueRow {
+  id: string;
+  publicRef: string | null;
+  amount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  currencyCode: string;
+  statusCode: string;
+  statusLabel: string;
+  assessedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date | null;
+  taxpayerId: string;
+  taxpayerName: string | null;
+  taxpayerRef: string | null;
+  requestRef: string | null;
+  basisTypeCode: string | null;
+  documentReference: string | null;
+  editable: boolean;
+  payable: boolean;
+  cancellable: boolean;
+}
+
+interface AdminDuePayment {
+  id: string;
+  publicRef: string | null;
+  amount: number;
+  receivedAt: Date;
+  statusCode: string;
+  confirmedAt: Date | null;
+  officerName: string | null;
+}
+
+interface AdminDueCorrection {
+  priorAmount: number;
+  newAmount: number;
+  currencyCode: string;
+  reason: string;
+  correctedAt: Date;
+  officerName: string | null;
+}
+
 /**
  * قراءة المستحقات للوحة الإدارة.
  *
@@ -39,7 +81,7 @@ export class DuesAdminController {
     @Query('status') status?: string,
     @Query('taxpayerId') taxpayerId?: string,
     @Query('search') search?: string,
-  ) {
+  ): Promise<AdminDueRow[]> {
     this.ensureDatabase();
 
     const statusFilter = (status ?? '').trim();
@@ -146,7 +188,9 @@ export class DuesAdminController {
   /** المدفوعات المعتمدة على مستحق واحد — من قبض وكم ومتى. */
   @Get(':id/payments')
   @RequirePermission('due.register')
-  async payments(@Param('id', new ParseUUIDPipe()) id: string) {
+  async payments(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<AdminDuePayment[]> {
     this.ensureDatabase();
 
     const result = await sql<{
@@ -187,7 +231,9 @@ export class DuesAdminController {
   /** سجل تعديلات مستحق واحد — من غيّر المبلغ ومتى ولماذا. */
   @Get(':id/corrections')
   @RequirePermission('due.register')
-  async corrections(@Param('id', new ParseUUIDPipe()) id: string) {
+  async corrections(
+    @Param('id', new ParseUUIDPipe()) id: string,
+  ): Promise<AdminDueCorrection[]> {
     this.ensureDatabase();
 
     const result = await sql<{

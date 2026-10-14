@@ -28,7 +28,11 @@ describe('مخطط تسجيل المستحق', () => {
   });
 
   it('يرفض مستحقاً بلا مكلف — دَينٌ على لا أحد', () => {
-    const { taxpayerId: _omitted, ...withoutTaxpayer } = valid;
+    const withoutTaxpayer = {
+      amount: valid.amount,
+      currencyCode: valid.currencyCode,
+      basisTypeCode: valid.basisTypeCode,
+    };
     expect(assessDueSchema.safeParse(withoutTaxpayer).success).toBe(false);
   });
 

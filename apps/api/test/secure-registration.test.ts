@@ -1,5 +1,5 @@
 import { ConfigService } from '@nestjs/config';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { SecureRegistrationService } from '../src/authn/secure-registration.service.js';
 import type { OtpService } from '../src/authn/otp.service.js';
 import type { SecurityService } from '../src/security/security.service.js';
@@ -7,10 +7,15 @@ import type { UsersService } from '../src/users/users.service.js';
 
 const PHONE = '+967770000001';
 
-function build() {
-  const users = {
-    createUserProfile: vi.fn().mockResolvedValue({ id: 'profile-1' }),
-  } as unknown as UsersService;
+function build(): {
+  service: SecureRegistrationService;
+  users: UsersService;
+  security: SecurityService;
+  otp: OtpService;
+  createUserProfile: Mock;
+} {
+  const createUserProfile = vi.fn().mockResolvedValue({ id: 'profile-1' });
+  const users = { createUserProfile } as unknown as UsersService;
   const security = {
     validatePasswordStrength: vi.fn().mockReturnValue(true),
   } as unknown as SecurityService;
@@ -31,6 +36,7 @@ function build() {
     users,
     security,
     otp,
+    createUserProfile,
   };
 }
 
@@ -46,11 +52,11 @@ describe('SecureRegistrationService', () => {
 
     await expect(
       service.register(PHONE, forged, 'Strong!Pass1', 'Test User'),
-    ).rejects.toMatchObject({ response: expect.anything() });
+    ).rejects.toMatchObject({ response: expect.anything() as unknown });
   });
 
   it('issues a signed proof after OTP verification and consumes it once', async () => {
-    const { service, users } = build();
+    const { service, createUserProfile } = build();
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue(
@@ -70,14 +76,14 @@ describe('SecureRegistrationService', () => {
     await expect(
       service.register(PHONE, verificationToken, 'Strong!Pass1', 'Test User'),
     ).resolves.toEqual({ userProfileId: 'profile-1' });
-    expect(users.createUserProfile).toHaveBeenCalledWith(
+    expect(createUserProfile).toHaveBeenCalledWith(
       'auth-user-1',
       'Test User',
     );
 
     await expect(
       service.register(PHONE, verificationToken, 'Strong!Pass1', 'Test User'),
-    ).rejects.toMatchObject({ response: expect.anything() });
+    ).rejects.toMatchObject({ response: expect.anything() as unknown });
   });
 
   it('binds the proof to the verified phone number', async () => {
@@ -94,6 +100,6 @@ describe('SecureRegistrationService', () => {
         'Strong!Pass1',
         'Test User',
       ),
-    ).rejects.toMatchObject({ response: expect.anything() });
+    ).rejects.toMatchObject({ response: expect.anything() as unknown });
   });
 });

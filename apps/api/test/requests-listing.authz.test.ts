@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { PermissionCode } from '@marib-tax/contracts';
-import {
+import type {
   RequestsQueryService,
-  type ServiceRequestListItem,
+  ServiceRequestListItem,
 } from '../src/requests/requests-query.service.js';
 import { RequestDraftController } from '../src/requests/request-draft.controller.js';
 import { VERIFIED_ACTOR } from '../src/authn/bearer-actor-context.resolver.js';
@@ -28,23 +28,35 @@ const STAFF_PERMISSIONS: PermissionCode[] = [
 ];
 
 /** يسجّل وسيط الملكية الذي وصل إلى طبقة الاستعلام. */
-function buildController(permissions: PermissionCode[], actorId: string) {
-  const calls: Array<{
-    limit: number | undefined;
-    ownerProfileId: string | undefined;
-  }> = [];
+interface ListCall {
+  limit: number | undefined;
+  ownerProfileId: string | undefined;
+}
+
+function buildController(
+  permissions: PermissionCode[],
+  actorId: string,
+): {
+  controller: RequestDraftController;
+  request: Parameters<RequestDraftController['list']>[0];
+  calls: ListCall[];
+} {
+  const calls: ListCall[] = [];
 
   const queryService = {
-    listRequests: async (limit?: number, ownerProfileId?: string) => {
+    listRequests: (
+      limit?: number,
+      ownerProfileId?: string,
+    ): Promise<ServiceRequestListItem[]> => {
       calls.push({ limit, ownerProfileId });
-      return [] as ServiceRequestListItem[];
+      return Promise.resolve([]);
     },
   } as unknown as RequestsQueryService;
 
   const controller = new RequestDraftController(
     {} as never,
     queryService,
-    { requireActorId: () => actorId },
+    { requireActorId: (): string => actorId },
   );
 
   const request = {

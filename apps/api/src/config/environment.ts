@@ -107,7 +107,7 @@ export function validateEnvironment(
   for (const key of optionalStringKeys) {
     if (
       typeof sanitizedInput[key] === 'string' &&
-      (sanitizedInput[key] as string).trim() === ''
+      sanitizedInput[key].trim() === ''
     ) {
       delete sanitizedInput[key];
     }

@@ -1,12 +1,15 @@
 import { ServiceUnavailableException } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
 import { describe, expect, it, vi } from 'vitest';
 import { OtpService } from '../src/authn/otp.service.js';
 
 const DEV_CODE = '123456';
 
 /** إعداد وهمي يُمرَّر لـ OtpService. */
-function configOf(values: Record<string, string | undefined>) {
-  return { get: (key: string) => values[key] } as never;
+function configOf(values: Record<string, string | undefined>): ConfigService {
+  return {
+    get: (key: string): string | undefined => values[key],
+  } as unknown as ConfigService;
 }
 
 const devEnabled = configOf({ DEV_OTP_CODE: DEV_CODE, NODE_ENV: 'development' });
@@ -88,8 +91,10 @@ describe('DEV_OTP_CODE — الشروط التي تعطّله', () => {
 
   it('معطّل حين يكون Twilio مضبوطاً — التحقق الحقيقي يسبقه', async () => {
     // Twilio يرد أن الرمز غير معتمد؛ رمز التجربة يجب ألا يُنقذه.
-    vi.stubGlobal('fetch', async () =>
-      new Response(JSON.stringify({ status: 'pending' }), { status: 200 }));
+    vi.stubGlobal('fetch', (): Promise<Response> =>
+      Promise.resolve(
+        new Response(JSON.stringify({ status: 'pending' }), { status: 200 }),
+      ));
 
     const otp = new OtpService(
       configOf({ DEV_OTP_CODE: DEV_CODE, NODE_ENV: 'development', ...TWILIO }),

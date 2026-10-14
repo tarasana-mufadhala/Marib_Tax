@@ -24,7 +24,7 @@ function controllerWith(options: {
   onGetDue?: (id: string) => unknown;
 }): DuesPaymentsController {
   const service = {
-    getDue: (id: string) =>
+    getDue: (id: string): Promise<unknown> =>
       Promise.resolve(options.onGetDue?.(id) ?? { id, amount: 5000 }),
   };
   const db = {
@@ -35,7 +35,7 @@ function controllerWith(options: {
   const controller = new DuesPaymentsController(
     service as never,
     db as never,
-    { requireActorId: () => '11111111-1111-1111-1111-111111111111' } as never,
+    { requireActorId: (): string => '11111111-1111-1111-1111-111111111111' },
   );
 
   // `ownsDue` يستعلم القاعدة؛ نستبدله بنتيجة معروفة لعزل قرار التصريح

@@ -103,6 +103,52 @@ interface CreateUserBody {
   roleCodes?: string[];
 }
 
+interface PermissionItem {
+  code: string;
+  label: string;
+  action: string;
+}
+
+interface PermissionGroup {
+  resource: string;
+  resourceLabel: string;
+  permissions: PermissionItem[];
+}
+
+interface DetailedRole {
+  id: string;
+  code: string;
+  nameAr: string | null;
+  description: string | null;
+  isSystem: boolean;
+  permissionCodes: string[];
+  holders: number;
+}
+
+interface CreatedRole {
+  id: string;
+  code: string;
+  nameAr: string;
+  permissionCodes: string[];
+}
+
+interface UpdatedRolePermissions {
+  id: string;
+  permissionCodes: string[];
+}
+
+interface CreatedStaffUser {
+  userProfileId: string;
+  staffProfileId: string;
+  email: string;
+  roleCodes: string[];
+}
+
+interface UpdatedUserRoles {
+  userProfileId: string;
+  roleCodes: string[];
+}
+
 /**
  * إدارة الصلاحيات والأدوار والمستخدمين.
  *
@@ -120,8 +166,8 @@ export class AccessControlController {
   /** كتالوج الصلاحيات مبوّباً بالمورد، لعرضه في شاشة الأدوار. */
   @Get('permissions')
   @RequirePermission('role.read')
-  permissions() {
-    const groups = new Map<string, { code: string; label: string; action: string }[]>();
+  permissions(): PermissionGroup[] {
+    const groups = new Map<string, PermissionItem[]>();
 
     for (const code of permissionCodes) {
       const parts = code.split('.');
@@ -146,7 +192,7 @@ export class AccessControlController {
   /** الأدوار مع صلاحيات كل دور وعدد من يحملونه. */
   @Get('roles/detailed')
   @RequirePermission('role.read')
-  async rolesDetailed() {
+  async rolesDetailed(): Promise<DetailedRole[]> {
     this.assertDatabase();
     const result = await sql<{
       id: string;
@@ -183,7 +229,7 @@ export class AccessControlController {
   /** إنشاء دور بمجموعة الصلاحيات التي يختارها المدير. */
   @Post('roles')
   @RequirePermission('role.assign')
-  async createRole(@Body() body: CreateRoleBody) {
+  async createRole(@Body() body: CreateRoleBody): Promise<CreatedRole> {
     this.assertDatabase();
 
     const code = (body.code ?? '').trim().toLowerCase();
@@ -226,7 +272,7 @@ export class AccessControlController {
   async updateRolePermissions(
     @Param('id', new ParseUUIDPipe()) roleId: string,
     @Body() body: { permissionCodes?: string[] },
-  ) {
+  ): Promise<UpdatedRolePermissions> {
     this.assertDatabase();
     const granted = this.validatedPermissions(body.permissionCodes);
 
@@ -257,7 +303,7 @@ export class AccessControlController {
   async createStaffUser(
     @Body() body: CreateUserBody,
     @Req() request: AuthenticatedRequest,
-  ) {
+  ): Promise<CreatedStaffUser> {
     this.assertDatabase();
 
     const displayName = (body.displayName ?? '').trim();
@@ -349,7 +395,7 @@ export class AccessControlController {
     @Param('id', new ParseUUIDPipe()) userProfileId: string,
     @Body() body: { roleCodes?: string[] },
     @Req() request: AuthenticatedRequest,
-  ) {
+  ): Promise<UpdatedUserRoles> {
     this.assertDatabase();
     const roleCodes = (body.roleCodes ?? []).filter((c) => typeof c === 'string');
     if (roleCodes.length === 0) {

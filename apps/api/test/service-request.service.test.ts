@@ -19,21 +19,23 @@ class MemoryRepository implements ServiceRequestRepository {
   company = false;
   taxNumber = false;
 
-  async create(request: StoredServiceRequest): Promise<void> {
+  create(request: StoredServiceRequest): Promise<void> {
     this.rows.set(request.id, structuredClone(request));
+    return Promise.resolve();
   }
 
-  async findById(id: string): Promise<StoredServiceRequest | null> {
+  findById(id: string): Promise<StoredServiceRequest | null> {
     const found = this.rows.get(id);
-    return found ? structuredClone(found) : null;
+    return Promise.resolve(found ? structuredClone(found) : null);
   }
 
-  async save(request: StoredServiceRequest): Promise<void> {
+  save(request: StoredServiceRequest): Promise<void> {
     this.rows.set(request.id, structuredClone(request));
+    return Promise.resolve();
   }
 
-  async list(ownerActorId: string | undefined, limit: number): Promise<ServiceRequestListItem[]> {
-    return [...this.rows.values()]
+  list(ownerActorId: string | undefined, limit: number): Promise<ServiceRequestListItem[]> {
+    const items: ServiceRequestListItem[] = [...this.rows.values()]
       .filter((r) => ownerActorId === undefined || r.ownerActorId === ownerActorId)
       .slice(0, limit)
       .map((r) => ({
@@ -45,22 +47,23 @@ class MemoryRepository implements ServiceRequestRepository {
         createdAt: r.createdAt,
         submittedAt: r.submittedAt,
       }));
+    return Promise.resolve(items);
   }
 
-  async attachedDocumentCodes(): Promise<string[]> {
-    return this.documents;
+  attachedDocumentCodes(): Promise<string[]> {
+    return Promise.resolve(this.documents);
   }
 
-  async isCompanyTaxpayer(): Promise<boolean> {
-    return this.company;
+  isCompanyTaxpayer(): Promise<boolean> {
+    return Promise.resolve(this.company);
   }
 
-  async hasTaxNumber(): Promise<boolean> {
-    return this.taxNumber;
+  hasTaxNumber(): Promise<boolean> {
+    return Promise.resolve(this.taxNumber);
   }
 
-  async serviceCodeOf(id: string) {
-    return this.rows.get(id)?.serviceCode ?? null;
+  serviceCodeOf(id: string): ReturnType<ServiceRequestRepository['serviceCodeOf']> {
+    return Promise.resolve(this.rows.get(id)?.serviceCode ?? null);
   }
 }
 
@@ -95,7 +98,7 @@ const FR102: CreateServiceRequest = {
   },
 };
 
-function build() {
+function build(): { repository: MemoryRepository; service: ServiceRequestService } {
   const repository = new MemoryRepository();
   return { repository, service: new ServiceRequestService(repository) };
 }
@@ -198,7 +201,7 @@ describe('ServiceRequestService — الملكية وحالات الرفض', () 
     const created = await service.create(OWNER, FR101);
 
     await expect(
-      service.edit(OTHER, created.id, { form: FR101.form } as never),
+      service.edit(OTHER, created.id, { form: FR101.form }),
     ).rejects.toThrow();
   });
 
@@ -217,7 +220,7 @@ describe('ServiceRequestService — الملكية وحالات الرفض', () 
     await service.submit(OWNER, created.id);
 
     await expect(
-      service.edit(OWNER, created.id, { form: FR101.form } as never),
+      service.edit(OWNER, created.id, { form: FR101.form }),
     ).rejects.toThrow();
   });
 

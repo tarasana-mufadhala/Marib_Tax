@@ -429,7 +429,7 @@ export class ReportsController {
       }),
 
       // 18. رموز التحقق OTP
-      'rep-18': async () => {
+      'rep-18': async (): Promise<ReportResult> => {
         const labels: Record<string, string> = {
           otp_requested: 'رموز مُرسلة',
           otp_verified: 'عمليات تحقق ناجحة',
@@ -712,7 +712,7 @@ export class ReportsController {
       }),
 
       // 29. استخدام الموقع
-      'rep-29': async () => {
+      'rep-29': async (): Promise<ReportResult> => {
         const rows = await this.query<{ page_path: string; total: number; week: number; last: string | null }>(`
           select page_path,
                  count(*)::int as total,

@@ -27,7 +27,11 @@ export class OtpService {
     @Optional() private readonly db?: DatabaseService,
   ) {}
 
-  private logEvent(eventType: string, phoneNumber: string, detail?: string) {
+  private logEvent(
+    eventType: string,
+    phoneNumber: string,
+    detail?: string,
+  ): void {
     recordAuthEvent(this.db, eventType, phoneNumber, detail);
   }
 

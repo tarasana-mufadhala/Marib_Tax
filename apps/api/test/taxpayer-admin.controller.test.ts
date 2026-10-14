@@ -11,7 +11,8 @@ const OFFICER = '11111111-1111-1111-1111-111111111111';
 
 /** لا تُقرأ خدمة الحسابات في هذه الحالات؛ بديل صامت يكفي. */
 const AUTHN_STUB = {
-  accountContact: () => Promise.resolve({ phone: null, email: null }),
+  accountContact: (): Promise<{ phone: null; email: null }> =>
+    Promise.resolve({ phone: null, email: null }),
 };
 const TAXPAYER = '22222222-2222-2222-2222-222222222222';
 

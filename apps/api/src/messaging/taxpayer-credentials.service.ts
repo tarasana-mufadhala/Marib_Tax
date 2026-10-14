@@ -332,7 +332,7 @@ export function generatePassword(): string {
   const symbols = '@#$%&*!?';
   const all = upper + lower + digits + symbols;
 
-  const pick = (set: string) => set[randomInt(set.length)]!;
+  const pick = (set: string): string => set[randomInt(set.length)]!;
   const characters = [pick(upper), pick(lower), pick(digits), pick(symbols)];
   while (characters.length < 12) characters.push(pick(all));
 

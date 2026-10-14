@@ -1,3 +1,4 @@
+import type { ConfigService } from '@nestjs/config';
 import { describe, expect, it } from 'vitest';
 import {
   generatePassword,
@@ -5,8 +6,10 @@ import {
 } from '../src/messaging/taxpayer-credentials.service.js';
 import { MetaMessagingProvider, maskPhone } from '../src/messaging/meta-messaging.provider.js';
 
-const configOf = (values: Record<string, string | undefined>) =>
-  ({ get: (key: string) => values[key] }) as never;
+const configOf = (values: Record<string, string | undefined>): ConfigService =>
+  ({
+    get: (key: string): string | undefined => values[key],
+  }) as unknown as ConfigService;
 
 describe('generatePassword — كلمة المرور المُولَّدة', () => {
   it('تستوفي شرط قوة كلمة المرور على الخادم', () => {
