@@ -12,7 +12,7 @@
     "test:e2e": "pnpm exec playwright test --config apps/api/playwright.config.ts",
     "test:e2e:ui": "pnpm exec playwright test --config apps/api/playwright.config.ts --ui",
     "lint": "node scripts/lint-ci.mjs apps/api/src apps/api/test packages/contracts/src packages/contracts/test",
-    "format:check": "node scripts/annotate.mjs format \"prettier --check '{apps,packages}/**/*.{ts,json,yaml}'\""
+    "format:check": "node scripts/format-check.mjs"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
