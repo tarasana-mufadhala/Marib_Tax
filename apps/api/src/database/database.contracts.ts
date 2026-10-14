@@ -1,5 +1,13 @@
 import type { Generated } from 'kysely';
 
+export type JsonValue =
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
+
 export interface TaxpayersTable {
   id: string;
   public_ref: string | null;
@@ -543,6 +551,207 @@ export interface IdentityStaffRoleAssignmentsTable {
   revocation_reason: string | null;
 }
 
+// Generated from the migration chain (information_schema) on 2026-10-14.
+// numeric/int8 columns are typed as string because node-postgres returns them
+// as strings unless a type parser is registered.
+export interface AuditAuditLogsTable {
+  id: string;
+  actor_profile_id: string | null;
+  action: string;
+  entity_type: string;
+  entity_id: string | null;
+  before_snapshot: JsonValue | null;
+  after_snapshot: JsonValue | null;
+  metadata: JsonValue | null;
+  correlation_id: string | null;
+  ip_address: string | null;
+  user_agent: string | null;
+  created_at: Generated<Date>;
+}
+
+export interface ContentAnnouncementsTable {
+  id: string;
+  title: string;
+  body: string | null;
+  image_path: string | null;
+  starts_at: Date | null;
+  ends_at: Date | null;
+  priority: Generated<number>;
+  is_active: Generated<boolean>;
+  published_at: Date | null;
+  published_by_profile_id: string | null;
+  created_at: Generated<Date>;
+  created_by_profile_id: string | null;
+  updated_at: Date | null;
+  updated_by_profile_id: string | null;
+}
+
+export interface ContentContactMessagesTable {
+  id: Generated<string>;
+  full_name: string;
+  phone: string;
+  email: string | null;
+  message: string;
+  status: Generated<string>;
+  created_at: Generated<Date>;
+  read_at: Date | null;
+  read_by_profile_id: string | null;
+}
+
+export interface ContentContentPagesTable {
+  id: string;
+  key: string;
+  title: string;
+  body: string;
+  status: string;
+  published_at: Date | null;
+  published_by_profile_id: string | null;
+  created_at: Generated<Date>;
+  created_by_profile_id: string | null;
+  updated_at: Date | null;
+  updated_by_profile_id: string | null;
+}
+
+export interface ContentFaqsTable {
+  id: string;
+  question: string;
+  answer: string;
+  category_code: string | null;
+  display_order: Generated<number>;
+  is_active: Generated<boolean>;
+  created_at: Generated<Date>;
+  created_by_profile_id: string | null;
+  updated_at: Date | null;
+  updated_by_profile_id: string | null;
+}
+
+export interface ContentLibraryDocumentsTable {
+  id: string;
+  title: string;
+  category_code: string;
+  file_path: string;
+  file_size_bytes: string | null;
+  mime_type: string | null;
+  status: Generated<string>;
+  version_label: string | null;
+  published_at: Date | null;
+  published_by_profile_id: string | null;
+  created_at: Generated<Date>;
+  created_by_profile_id: string | null;
+  updated_at: Date | null;
+  updated_by_profile_id: string | null;
+  topic_code: string | null;
+}
+
+export interface ContentPageViewsTable {
+  id: Generated<string>;
+  page_path: string;
+  referrer: string | null;
+  created_at: Generated<Date>;
+}
+
+export interface FilesAttachmentLinksTable {
+  id: string;
+  attachment_id: string;
+  owner_type: string;
+  owner_id: string;
+  link_role_code: string | null;
+  linked_at: Date;
+  unlinked_at: Date | null;
+  created_at: Generated<Date>;
+  created_by_profile_id: string | null;
+  correlation_id: string | null;
+}
+
+export interface FilesAttachmentsTable {
+  id: string;
+  logical_file_size_bytes: string;
+  media_content_class_code: string;
+  access_classification_code: string;
+  original_filename: string;
+  mime_type: string;
+  checksum_sha256: string | null;
+  document_category_code: string;
+  storage_accounting_category_code: string;
+  storage_object_path: string | null;
+  storage_object_id: string | null;
+  version_number: Generated<number>;
+  is_current_version: Generated<boolean>;
+  storage_status_code: string;
+  deletion_retention_status_code: string;
+  created_at: Generated<Date>;
+  created_by_profile_id: string | null;
+  updated_at: Date | null;
+  updated_by_profile_id: string | null;
+  correlation_id: string | null;
+}
+
+export interface IdentityAuthEventsTable {
+  id: Generated<string>;
+  event_type: string;
+  identifier: string | null;
+  channel: Generated<string>;
+  detail: string | null;
+  created_at: Generated<Date>;
+}
+
+export interface ImportsImportErrorsTable {
+  id: string;
+  import_job_id: string;
+  import_row_id: string;
+  severity: string;
+  error_code: string;
+  error_message: string;
+  field_name: string | null;
+  created_at: Generated<Date>;
+}
+
+export interface ImportsImportFilesTable {
+  id: string;
+  import_job_id: string;
+  file_name: string;
+  file_size_bytes: string;
+  mime_type: string;
+  storage_path: string;
+  created_at: Generated<Date>;
+  created_by_profile_id: string | null;
+}
+
+export interface ImportsImportJobsTable {
+  id: string;
+  public_ref: string | null;
+  status_code: string;
+  source_label: string | null;
+  created_at: Generated<Date>;
+  created_by_profile_id: string | null;
+  updated_at: Date | null;
+  updated_by_profile_id: string | null;
+  correlation_id: string | null;
+  idempotency_key: string | null;
+}
+
+export interface ImportsImportRowsTable {
+  id: string;
+  import_job_id: string;
+  row_number: number;
+  raw_data: JsonValue;
+  normalized_data: JsonValue | null;
+  validation_status: string;
+  created_at: Generated<Date>;
+}
+
+export interface RequestsRequestStatusHistoriesTable {
+  id: string;
+  service_request_id: string;
+  changed_at: Date;
+  changed_by_profile_id: string | null;
+  from_status_code: string | null;
+  to_status_code: string;
+  reason: string | null;
+  correlation_id: string | null;
+  created_at: Generated<Date>;
+}
+
 export interface DatabaseSchemas {
   // Identity schema
   'identity.user_profiles': IdentityUserProfilesTable;
@@ -600,4 +809,21 @@ export interface DatabaseSchemas {
   'notify.notification_read_states': NotificationReadStatesTable;
   'notify.notification_outbox_messages': NotificationOutboxMessagesTable;
   'notify.device_tokens': DeviceTokensTable;
+
+  // Typed from the migration chain on 2026-10-14
+  'audit.audit_logs': AuditAuditLogsTable;
+  'content.announcements': ContentAnnouncementsTable;
+  'content.contact_messages': ContentContactMessagesTable;
+  'content.content_pages': ContentContentPagesTable;
+  'content.faqs': ContentFaqsTable;
+  'content.library_documents': ContentLibraryDocumentsTable;
+  'content.page_views': ContentPageViewsTable;
+  'files.attachment_links': FilesAttachmentLinksTable;
+  'files.attachments': FilesAttachmentsTable;
+  'identity.auth_events': IdentityAuthEventsTable;
+  'imports.import_errors': ImportsImportErrorsTable;
+  'imports.import_files': ImportsImportFilesTable;
+  'imports.import_jobs': ImportsImportJobsTable;
+  'imports.import_rows': ImportsImportRowsTable;
+  'requests.request_status_histories': RequestsRequestStatusHistoriesTable;
 }
