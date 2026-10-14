@@ -5,15 +5,122 @@ import { DomainException } from '../http/domain-exception.js';
 import { DUE_STATUSES } from '../dues-payments/dues-payments.repository.js';
 import { ConfigService } from '@nestjs/config';
 import { sql } from 'kysely';
+import type { Selectable } from 'kysely';
 import {
   AuthenticatedEndpoint,
   RequirePermission,
 } from '../authz/authorization.decorators.js';
+import type { ActorAuthorizationContext } from '../authz/authorization.contracts.js';
 import {
   VERIFIED_ACTOR,
   type AuthenticatedRequest,
 } from '../authn/bearer-actor-context.resolver.js';
 import { DatabaseService } from '../database/database.service.js';
+import type {
+  ContentAnnouncementsTable,
+  ContentContactMessagesTable,
+  ContentContentPagesTable,
+  ContentFaqsTable,
+  LegalEntitiesTable,
+  RequestsRequestStatusHistoriesTable,
+  ServiceRequestsTable,
+  ServiceTypesTable,
+} from '../database/database.contracts.js';
+
+export interface AdminErrorResponse {
+  error: string;
+}
+
+export interface AdminSuccessResponse {
+  success: true;
+}
+
+export interface AdminRequestRow {
+  id: string;
+  public_ref: string | null;
+  status_code: string;
+  submitted_at: Date | null;
+  created_at: Date;
+  taxpayer_name: string | null;
+  taxpayer_ref: string | null;
+  service_type_name: string | null;
+}
+
+export interface AdminRequestDetailsResponse {
+  request: AdminRequestRow;
+  history: Selectable<RequestsRequestStatusHistoriesTable>[];
+}
+
+export interface CreateStaffUserResponse {
+  success: true;
+  staffProfileId: string;
+  displayName: string;
+}
+
+export interface CurrentUserResponse {
+  userProfileId: string;
+  displayName: string | null;
+  staffCode: string | null;
+  title: string | null;
+  roles: { code: string; nameAr: string | null }[];
+  permissions: ActorAuthorizationContext['permissions'];
+}
+
+export interface AdminRoleRow {
+  id: string;
+  code: string;
+  name_ar: string;
+}
+
+export interface AdminUserRow {
+  id: string;
+  staff_code: string | null;
+  title: string | null;
+  is_active: boolean;
+  display_name: string | null;
+  role_name: string | null;
+}
+
+export interface AdminDecisionRow {
+  id: string;
+  outcome_code: string;
+  decision_summary: string | null;
+  decided_at: Date;
+  request_ref: string | null;
+  taxpayer_name: string | null;
+}
+
+export interface AdminBalaghRow {
+  id: string;
+  public_ref: string | null;
+  balagh_type_code: string;
+  status_code: string;
+  submitted_at: Date | null;
+  created_at: Date;
+  taxpayer_name: string | null;
+  taxpayer_ref: string | null;
+}
+
+export interface AdminVisitRow {
+  id: string;
+  public_ref: string | null;
+  status_code: string;
+  service_request_id: string | null;
+  notes: string | null;
+  created_at: Date;
+  taxpayer_name: string | null;
+}
+
+interface ActiveRoleRow {
+  code: string;
+  name_ar: string | null;
+}
+
+/** قراءة خاصية من جسم JSON مجهول البنية دون افتراض شكله. */
+function readJsonProperty(value: unknown, key: string): unknown {
+  if (typeof value !== 'object' || value === null) return undefined;
+  return (value as Record<string, unknown>)[key];
+}
 
 @Controller('api/v1/admin')
 export class AdminController {
@@ -25,8 +132,8 @@ export class AdminController {
   /** أدوار المستخدم النشطة — استعلام مُعامَل (لا تركيب نصي). */
   private async activeRolesOf(
     userProfileId: string,
-  ): Promise<{ code: string; name_ar: string | null }[]> {
-    const result = await sql<{ code: string; name_ar: string | null }>`
+  ): Promise<ActiveRoleRow[]> {
+    const result = await sql<ActiveRoleRow>`
       select r.code, r.name_ar
       from identity.staff_role_assignments sra
       join identity.roles r on r.id = sra.role_id
@@ -42,11 +149,13 @@ export class AdminController {
   // وهذه النقطة تكشف تفاصيل أي طلب في النظام.
   @RequirePermission('request.review')
   @Get('requests/:id/details')
-  async getRequestDetails(@Param('id') id: string) {
+  async getRequestDetails(
+    @Param('id') id: string,
+  ): Promise<AdminRequestDetailsResponse | null> {
     if (!this.db.isInitialized) return null;
     try {
-      const request = await (this.db.db
-        .selectFrom('requests.service_requests' as any) as any)
+      const request: AdminRequestRow | undefined = await this.db.db
+        .selectFrom('requests.service_requests')
         .leftJoin('registry.taxpayers', 'registry.taxpayers.id', 'requests.service_requests.taxpayer_id')
         .leftJoin('requests.service_types', 'requests.service_types.id', 'requests.service_requests.service_type_id')
         .select([
@@ -63,11 +172,11 @@ export class AdminController {
         .executeTakeFirst();
       if (!request) return null;
 
-      const history = await this.db.db
-        .selectFrom('requests.request_status_histories' as any)
+      const history: Selectable<RequestsRequestStatusHistoriesTable>[] = await this.db.db
+        .selectFrom('requests.request_status_histories')
         .selectAll()
-        .where('service_request_id' as any, '=', id)
-        .orderBy('changed_at' as any, 'desc')
+        .where('service_request_id', '=', id)
+        .orderBy('changed_at', 'desc')
         .limit(50)
         .execute()
         .catch(() => []);
@@ -80,13 +189,13 @@ export class AdminController {
 
   @RequirePermission('request.read')
   @Get('services')
-  async getServices() {
+  async getServices(): Promise<Selectable<ServiceTypesTable>[]> {
     if (!this.db.isInitialized) return [];
     try {
       return await this.db.db
-        .selectFrom('requests.service_types' as any)
+        .selectFrom('requests.service_types')
         .selectAll()
-        .orderBy('created_at' as any, 'asc')
+        .orderBy('created_at', 'asc')
         .limit(100)
         .execute();
     } catch {
@@ -96,19 +205,21 @@ export class AdminController {
 
   @RequirePermission('masterdata.manage')
   @Patch('services/:id/toggle')
-  async toggleService(@Param('id') id: string) {
+  async toggleService(
+    @Param('id') id: string,
+  ): Promise<Selectable<ServiceTypesTable> | undefined | AdminErrorResponse> {
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     try {
       const current = await this.db.db
-        .selectFrom('requests.service_types' as any)
-        .select(['is_active'] as any)
-        .where('id' as any, '=', id)
+        .selectFrom('requests.service_types')
+        .select(['is_active'])
+        .where('id', '=', id)
         .executeTakeFirst();
       if (!current) return { error: 'الخدمة غير موجودة' };
       return await this.db.db
-        .updateTable('requests.service_types' as any)
-        .set({ is_active: !(current as any).is_active, updated_at: new Date() } as any)
-        .where('id' as any, '=', id)
+        .updateTable('requests.service_types')
+        .set({ is_active: !current.is_active, updated_at: new Date() })
+        .where('id', '=', id)
         .returningAll()
         .executeTakeFirst();
     } catch {
@@ -118,14 +229,14 @@ export class AdminController {
 
   @RequirePermission('taxpayer.profile.read')
   @Get('legal-entities')
-  async getLegalEntities() {
+  async getLegalEntities(): Promise<Selectable<LegalEntitiesTable>[]> {
     if (!this.db.isInitialized) return [];
     try {
       return await this.db.db
-        .selectFrom('legal.legal_entities' as any)
+        .selectFrom('legal.legal_entities')
         .selectAll()
-        .where('archived_at' as any, 'is', null)
-        .orderBy('created_at' as any, 'asc')
+        .where('archived_at', 'is', null)
+        .orderBy('created_at', 'asc')
         .limit(100)
         .execute();
     } catch {
@@ -135,18 +246,20 @@ export class AdminController {
 
   @RequirePermission('taxpayer.profile.update')
   @Post('legal-entities')
-  async createLegalEntity(@Body() body: { legal_name: string; classification_code?: string }) {
+  async createLegalEntity(
+    @Body() body: { legal_name: string; classification_code?: string },
+  ): Promise<Selectable<LegalEntitiesTable> | undefined | AdminErrorResponse> {
     if (!body?.legal_name?.trim()) return { error: 'اسم الكيان مطلوب' };
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     try {
       return await this.db.db
-        .insertInto('legal.legal_entities' as any)
+        .insertInto('legal.legal_entities')
         .values({
           id: crypto.randomUUID(),
           legal_name: body.legal_name.trim(),
           classification_code: body.classification_code ?? 'other',
           is_active: true,
-        } as any)
+        })
         .returningAll()
         .executeTakeFirst();
     } catch {
@@ -158,7 +271,7 @@ export class AdminController {
   @Post('users')
   async createStaffUser(
     @Body() body: { displayName: string; phone: string; password: string; title?: string; roleCode?: string },
-  ) {
+  ): Promise<CreateStaffUserResponse | AdminErrorResponse> {
     if (!body?.displayName?.trim() || !body?.phone?.trim() || !body?.password) {
       return { error: 'الاسم ورقم الهاتف وكلمة المرور مطلوبة' };
     }
@@ -183,22 +296,30 @@ export class AdminController {
           phone_confirm: true,
         }),
       });
-      const authData: any = await authRes.json();
-      if (!authRes.ok || !authData?.id) {
-        return { error: authData?.msg || authData?.message || 'تعذر إنشاء حساب المصادقة — تحقق من تفعيل مزود الهاتف' };
+      const authData: unknown = await authRes.json();
+      const authUserId = readJsonProperty(authData, 'id');
+      if (!authRes.ok || typeof authUserId !== 'string' || !authUserId) {
+        const msg = readJsonProperty(authData, 'msg');
+        const message = readJsonProperty(authData, 'message');
+        return {
+          error:
+            (typeof msg === 'string' && msg) ||
+            (typeof message === 'string' && message) ||
+            'تعذر إنشاء حساب المصادقة — تحقق من تفعيل مزود الهاتف',
+        };
       }
 
       // 2. ملف المستخدم
       const userProfileId = crypto.randomUUID();
       await this.db.db
-        .insertInto('identity.user_profiles' as any)
-        .values({ id: userProfileId, auth_user_id: authData.id, display_name: body.displayName.trim(), is_active: true } as any)
+        .insertInto('identity.user_profiles')
+        .values({ id: userProfileId, auth_user_id: authUserId, display_name: body.displayName.trim(), is_active: true })
         .execute();
 
       // 3. الملف الوظيفي
       const staffProfileId = crypto.randomUUID();
       await this.db.db
-        .insertInto('identity.staff_profiles' as any)
+        .insertInto('identity.staff_profiles')
         .values({
           id: staffProfileId,
           user_profile_id: userProfileId,
@@ -206,26 +327,26 @@ export class AdminController {
           title: body.title?.trim() ?? 'موظف',
           is_active: true,
           effective_from: new Date(),
-        } as any)
+        })
         .execute();
 
       // 4. إسناد الدور إن وُجد
       if (body.roleCode) {
         const role = await this.db.db
-          .selectFrom('identity.roles' as any)
-          .select(['id'] as any)
-          .where('code' as any, '=', body.roleCode)
+          .selectFrom('identity.roles')
+          .select(['id'])
+          .where('code', '=', body.roleCode)
           .executeTakeFirst();
         if (role) {
           await this.db.db
-            .insertInto('identity.staff_role_assignments' as any)
+            .insertInto('identity.staff_role_assignments')
             .values({
               id: crypto.randomUUID(),
               staff_profile_id: staffProfileId,
-              role_id: (role as any).id,
+              role_id: role.id,
               effective_from: new Date(),
               assigned_at: new Date(),
-            } as any)
+            })
             .execute();
         }
       }
@@ -242,21 +363,23 @@ export class AdminController {
    */
   @AuthenticatedEndpoint()
   @Get('me')
-  async getCurrentUser(@Req() request: AuthenticatedRequest) {
+  async getCurrentUser(
+    @Req() request: AuthenticatedRequest,
+  ): Promise<CurrentUserResponse | null> {
     const actor = request[VERIFIED_ACTOR];
     if (!actor) return null;
-    const empty = {
+    const empty: CurrentUserResponse = {
       userProfileId: actor.actorId,
-      displayName: null as string | null,
-      staffCode: null as string | null,
-      title: null as string | null,
-      roles: [] as { code: string; nameAr: string | null }[],
+      displayName: null,
+      staffCode: null,
+      title: null,
+      roles: [],
       permissions: actor.permissions,
     };
     if (!this.db.isInitialized) return empty;
     try {
-      const profile = await (this.db.db
-        .selectFrom('identity.user_profiles' as any) as any)
+      const profile = await this.db.db
+        .selectFrom('identity.user_profiles')
         .leftJoin(
           'identity.staff_profiles',
           'identity.staff_profiles.user_profile_id',
@@ -286,13 +409,13 @@ export class AdminController {
 
   @RequirePermission('role.read')
   @Get('roles')
-  async getRoles() {
+  async getRoles(): Promise<AdminRoleRow[]> {
     if (!this.db.isInitialized) return [];
     try {
       return await this.db.db
-        .selectFrom('identity.roles' as any)
-        .select(['id', 'code', 'name_ar'] as any)
-        .where('is_active' as any, '=', true)
+        .selectFrom('identity.roles')
+        .select(['id', 'code', 'name_ar'])
+        .where('is_active', '=', true)
         .execute();
     } catch {
       return [];
@@ -301,13 +424,13 @@ export class AdminController {
 
   @RequirePermission('content.publish')
   @Get('content-pages')
-  async getContentPages() {
+  async getContentPages(): Promise<Selectable<ContentContentPagesTable>[]> {
     if (!this.db.isInitialized) return [];
     try {
       return await this.db.db
-        .selectFrom('content.content_pages' as any)
+        .selectFrom('content.content_pages')
         .selectAll()
-        .orderBy('created_at' as any, 'asc')
+        .orderBy('created_at', 'asc')
         .limit(50)
         .execute();
     } catch {
@@ -317,25 +440,27 @@ export class AdminController {
 
   @RequirePermission('content.publish')
   @Post('content-pages')
-  async saveContentPage(@Body() body: { key: string; title: string; body: string }) {
+  async saveContentPage(
+    @Body() body: { key: string; title: string; body: string },
+  ): Promise<Selectable<ContentContentPagesTable> | undefined | AdminErrorResponse> {
     if (!body?.key?.trim() || !body?.title?.trim()) return { error: 'المفتاح والعنوان مطلوبان' };
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     try {
       const existing = await this.db.db
-        .selectFrom('content.content_pages' as any)
-        .select(['id'] as any)
-        .where('key' as any, '=', body.key.trim())
+        .selectFrom('content.content_pages')
+        .select(['id'])
+        .where('key', '=', body.key.trim())
         .executeTakeFirst();
       if (existing) {
         return await this.db.db
-          .updateTable('content.content_pages' as any)
-          .set({ title: body.title.trim(), body: body.body ?? '', status: 'published', updated_at: new Date() } as any)
-          .where('id' as any, '=', (existing as any).id)
+          .updateTable('content.content_pages')
+          .set({ title: body.title.trim(), body: body.body ?? '', status: 'published', updated_at: new Date() })
+          .where('id', '=', existing.id)
           .returningAll()
           .executeTakeFirst();
       }
       return await this.db.db
-        .insertInto('content.content_pages' as any)
+        .insertInto('content.content_pages')
         .values({
           id: crypto.randomUUID(),
           key: body.key.trim(),
@@ -343,7 +468,7 @@ export class AdminController {
           body: body.body ?? '',
           status: 'published',
           published_at: new Date(),
-        } as any)
+        })
         .returningAll()
         .executeTakeFirst();
     } catch {
@@ -353,13 +478,13 @@ export class AdminController {
 
   @RequirePermission('content.publish')
   @Get('contact-messages')
-  async getContactMessages() {
+  async getContactMessages(): Promise<Selectable<ContentContactMessagesTable>[]> {
     if (!this.db.isInitialized) return [];
     try {
       return await this.db.db
-        .selectFrom('content.contact_messages' as any)
+        .selectFrom('content.contact_messages')
         .selectAll()
-        .orderBy('created_at' as any, 'desc')
+        .orderBy('created_at', 'desc')
         .limit(200)
         .execute();
     } catch {
@@ -369,13 +494,15 @@ export class AdminController {
 
   @RequirePermission('content.publish')
   @Patch('contact-messages/:id/read')
-  async markContactMessageRead(@Param('id') id: string) {
+  async markContactMessageRead(
+    @Param('id') id: string,
+  ): Promise<Selectable<ContentContactMessagesTable> | undefined | AdminErrorResponse> {
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     try {
       return await this.db.db
-        .updateTable('content.contact_messages' as any)
-        .set({ status: 'read', read_at: new Date() } as any)
-        .where('id' as any, '=', id)
+        .updateTable('content.contact_messages')
+        .set({ status: 'read', read_at: new Date() })
+        .where('id', '=', id)
         .returningAll()
         .executeTakeFirst();
     } catch {
@@ -385,11 +512,11 @@ export class AdminController {
 
   @RequirePermission('user.read')
   @Get('users')
-  async getUsers() {
+  async getUsers(): Promise<AdminUserRow[]> {
     if (!this.db.isInitialized) return [];
     try {
-      const rows = await (this.db.db
-        .selectFrom('identity.staff_profiles' as any) as any)
+      const rows: AdminUserRow[] = await this.db.db
+        .selectFrom('identity.staff_profiles')
         .leftJoin(
           'identity.user_profiles',
           'identity.user_profiles.id',
@@ -425,11 +552,11 @@ export class AdminController {
 
   @RequirePermission('request.review')
   @Get('decisions')
-  async getDecisions() {
+  async getDecisions(): Promise<AdminDecisionRow[]> {
     if (!this.db.isInitialized) return [];
     try {
-      const rows = await (this.db.db
-        .selectFrom('requests.request_decision_records' as any) as any)
+      const rows: AdminDecisionRow[] = await this.db.db
+        .selectFrom('requests.request_decision_records')
         .leftJoin(
           'requests.service_requests',
           'requests.service_requests.id',
@@ -459,13 +586,13 @@ export class AdminController {
 
   @RequirePermission('content.publish')
   @Get('announcements')
-  async getAnnouncements() {
+  async getAnnouncements(): Promise<Selectable<ContentAnnouncementsTable>[]> {
     if (!this.db.isInitialized) return [];
     try {
       const rows = await this.db.db
-        .selectFrom('content.announcements' as any)
+        .selectFrom('content.announcements')
         .selectAll()
-        .orderBy('created_at' as any, 'desc')
+        .orderBy('created_at', 'desc')
         .limit(50)
         .execute();
       return rows;
@@ -478,14 +605,14 @@ export class AdminController {
   @Post('announcements')
   async createAnnouncement(
     @Body() body: { title: string; body: string; priority?: number },
-  ) {
+  ): Promise<Selectable<ContentAnnouncementsTable> | undefined | AdminErrorResponse> {
     if (!body?.title || !body?.body) {
       return { error: 'العنوان والنص مطلوبان' };
     }
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     try {
       const row = await this.db.db
-        .insertInto('content.announcements' as any)
+        .insertInto('content.announcements')
         .values({
           id: crypto.randomUUID(),
           title: body.title,
@@ -493,7 +620,7 @@ export class AdminController {
           priority: body.priority ?? 0,
           is_active: true,
           published_at: new Date(),
-        } as any)
+        })
         .returningAll()
         .executeTakeFirst();
       return row;
@@ -504,19 +631,21 @@ export class AdminController {
 
   @RequirePermission('content.publish')
   @Patch('announcements/:id/toggle')
-  async toggleAnnouncement(@Param('id') id: string) {
+  async toggleAnnouncement(
+    @Param('id') id: string,
+  ): Promise<Selectable<ContentAnnouncementsTable> | undefined | AdminErrorResponse> {
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     try {
-      const existing = (await this.db.db
-        .selectFrom('content.announcements' as any)
-        .select(['is_active'] as any)
-        .where('id' as any, '=', id)
-        .executeTakeFirst()) as any;
+      const existing = await this.db.db
+        .selectFrom('content.announcements')
+        .select(['is_active'])
+        .where('id', '=', id)
+        .executeTakeFirst();
       if (!existing) return { error: 'الإعلان غير موجود' };
       const updated = await this.db.db
-        .updateTable('content.announcements' as any)
-        .set({ is_active: !existing.is_active, updated_at: new Date() } as any)
-        .where('id' as any, '=', id)
+        .updateTable('content.announcements')
+        .set({ is_active: !existing.is_active, updated_at: new Date() })
+        .where('id', '=', id)
         .returningAll()
         .executeTakeFirst();
       return updated;
@@ -527,12 +656,14 @@ export class AdminController {
 
   @RequirePermission('content.publish')
   @Delete('announcements/:id')
-  async deleteAnnouncement(@Param('id') id: string) {
+  async deleteAnnouncement(
+    @Param('id') id: string,
+  ): Promise<AdminSuccessResponse | AdminErrorResponse> {
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     try {
       await this.db.db
-        .deleteFrom('content.announcements' as any)
-        .where('id' as any, '=', id)
+        .deleteFrom('content.announcements')
+        .where('id', '=', id)
         .execute();
       return { success: true };
     } catch {
@@ -542,14 +673,14 @@ export class AdminController {
 
   @RequirePermission('content.publish')
   @Get('faqs')
-  async getFaqs() {
+  async getFaqs(): Promise<Selectable<ContentFaqsTable>[]> {
     if (!this.db.isInitialized) return [];
     try {
       return await this.db.db
-        .selectFrom('content.faqs' as any)
+        .selectFrom('content.faqs')
         .selectAll()
-        .orderBy('display_order' as any, 'asc')
-        .orderBy('created_at' as any, 'desc')
+        .orderBy('display_order', 'asc')
+        .orderBy('created_at', 'desc')
         .limit(100)
         .execute();
     } catch {
@@ -561,14 +692,14 @@ export class AdminController {
   @Post('faqs')
   async createFaq(
     @Body() body: { question: string; answer: string; category?: string; displayOrder?: number },
-  ) {
+  ): Promise<Selectable<ContentFaqsTable> | undefined | AdminErrorResponse> {
     if (!body?.question?.trim() || !body?.answer?.trim()) {
       return { error: 'السؤال والإجابة حقول مطلوبة' };
     }
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     try {
       return await this.db.db
-        .insertInto('content.faqs' as any)
+        .insertInto('content.faqs')
         .values({
           id: crypto.randomUUID(),
           question: body.question.trim(),
@@ -576,7 +707,7 @@ export class AdminController {
           category_code: body.category?.trim() || 'general',
           display_order: body.displayOrder ?? 0,
           is_active: true,
-        } as any)
+        })
         .returningAll()
         .executeTakeFirst();
     } catch {
@@ -586,19 +717,21 @@ export class AdminController {
 
   @RequirePermission('content.publish')
   @Patch('faqs/:id/toggle')
-  async toggleFaq(@Param('id') id: string) {
+  async toggleFaq(
+    @Param('id') id: string,
+  ): Promise<Selectable<ContentFaqsTable> | undefined | AdminErrorResponse> {
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     try {
-      const existing = (await this.db.db
-        .selectFrom('content.faqs' as any)
-        .select(['is_active'] as any)
-        .where('id' as any, '=', id)
-        .executeTakeFirst()) as any;
+      const existing = await this.db.db
+        .selectFrom('content.faqs')
+        .select(['is_active'])
+        .where('id', '=', id)
+        .executeTakeFirst();
       if (!existing) return { error: 'السؤال غير موجود' };
       return await this.db.db
-        .updateTable('content.faqs' as any)
-        .set({ is_active: !existing.is_active, updated_at: new Date() } as any)
-        .where('id' as any, '=', id)
+        .updateTable('content.faqs')
+        .set({ is_active: !existing.is_active, updated_at: new Date() })
+        .where('id', '=', id)
         .returningAll()
         .executeTakeFirst();
     } catch {
@@ -608,12 +741,14 @@ export class AdminController {
 
   @RequirePermission('content.publish')
   @Delete('faqs/:id')
-  async deleteFaq(@Param('id') id: string) {
+  async deleteFaq(
+    @Param('id') id: string,
+  ): Promise<AdminSuccessResponse | AdminErrorResponse> {
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     try {
       await this.db.db
-        .deleteFrom('content.faqs' as any)
-        .where('id' as any, '=', id)
+        .deleteFrom('content.faqs')
+        .where('id', '=', id)
         .execute();
       return { success: true };
     } catch {
@@ -623,7 +758,7 @@ export class AdminController {
 
   @RequirePermission('import.validate')
   @Get('imports')
-  async getImportJobs() {
+  async getImportJobs(): Promise<Record<string, unknown>[]> {
     if (!this.db.isInitialized) return [];
     try {
       const result = await sql<Record<string, unknown>>`
@@ -645,11 +780,11 @@ export class AdminController {
   // تعيد طلبات كل المكلفين بأسمائهم ⇒ صلاحية موظف لا صلاحية مكلف.
   @RequirePermission('request.review')
   @Get('requests')
-  async getRequests() {
+  async getRequests(): Promise<AdminRequestRow[]> {
     if (!this.db.isInitialized) return [];
     try {
-      const rows = await (this.db.db
-        .selectFrom('requests.service_requests' as any) as any)
+      const rows: AdminRequestRow[] = await this.db.db
+        .selectFrom('requests.service_requests')
         .leftJoin(
           'registry.taxpayers',
           'registry.taxpayers.id',
@@ -670,8 +805,8 @@ export class AdminController {
           'registry.taxpayers.public_ref as taxpayer_ref',
           'requests.service_types.name as service_type_name',
         ])
-        .where('requests.service_requests.archived_at' as any, 'is', null)
-        .orderBy('requests.service_requests.created_at' as any, 'desc')
+        .where('requests.service_requests.archived_at', 'is', null)
+        .orderBy('requests.service_requests.created_at', 'desc')
         .limit(50)
         .execute();
       return rows;
@@ -689,19 +824,10 @@ export class AdminController {
    */
   @RequirePermission('balagh.review')
   @Get('balaghs')
-  async getBalaghs() {
+  async getBalaghs(): Promise<AdminBalaghRow[]> {
     if (!this.db.isInitialized) return [];
     try {
-      const rows = await sql<{
-        id: string;
-        public_ref: string | null;
-        balagh_type_code: string;
-        status_code: string;
-        submitted_at: Date | null;
-        created_at: Date;
-        taxpayer_name: string | null;
-        taxpayer_ref: string | null;
-      }>`
+      const rows = await sql<AdminBalaghRow>`
         select b.id,
                b.public_ref,
                b.balagh_type_code,
@@ -726,11 +852,11 @@ export class AdminController {
 
   @RequirePermission('field_visit.schedule')
   @Get('visits')
-  async getVisits() {
+  async getVisits(): Promise<AdminVisitRow[]> {
     if (!this.db.isInitialized) return [];
     try {
-      const rows = await (this.db.db
-        .selectFrom('visits.field_visits' as any) as any)
+      const rows: AdminVisitRow[] = await this.db.db
+        .selectFrom('visits.field_visits')
         .leftJoin(
           'requests.service_requests',
           'requests.service_requests.id',
@@ -750,8 +876,8 @@ export class AdminController {
           'visits.field_visits.created_at as created_at',
           'registry.taxpayers.display_name as taxpayer_name',
         ])
-        .where('visits.field_visits.archived_at' as any, 'is', null)
-        .orderBy('visits.field_visits.created_at' as any, 'desc')
+        .where('visits.field_visits.archived_at', 'is', null)
+        .orderBy('visits.field_visits.created_at', 'desc')
         .limit(50)
         .execute();
       return rows;
@@ -770,7 +896,7 @@ export class AdminController {
   async updateDueStatus(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() body: { status?: string },
-  ) {
+  ): Promise<never> {
     if (!this.db.isInitialized) {
       throw DomainException.unavailable('قاعدة البيانات غير متاحة');
     }
@@ -778,8 +904,8 @@ export class AdminController {
     if (!(Object.values(DUE_STATUSES) as string[]).includes(status)) {
       throw DomainException.badRequest('حالة المستحق غير معروفة');
     }
-    const due = await (this.db.db
-      .selectFrom('dues.payment_dues' as any) as any)
+    const due = await this.db.db
+      .selectFrom('dues.payment_dues')
       .select(['status_code'])
       .where('id', '=', id)
       .executeTakeFirst();
@@ -799,7 +925,7 @@ export class AdminController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() body: { status?: string; notes?: string },
     @Req() request: AuthenticatedRequest,
-  ) {
+  ): Promise<Selectable<ServiceRequestsTable>> {
     if (!this.db.isInitialized) {
       throw DomainException.unavailable('قاعدة البيانات غير متاحة');
     }
@@ -810,8 +936,8 @@ export class AdminController {
     }
     const actorId = request[VERIFIED_ACTOR]?.actorId ?? null;
     return this.db.db.transaction().execute(async (trx) => {
-      const current = await (trx
-        .selectFrom('requests.service_requests' as any) as any)
+      const current = await trx
+        .selectFrom('requests.service_requests')
         .select(['status_code'])
         .where('id', '=', id)
         .forUpdate()
@@ -824,13 +950,14 @@ export class AdminController {
         );
       }
       const now = new Date();
-      const updated = await (trx
-        .updateTable('requests.service_requests' as any) as any)
+      const updated = await trx
+        .updateTable('requests.service_requests')
         .set({ status_code: target, updated_at: now })
         .where('id', '=', id)
         .returningAll()
         .executeTakeFirstOrThrow();
-      await (trx.insertInto('requests.request_status_histories' as any) as any)
+      await trx
+        .insertInto('requests.request_status_histories')
         .values({
           id: randomUUID(),
           service_request_id: id,

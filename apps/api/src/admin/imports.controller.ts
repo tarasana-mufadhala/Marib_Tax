@@ -11,8 +11,14 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { sql } from 'kysely';
+import type { Selectable, Transaction } from 'kysely';
 import * as XLSX from 'xlsx';
 import { RequirePermission } from '../authz/authorization.decorators.js';
+import type {
+  DatabaseSchemas,
+  ImportsImportJobsTable,
+  JsonValue,
+} from '../database/database.contracts.js';
 import { DatabaseService } from '../database/database.service.js';
 import { StorageService } from './storage.service.js';
 import { TaxpayerCredentialsService } from '../messaging/taxpayer-credentials.service.js';
@@ -24,11 +30,75 @@ interface ParsedRow {
   raw: Record<string, string>;
 }
 
+interface NormalizedRow {
+  name?: string;
+  phone?: string;
+  taxNumber?: string;
+  address?: string;
+  activityName?: string;
+  requestRef?: string;
+  currency?: string;
+  amount?: number;
+}
+
+interface RowError {
+  code: string;
+  message: string;
+  field?: string;
+}
+
 interface ValidatedRow {
   rowNumber: number;
   raw: Record<string, string>;
-  normalized: Record<string, any>;
-  errors: { code: string; message: string; field?: string }[];
+  normalized: NormalizedRow;
+  errors: RowError[];
+}
+
+interface ImportErrorResponse {
+  error: string;
+}
+
+interface UploadImportResponse {
+  jobId: string;
+  total: number;
+  valid: number;
+  rejected: number;
+  errors: { row: number; field: string; message: string }[];
+}
+
+interface ImportJobErrorItem {
+  id: string;
+  row_number: number | null;
+  field_name: string | null;
+  error_message: string;
+}
+
+interface ImportJobDetailResponse {
+  job: Selectable<ImportsImportJobsTable>;
+  total: number;
+  valid: number;
+  rejected: number;
+  importType: JsonValue;
+  errors: ImportJobErrorItem[];
+}
+
+interface ApproveImportResponse {
+  success: boolean;
+  inserted: number;
+  skipped: number;
+  accountsCreated?: number;
+  accountIssues?: string[];
+}
+
+interface RejectImportResponse {
+  success: boolean;
+}
+
+type AuditMetadata = Record<string, string | number>;
+
+interface ContactRow {
+  contact_type_code: string;
+  contact_value: string;
 }
 
 const NAME_HEADERS = ['الاسم', 'الاسم الكامل', 'اسم المكلف', 'name', 'display_name', 'full_name', 'fullname'];
@@ -65,6 +135,29 @@ function randomRef(prefix: string): string {
   return `${prefix}-${crypto.randomUUID().replace(/-/g, '').slice(0, 6).toUpperCase()}`;
 }
 
+/** يعيد قيمة jsonb ككائن، أو كائناً فارغاً إن لم تكن كائناً. */
+function asRecord(value: JsonValue | null | undefined): Record<string, JsonValue> {
+  if (value !== null && value !== undefined && typeof value === 'object' && !Array.isArray(value)) {
+    return value;
+  }
+  return {};
+}
+
+/** مكافئ String(value ?? fallback) لقيم jsonb النصية والعددية. */
+function jsonText(value: JsonValue | undefined, fallback: string): string {
+  if (value === undefined || value === null) return fallback;
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  return JSON.stringify(value);
+}
+
+/** مراجع الربط بالمكلف (الهاتف/الرقم الضريبي) غير الفارغة. */
+function contactRefs(data: Record<string, JsonValue>): string[] {
+  return [data.phone, data.taxNumber].filter(
+    (v): v is string => typeof v === 'string' && v !== '',
+  );
+}
+
 @Controller('api/v1/admin')
 export class ImportsController {
   constructor(
@@ -79,7 +172,7 @@ export class ImportsController {
   async uploadImport(
     @UploadedFile() file: { originalname?: string; mimetype?: string; size?: number; buffer?: Buffer },
     @Body() body: { importType?: string },
-  ) {
+  ): Promise<ImportErrorResponse | UploadImportResponse> {
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     const importType = (body?.importType ?? '') as ImportType;
     if (!['taxpayers', 'activities', 'dues'].includes(importType)) {
@@ -112,13 +205,13 @@ export class ImportsController {
         importType === 'taxpayers' ? 'مكلفون' : importType === 'activities' ? 'أنشطة تجارية' : 'مستحقات';
 
       await this.db.db
-        .insertInto('imports.import_jobs' as any)
+        .insertInto('imports.import_jobs')
         .values({
           id: jobId,
           public_ref: randomRef('IMP'),
           status_code: 'pending_review',
           source_label: `${typeLabel} — ${fileName}`,
-        } as any)
+        })
         .execute();
 
       let storagePath = `inline://${fileName}`;
@@ -134,21 +227,22 @@ export class ImportsController {
       }
 
       await this.db.db
-        .insertInto('imports.import_files' as any)
+        .insertInto('imports.import_files')
         .values({
           id: crypto.randomUUID(),
           import_job_id: jobId,
           file_name: fileName,
-          file_size_bytes: file.size ?? file.buffer.length,
+          // int8 مُنمَّط نصاً؛ node-postgres يرسل الأرقام نصاً على أي حال
+          file_size_bytes: String(file.size ?? file.buffer.length),
           mime_type: file.mimetype ?? 'application/octet-stream',
           storage_path: storagePath,
-        } as any)
+        })
         .execute();
 
       for (const row of validated) {
         const rowId = crypto.randomUUID();
         await this.db.db
-          .insertInto('imports.import_rows' as any)
+          .insertInto('imports.import_rows')
           .values({
             id: rowId,
             import_job_id: jobId,
@@ -156,12 +250,12 @@ export class ImportsController {
             raw_data: JSON.stringify(row.raw),
             normalized_data: JSON.stringify({ import_type: importType, ...row.normalized }),
             validation_status: row.errors.length === 0 ? 'valid' : 'rejected',
-          } as any)
+          })
           .execute();
 
         for (const err of row.errors) {
           await this.db.db
-            .insertInto('imports.import_errors' as any)
+            .insertInto('imports.import_errors')
             .values({
               id: crypto.randomUUID(),
               import_job_id: jobId,
@@ -170,7 +264,7 @@ export class ImportsController {
               error_code: err.code,
               error_message: err.message,
               field_name: err.field ?? null,
-            } as any)
+            })
             .execute();
         }
       }
@@ -199,13 +293,13 @@ export class ImportsController {
 
   @RequirePermission('import.validate')
   @Get('imports/:id')
-  async getImportJob(@Param('id') id: string) {
+  async getImportJob(@Param('id') id: string): Promise<ImportJobDetailResponse | null> {
     if (!this.db.isInitialized) return null;
     try {
       const job = await this.db.db
-        .selectFrom('imports.import_jobs' as any)
+        .selectFrom('imports.import_jobs')
         .selectAll()
-        .where('id' as any, '=', id)
+        .where('id', '=', id)
         .executeTakeFirst();
       if (!job) return null;
 
@@ -219,8 +313,8 @@ export class ImportsController {
           count(*) filter (where validation_status = 'rejected') as rejected
         from imports.import_rows where import_job_id = ${id}`.execute(this.db.db);
 
-      const errors = await (this.db.db
-        .selectFrom('imports.import_errors' as any) as any)
+      const errors: ImportJobErrorItem[] = await this.db.db
+        .selectFrom('imports.import_errors')
         .leftJoin('imports.import_rows', 'imports.import_rows.id', 'imports.import_errors.import_row_id')
         .select([
           'imports.import_errors.id as id',
@@ -232,12 +326,12 @@ export class ImportsController {
         .orderBy('imports.import_rows.row_number', 'asc')
         .limit(200)
         .execute()
-        .catch(() => []);
+        .catch((): ImportJobErrorItem[] => []);
 
       const firstRow = await this.db.db
-        .selectFrom('imports.import_rows' as any)
-        .select(['normalized_data'] as any)
-        .where('import_job_id' as any, '=', id)
+        .selectFrom('imports.import_rows')
+        .select(['normalized_data'])
+        .where('import_job_id', '=', id)
         .limit(1)
         .executeTakeFirst()
         .catch(() => null);
@@ -248,7 +342,7 @@ export class ImportsController {
         total: Number(c.total),
         valid: Number(c.valid),
         rejected: Number(c.rejected),
-        importType: (firstRow as any)?.normalized_data?.import_type ?? null,
+        importType: asRecord(firstRow?.normalized_data).import_type ?? null,
         errors,
       };
     } catch {
@@ -258,30 +352,30 @@ export class ImportsController {
 
   @RequirePermission('import.approve')
   @Post('imports/:id/approve')
-  async approveImport(@Param('id') id: string) {
+  async approveImport(@Param('id') id: string): Promise<ImportErrorResponse | ApproveImportResponse> {
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     try {
-      const job = (await this.db.db
-        .selectFrom('imports.import_jobs' as any)
+      const job = await this.db.db
+        .selectFrom('imports.import_jobs')
         .selectAll()
-        .where('id' as any, '=', id)
-        .executeTakeFirst()) as any;
+        .where('id', '=', id)
+        .executeTakeFirst();
       if (!job) return { error: 'عملية الاستيراد غير موجودة' };
       if (job.status_code !== 'pending_review') {
         return { error: 'لا يمكن الاعتماد — العملية ليست في حالة «بانتظار الاعتماد»' };
       }
 
-      const validRows = (await this.db.db
-        .selectFrom('imports.import_rows' as any)
-        .select(['id', 'row_number', 'normalized_data'] as any)
-        .where('import_job_id' as any, '=', id)
-        .where('validation_status' as any, '=', 'valid')
-        .orderBy('row_number' as any, 'asc')
-        .execute()) as any[];
+      const validRows = await this.db.db
+        .selectFrom('imports.import_rows')
+        .select(['id', 'row_number', 'normalized_data'])
+        .where('import_job_id', '=', id)
+        .where('validation_status', '=', 'valid')
+        .orderBy('row_number', 'asc')
+        .execute();
 
       if (validRows.length === 0) return { error: 'لا توجد صفوف صحيحة للترحيل' };
 
-      const importType = validRows[0]?.normalized_data?.import_type as ImportType;
+      const importType = asRecord(validRows[0]?.normalized_data).import_type;
       let inserted = 0;
       let skipped = 0;
       // تُجمع هنا ليُنشأ لها حسابات **بعد** نجاح المعاملة: إنشاء الهوية
@@ -290,7 +384,7 @@ export class ImportsController {
 
       await this.db.db.transaction().execute(async (trx) => {
         for (const row of validRows) {
-          const data = row.normalized_data ?? {};
+          const data = asRecord(row.normalized_data);
           try {
             if (importType === 'taxpayers') {
               const taxpayerId = await this.commitTaxpayerRow(trx, data);
@@ -298,18 +392,20 @@ export class ImportsController {
                 inserted++;
                 provisioned.push({
                   taxpayerId,
-                  phone: String(data.phone ?? ''),
-                  name: String(data.name ?? 'مكلف'),
+                  phone: jsonText(data.phone, ''),
+                  name: jsonText(data.name, 'مكلف'),
                 });
               } else {
                 skipped++;
               }
             } else if (importType === 'activities') {
               const done = await this.commitActivityRow(trx, data);
-              done ? inserted++ : skipped++;
+              if (done) inserted++;
+              else skipped++;
             } else if (importType === 'dues') {
               const done = await this.commitDueRow(trx, data);
-              done ? inserted++ : skipped++;
+              if (done) inserted++;
+              else skipped++;
             }
           } catch {
             skipped++;
@@ -317,9 +413,9 @@ export class ImportsController {
         }
 
         await trx
-          .updateTable('imports.import_jobs' as any)
-          .set({ status_code: 'imported', updated_at: new Date() } as any)
-          .where('id' as any, '=', id)
+          .updateTable('imports.import_jobs')
+          .set({ status_code: 'imported', updated_at: new Date() })
+          .where('id', '=', id)
           .execute();
       });
 
@@ -339,15 +435,13 @@ export class ImportsController {
 
       await this.audit('import.approved', id, { inserted, skipped, accountsCreated });
 
-      return {
-        success: true,
-        inserted,
-        skipped,
-        ...(provisioned.length > 0
-          ? { accountsCreated, accountIssues: accountIssues.slice(0, 10) }
-          : {}),
-      };
-    } catch (e) {
+      const response: ApproveImportResponse = { success: true, inserted, skipped };
+      if (provisioned.length > 0) {
+        response.accountsCreated = accountsCreated;
+        response.accountIssues = accountIssues.slice(0, 10);
+      }
+      return response;
+    } catch (e: unknown) {
       console.error('approveImport failed:', e);
       return { error: 'تعذر اعتماد وترحيل البيانات' };
     }
@@ -355,14 +449,14 @@ export class ImportsController {
 
   @RequirePermission('import.reject')
   @Post('imports/:id/reject')
-  async rejectImport(@Param('id') id: string) {
+  async rejectImport(@Param('id') id: string): Promise<ImportErrorResponse | RejectImportResponse> {
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     try {
       const result = await this.db.db
-        .updateTable('imports.import_jobs' as any)
-        .set({ status_code: 'rejected', updated_at: new Date() } as any)
-        .where('id' as any, '=', id)
-        .where('status_code' as any, '=', 'pending_review')
+        .updateTable('imports.import_jobs')
+        .set({ status_code: 'rejected', updated_at: new Date() })
+        .where('id', '=', id)
+        .where('status_code', '=', 'pending_review')
         .returningAll()
         .executeTakeFirst();
       if (!result) return { error: 'العملية غير موجودة أو سبق معالجتها' };
@@ -375,22 +469,22 @@ export class ImportsController {
 
   @RequirePermission('import.validate')
   @Get('imports/:id/file')
-  async downloadImportFile(@Param('id') id: string, @Res() res: Response) {
+  async downloadImportFile(@Param('id') id: string, @Res() res: Response): Promise<void> {
     if (!this.db.isInitialized || !this.storage.enabled) {
       res.status(503).json({ error: 'الخدمة غير متاحة' });
       return;
     }
     try {
-      const fileRow = (await this.db.db
-        .selectFrom('imports.import_files' as any)
-        .select(['storage_path', 'file_name', 'mime_type'] as any)
-        .where('import_job_id' as any, '=', id)
-        .executeTakeFirst()) as any;
-      if (!fileRow?.storage_path || String(fileRow.storage_path).startsWith('inline://')) {
+      const fileRow = await this.db.db
+        .selectFrom('imports.import_files')
+        .select(['storage_path', 'file_name', 'mime_type'])
+        .where('import_job_id', '=', id)
+        .executeTakeFirst();
+      if (!fileRow?.storage_path || fileRow.storage_path.startsWith('inline://')) {
         res.status(404).json({ error: 'لا يوجد ملف محفوظ لهذه العملية' });
         return;
       }
-      const [bucket, ...rest] = String(fileRow.storage_path).split('/');
+      const [bucket, ...rest] = fileRow.storage_path.split('/');
       const file = await this.storage.download(bucket ?? '', rest.join('/'));
       if (!file) {
         res.status(404).json({ error: 'تعذر جلب الملف من التخزين' });
@@ -410,7 +504,7 @@ export class ImportsController {
   private parseFile(buffer: Buffer, ext: string): ParsedRow[] {
     const workbook =
       ext === 'csv'
-        ? XLSX.read(buffer.toString('utf8').replace(/^﻿/, ''), { type: 'string' })
+        ? XLSX.read(buffer.toString('utf8').replace(/^\uFEFF/, ''), { type: 'string' })
         : XLSX.read(buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const sheet = sheetName ? workbook.Sheets[sheetName] : undefined;
@@ -437,42 +531,50 @@ export class ImportsController {
 
   private async validateRows(rows: ParsedRow[], importType: ImportType): Promise<ValidatedRow[]> {
     const validated: ValidatedRow[] = rows.map((r) => {
-      const normalized: Record<string, any> = {};
-      const errors: { code: string; message: string; field?: string }[] = [];
+      const normalized: NormalizedRow = {};
+      const errors: RowError[] = [];
 
       if (importType === 'taxpayers') {
-        normalized.name = pickField(r.raw, NAME_HEADERS);
-        normalized.phone = normalizePhone(pickField(r.raw, PHONE_HEADERS));
+        const name = pickField(r.raw, NAME_HEADERS);
+        const phone = normalizePhone(pickField(r.raw, PHONE_HEADERS));
+        normalized.name = name;
+        normalized.phone = phone;
         normalized.taxNumber = normalizeDigits(pickField(r.raw, TAX_HEADERS)).replace(/\s/g, '');
         normalized.address = pickField(r.raw, ADDRESS_HEADERS);
 
-        if (!normalized.name) errors.push({ code: 'MISSING_NAME', message: 'الاسم مطلوب', field: 'الاسم' });
-        if (!normalized.phone) {
+        if (!name) errors.push({ code: 'MISSING_NAME', message: 'الاسم مطلوب', field: 'الاسم' });
+        if (!phone) {
           errors.push({ code: 'MISSING_PHONE', message: 'رقم الهاتف مطلوب', field: 'الهاتف' });
-        } else if (normalized.phone.length < 7 || normalized.phone.length > 15) {
-          errors.push({ code: 'INVALID_PHONE', message: `صيغة الهاتف غير صحيحة (${normalized.phone})`, field: 'الهاتف' });
+        } else if (phone.length < 7 || phone.length > 15) {
+          errors.push({ code: 'INVALID_PHONE', message: `صيغة الهاتف غير صحيحة (${phone})`, field: 'الهاتف' });
         }
       } else if (importType === 'activities') {
-        normalized.phone = normalizePhone(pickField(r.raw, PHONE_HEADERS));
-        normalized.taxNumber = normalizeDigits(pickField(r.raw, TAX_HEADERS)).replace(/\s/g, '');
-        normalized.activityName = pickField(r.raw, ACTIVITY_NAME_HEADERS);
+        const phone = normalizePhone(pickField(r.raw, PHONE_HEADERS));
+        const taxNumber = normalizeDigits(pickField(r.raw, TAX_HEADERS)).replace(/\s/g, '');
+        const activityName = pickField(r.raw, ACTIVITY_NAME_HEADERS);
+        normalized.phone = phone;
+        normalized.taxNumber = taxNumber;
+        normalized.activityName = activityName;
 
-        if (!normalized.phone && !normalized.taxNumber) {
+        if (!phone && !taxNumber) {
           errors.push({ code: 'MISSING_TAXPAYER_REF', message: 'يجب تحديد هاتف المكلف أو رقمه الضريبي', field: 'المكلف' });
         }
-        if (!normalized.activityName) {
+        if (!activityName) {
           errors.push({ code: 'MISSING_ACTIVITY', message: 'اسم النشاط مطلوب', field: 'النشاط' });
         }
       } else {
         // مستحقات: مرجع طلب أو مرجع مكلف + مبلغ إلزامي
-        normalized.phone = normalizePhone(pickField(r.raw, PHONE_HEADERS));
-        normalized.taxNumber = normalizeDigits(pickField(r.raw, TAX_HEADERS)).replace(/\s/g, '');
-        normalized.requestRef = normalizeDigits(pickField(r.raw, REQUEST_REF_HEADERS)).replace(/\s/g, '').toUpperCase();
+        const phone = normalizePhone(pickField(r.raw, PHONE_HEADERS));
+        const taxNumber = normalizeDigits(pickField(r.raw, TAX_HEADERS)).replace(/\s/g, '');
+        const requestRef = normalizeDigits(pickField(r.raw, REQUEST_REF_HEADERS)).replace(/\s/g, '').toUpperCase();
+        normalized.phone = phone;
+        normalized.taxNumber = taxNumber;
+        normalized.requestRef = requestRef;
         normalized.currency = (pickField(r.raw, CURRENCY_HEADERS) || 'YER').toUpperCase();
         const amountRaw = normalizeDigits(pickField(r.raw, AMOUNT_HEADERS)).replace(/[,\s]/g, '');
         const amount = Number(amountRaw);
 
-        if (!normalized.requestRef && !normalized.phone && !normalized.taxNumber) {
+        if (!requestRef && !phone && !taxNumber) {
           errors.push({
             code: 'MISSING_LINK_REF',
             message: 'يجب تحديد مرجع الطلب أو هاتف المكلف أو رقمه الضريبي',
@@ -522,15 +624,15 @@ export class ImportsController {
     const phones = [...seenPhones];
     const taxes = [...seenTax];
     const contactValues = [...phones, ...taxes];
-    let existing: { contact_type_code: string; contact_value: string }[] = [];
+    let existing: ContactRow[] = [];
     if (contactValues.length > 0) {
-      existing = (await (this.db.db
-        .selectFrom('registry.taxpayer_contacts' as any) as any)
+      existing = await this.db.db
+        .selectFrom('registry.taxpayer_contacts')
         .select(['contact_type_code', 'contact_value'])
         .where('contact_value', 'in', contactValues)
         .where('is_active', '=', true)
         .execute()
-        .catch(() => [])) as any[];
+        .catch((): ContactRow[] => []);
     }
     const existingPhones = new Set(existing.filter((e) => e.contact_type_code === 'phone').map((e) => e.contact_value));
     const existingTax = new Set(existing.filter((e) => e.contact_type_code === 'tax_number').map((e) => e.contact_value));
@@ -560,16 +662,22 @@ export class ImportsController {
 
     // المستحقات: مرجع الطلب (إن حُدد) يجب أن يكون موجوداً
     if (importType === 'dues') {
-      const refs = [...new Set(validated.map((r) => r.normalized.requestRef).filter(Boolean))];
+      const refs = [
+        ...new Set(
+          validated
+            .map((r) => r.normalized.requestRef)
+            .filter((ref): ref is string => Boolean(ref)),
+        ),
+      ];
       let existingRefs = new Set<string>();
       if (refs.length > 0) {
-        const reqRows = (await (this.db.db
-          .selectFrom('requests.service_requests' as any) as any)
+        const reqRows = await this.db.db
+          .selectFrom('requests.service_requests')
           .select(['public_ref'])
           .where('public_ref', 'in', refs)
           .where('archived_at', 'is', null)
           .execute()
-          .catch(() => [])) as any[];
+          .catch((): { public_ref: string | null }[] => []);
         existingRefs = new Set(reqRows.map((r) => String(r.public_ref)));
       }
       for (const row of validated) {
@@ -589,11 +697,11 @@ export class ImportsController {
 
   /** يعيد معرّف المكلف المُنشأ، أو null إن تُخطّي الصف. */
   private async commitTaxpayerRow(
-    trx: any,
-    data: Record<string, any>,
+    trx: Transaction<DatabaseSchemas>,
+    data: Record<string, JsonValue>,
   ): Promise<string | null> {
     // فحص التكرار لحظة الترحيل (قد يكون سُجل بعد المعاينة)
-    const values = [data.phone, data.taxNumber].filter(Boolean);
+    const values = contactRefs(data);
     if (values.length > 0) {
       const dup = await trx
         .selectFrom('registry.taxpayer_contacts')
@@ -605,13 +713,18 @@ export class ImportsController {
       if (dup) return null;
     }
 
+    // الصفوف الصحيحة تحمل الاسم والهاتف نصاً دائماً (تحقق validateRows)
+    const name = data.name;
+    const phone = data.phone;
+    if (typeof name !== 'string' || typeof phone !== 'string') return null;
+
     const taxpayerId = crypto.randomUUID();
     await trx
       .insertInto('registry.taxpayers')
       .values({
         id: taxpayerId,
         public_ref: randomRef('TIN'),
-        display_name: data.name,
+        display_name: name,
         status_code: 'active',
       })
       .execute();
@@ -622,21 +735,22 @@ export class ImportsController {
         id: crypto.randomUUID(),
         taxpayer_id: taxpayerId,
         contact_type_code: 'phone',
-        contact_value: data.phone,
+        contact_value: phone,
         is_primary: true,
         is_active: true,
         effective_from: new Date(),
       })
       .execute();
 
-    if (data.taxNumber) {
+    const taxNumber = data.taxNumber;
+    if (typeof taxNumber === 'string' && taxNumber) {
       await trx
         .insertInto('registry.taxpayer_contacts')
         .values({
           id: crypto.randomUUID(),
           taxpayer_id: taxpayerId,
           contact_type_code: 'tax_number',
-          contact_value: data.taxNumber,
+          contact_value: taxNumber,
           is_primary: false,
           is_active: true,
           effective_from: new Date(),
@@ -646,8 +760,11 @@ export class ImportsController {
     return taxpayerId;
   }
 
-  private async commitActivityRow(trx: any, data: Record<string, any>): Promise<boolean> {
-    const values = [data.phone, data.taxNumber].filter(Boolean);
+  private async commitActivityRow(
+    trx: Transaction<DatabaseSchemas>,
+    data: Record<string, JsonValue>,
+  ): Promise<boolean> {
+    const values = contactRefs(data);
     const contact = await trx
       .selectFrom('registry.taxpayer_contacts')
       .select(['taxpayer_id'])
@@ -657,34 +774,45 @@ export class ImportsController {
       .catch(() => null);
     if (!contact) return false;
 
+    // الصفوف الصحيحة تحمل اسم النشاط نصاً دائماً (تحقق validateRows)
+    const activityName = data.activityName;
+    if (typeof activityName !== 'string') return false;
+
     await trx
       .insertInto('masterdata.commercial_activities')
       .values({
         id: crypto.randomUUID(),
         public_ref: randomRef('ACT'),
         taxpayer_id: contact.taxpayer_id,
-        name: data.activityName,
+        name: activityName,
         status_code: 'active',
       })
       .execute();
     return true;
   }
 
-  private async commitDueRow(trx: any, data: Record<string, any>): Promise<boolean> {
+  private async commitDueRow(
+    trx: Transaction<DatabaseSchemas>,
+    data: Record<string, JsonValue>,
+  ): Promise<boolean> {
     // الربط: مرجع الطلب إن حُدد، وإلا أحدث طلب للمكلف — المستحق لا يُنشأ بلا طلب حفاظاً على التتبع
     let requestId: string | null = null;
+    // dues.payment_dues.taxpayer_id إلزامي (NOT NULL): يؤخذ من مكلف الطلب نفسه
+    let taxpayerId: string | null = null;
 
-    if (data.requestRef) {
+    const requestRef = data.requestRef;
+    if (typeof requestRef === 'string' && requestRef) {
       const req = await trx
         .selectFrom('requests.service_requests')
-        .select(['id'])
-        .where('public_ref', '=', data.requestRef)
+        .select(['id', 'taxpayer_id'])
+        .where('public_ref', '=', requestRef)
         .where('archived_at', 'is', null)
         .executeTakeFirst()
         .catch(() => null);
       requestId = req?.id ?? null;
+      taxpayerId = req?.taxpayer_id ?? null;
     } else {
-      const values = [data.phone, data.taxNumber].filter(Boolean);
+      const values = contactRefs(data);
       const contact = await trx
         .selectFrom('registry.taxpayer_contacts')
         .select(['taxpayer_id'])
@@ -695,7 +823,7 @@ export class ImportsController {
       if (!contact) return false;
       const req = await trx
         .selectFrom('requests.service_requests')
-        .select(['id'])
+        .select(['id', 'taxpayer_id'])
         .where('taxpayer_id', '=', contact.taxpayer_id)
         .where('archived_at', 'is', null)
         .orderBy('created_at', 'desc')
@@ -703,18 +831,25 @@ export class ImportsController {
         .executeTakeFirst()
         .catch(() => null);
       requestId = req?.id ?? null;
+      taxpayerId = req?.taxpayer_id ?? null;
     }
 
-    if (!requestId) return false;
+    if (!requestId || !taxpayerId) return false;
+
+    // الصفوف الصحيحة تحمل المبلغ رقماً دائماً (تحقق validateRows)
+    const amount = data.amount;
+    if (typeof amount !== 'number') return false;
+    const currency = data.currency;
 
     await trx
       .insertInto('dues.payment_dues')
       .values({
         id: crypto.randomUUID(),
         public_ref: randomRef('DUE'),
+        taxpayer_id: taxpayerId,
         service_request_id: requestId,
-        amount: data.amount,
-        currency_code: data.currency || 'YER',
+        amount,
+        currency_code: typeof currency === 'string' && currency ? currency : 'YER',
         status_code: 'unpaid',
         assessed_at: new Date(),
         created_at: new Date(),
@@ -723,16 +858,16 @@ export class ImportsController {
     return true;
   }
 
-  private async audit(action: string, jobId: string, metadata: Record<string, any>) {
+  private async audit(action: string, jobId: string, metadata: AuditMetadata): Promise<void> {
     await this.db.db
-      .insertInto('audit.audit_logs' as any)
+      .insertInto('audit.audit_logs')
       .values({
         id: crypto.randomUUID(),
         action,
         entity_type: 'import_job',
         entity_id: jobId,
         metadata: JSON.stringify(metadata),
-      } as any)
+      })
       .execute()
       .catch(() => undefined);
   }
