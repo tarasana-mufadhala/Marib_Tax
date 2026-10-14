@@ -41,12 +41,16 @@ function verifyToken(
 describe('التحقق من رموز البريد', () => {
   it('يرسل النوع الصحيح إلى GoTrue لكل غرض', async () => {
     const calls: string[] = [];
-    const fetchMock = vi.fn(async (_url: string, init: { body: string }) => {
-      calls.push((JSON.parse(init.body) as { type: string }).type);
-      return new Response(JSON.stringify({ user: { id: 'auth-1' } }), {
-        status: 200,
-      });
-    });
+    const fetchMock = vi.fn(
+      (_url: string, init: { body: string }): Promise<Response> => {
+        calls.push((JSON.parse(init.body) as { type: string }).type);
+        return Promise.resolve(
+          new Response(JSON.stringify({ user: { id: 'auth-1' } }), {
+            status: 200,
+          }),
+        );
+      },
+    );
     vi.stubGlobal('fetch', fetchMock);
 
     const service = serviceStub();
@@ -60,7 +64,9 @@ describe('التحقق من رموز البريد', () => {
   it('يرفض رمزاً خاطئاً برسالة عربية واحدة لا تكشف السبب', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => new Response('{}', { status: 401 })),
+      vi.fn((): Promise<Response> =>
+        Promise.resolve(new Response('{}', { status: 401 })),
+      ),
     );
 
     const service = serviceStub({ db: undefined });
@@ -74,7 +80,9 @@ describe('التحقق من رموز البريد', () => {
   it('يرفض رداً ناجحاً بلا معرّف حساب بدل المضي على فراغ', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async () => new Response(JSON.stringify({}), { status: 200 })),
+      vi.fn((): Promise<Response> =>
+        Promise.resolve(new Response(JSON.stringify({}), { status: 200 })),
+      ),
     );
 
     const service = serviceStub({ db: undefined });
@@ -137,11 +145,13 @@ describe('تأكيد البريد المضاف', () => {
     let sentType = '';
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (_url: string, init: { body: string }) => {
+      vi.fn((_url: string, init: { body: string }): Promise<Response> => {
         sentType = (JSON.parse(init.body) as { type: string }).type;
-        return new Response(JSON.stringify({ user: { id: 'auth-1' } }), {
-          status: 200,
-        });
+        return Promise.resolve(
+          new Response(JSON.stringify({ user: { id: 'auth-1' } }), {
+            status: 200,
+          }),
+        );
       }),
     );
 

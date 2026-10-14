@@ -26,7 +26,9 @@ export class HybridAccessTokenVerifier implements AccessTokenVerifier {
       ''
     ).replace(/\/$/, '');
     if (!supabaseUrl) {
-      throw new Error('SUPABASE_URL must be configured for token verification.');
+      throw new Error(
+        'SUPABASE_URL must be configured for token verification.',
+      );
     }
     this.issuer = `${supabaseUrl}/auth/v1`;
 

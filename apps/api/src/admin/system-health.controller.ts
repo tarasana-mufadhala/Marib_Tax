@@ -1,6 +1,10 @@
 import { Body, Controller, Get, HttpCode, Post } from '@nestjs/common';
 import { RequirePermission } from '../authz/authorization.decorators.js';
-import { AuthnService } from '../authn/authn.service.js';
+import {
+  AuthnService,
+  type EmailProviderStatus,
+  type TestEmailResult,
+} from '../authn/authn.service.js';
 import { DomainException } from '../http/domain-exception.js';
 
 interface TestEmailBody {
@@ -21,7 +25,7 @@ export class SystemHealthController {
   /** حالة مزوّد البريد كما تقولها إعدادات المشروع نفسها. */
   @Get('email')
   @RequirePermission('user.manage')
-  status() {
+  status(): Promise<EmailProviderStatus> {
     return this.authn.emailProviderStatus();
   }
 
@@ -34,7 +38,7 @@ export class SystemHealthController {
   @Post('email/test')
   @HttpCode(200)
   @RequirePermission('user.manage')
-  test(@Body() body: TestEmailBody) {
+  test(@Body() body: TestEmailBody): Promise<TestEmailResult> {
     const email = (body?.email ?? '').trim();
     if (email.length === 0) {
       throw DomainException.badRequest('أدخل بريداً للاختبار');

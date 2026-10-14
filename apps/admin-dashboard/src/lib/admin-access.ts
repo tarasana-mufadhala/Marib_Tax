@@ -5,10 +5,13 @@ export interface AdminUser {
   permissions: string[];
 }
 
-export function canAccessSection(user: AdminUser | null, section: string): boolean {
+export function canAccessSection(
+  user: AdminUser | null,
+  section: string,
+): boolean {
   if (!user) return false;
   if (user.role === 'ADMIN') return true;
-  
+
   switch (section) {
     case 'users':
       return false;

@@ -344,7 +344,12 @@ export const fr101FormSchema = z
     nearbyLandmark: optionalText,
     premisesOwnership: z.enum(['owned', 'rented']),
     startedAt: z.string().datetime(),
-    employeeCount: z.number().int().nonnegative().nullable().optional()
+    employeeCount: z
+      .number()
+      .int()
+      .nonnegative()
+      .nullable()
+      .optional()
       .transform((value) => value ?? null),
     notes: optionalText,
   })
@@ -356,7 +361,12 @@ export const fr102FormSchema = z
     practiceLicenseNumber: z.string().trim().min(1),
     insuranceCardNumber: optionalText,
     isCompany: z.boolean(),
-    partnerCount: z.number().int().nonnegative().nullable().optional()
+    partnerCount: z
+      .number()
+      .int()
+      .nonnegative()
+      .nullable()
+      .optional()
       .transform((value) => value ?? null),
     notes: optionalText,
   })
@@ -404,31 +414,41 @@ export type Fr105Form = z.infer<typeof fr105FormSchema>;
  * إرسال نموذج FR-104 تحت رمز FR-101.
  */
 export const createServiceRequestSchema = z.discriminatedUnion('serviceCode', [
-  z.object({
-    serviceCode: z.literal('FR-101'),
-    schemaVersion: z.literal('1.0.0'),
-    form: fr101FormSchema,
-  }).strict(),
-  z.object({
-    serviceCode: z.literal('FR-102'),
-    schemaVersion: z.literal('1.0.0'),
-    form: fr102FormSchema,
-  }).strict(),
-  z.object({
-    serviceCode: z.literal('FR-103'),
-    schemaVersion: z.literal('1.0.0'),
-    form: fr103FormSchema,
-  }).strict(),
-  z.object({
-    serviceCode: z.literal('FR-104'),
-    schemaVersion: z.literal('1.0.0'),
-    form: fr104FormSchema,
-  }).strict(),
-  z.object({
-    serviceCode: z.literal('FR-105'),
-    schemaVersion: z.literal('1.0.0'),
-    form: fr105FormSchema,
-  }).strict(),
+  z
+    .object({
+      serviceCode: z.literal('FR-101'),
+      schemaVersion: z.literal('1.0.0'),
+      form: fr101FormSchema,
+    })
+    .strict(),
+  z
+    .object({
+      serviceCode: z.literal('FR-102'),
+      schemaVersion: z.literal('1.0.0'),
+      form: fr102FormSchema,
+    })
+    .strict(),
+  z
+    .object({
+      serviceCode: z.literal('FR-103'),
+      schemaVersion: z.literal('1.0.0'),
+      form: fr103FormSchema,
+    })
+    .strict(),
+  z
+    .object({
+      serviceCode: z.literal('FR-104'),
+      schemaVersion: z.literal('1.0.0'),
+      form: fr104FormSchema,
+    })
+    .strict(),
+  z
+    .object({
+      serviceCode: z.literal('FR-105'),
+      schemaVersion: z.literal('1.0.0'),
+      form: fr105FormSchema,
+    })
+    .strict(),
 ]);
 
 export type CreateServiceRequest = z.infer<typeof createServiceRequestSchema>;

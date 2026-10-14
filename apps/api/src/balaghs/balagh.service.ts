@@ -83,8 +83,14 @@ export class BalaghService {
     return toResponse(await this.owned(ownerActorId, id));
   }
 
-  list(ownerActorId: string | undefined, limit = 50): Promise<BalaghListItem[]> {
-    return this.repository.list(ownerActorId, Math.min(Math.max(limit, 1), 200));
+  list(
+    ownerActorId: string | undefined,
+    limit = 50,
+  ): Promise<BalaghListItem[]> {
+    return this.repository.list(
+      ownerActorId,
+      Math.min(Math.max(limit, 1), 200),
+    );
   }
 
   async edit(

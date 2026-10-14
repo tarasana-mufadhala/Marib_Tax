@@ -56,7 +56,7 @@ describe('ReportsController authorization', () => {
         },
         {
           provide: AUTHORIZATION_POLICY_EVALUATOR,
-          useValue: { evaluate: () => Promise.resolve(true) },
+          useValue: { evaluate: (): Promise<boolean> => Promise.resolve(true) },
         },
         {
           provide: AUTHORIZATION_AUDIT_HOOK,
@@ -73,8 +73,10 @@ describe('ReportsController authorization', () => {
 
   afterEach(async () => app.close());
 
-  const get = (path: string, token?: string) => {
-    const req = request(app.getHttpServer()).get(path);
+  const get = (path: string, token?: string): request.Test => {
+    const req = request(
+      app.getHttpServer() as Parameters<typeof request>[0],
+    ).get(path);
     return token ? req.set('Authorization', `Bearer ${token}`) : req;
   };
 

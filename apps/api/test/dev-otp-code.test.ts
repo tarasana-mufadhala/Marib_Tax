@@ -1,14 +1,21 @@
+import { ServiceUnavailableException } from '@nestjs/common';
+import type { ConfigService } from '@nestjs/config';
 import { describe, expect, it, vi } from 'vitest';
 import { OtpService } from '../src/authn/otp.service.js';
 
 const DEV_CODE = '123456';
 
 /** إعداد وهمي يُمرَّر لـ OtpService. */
-function configOf(values: Record<string, string | undefined>) {
-  return { get: (key: string) => values[key] } as never;
+function configOf(values: Record<string, string | undefined>): ConfigService {
+  return {
+    get: (key: string): string | undefined => values[key],
+  } as unknown as ConfigService;
 }
 
-const devEnabled = configOf({ DEV_OTP_CODE: DEV_CODE, NODE_ENV: 'development' });
+const devEnabled = configOf({
+  DEV_OTP_CODE: DEV_CODE,
+  NODE_ENV: 'development',
+});
 
 const TWILIO = {
   TWILIO_ACCOUNT_SID: 'AC-test',
@@ -27,22 +34,23 @@ describe('DEV_OTP_CODE — رمز التجربة', () => {
     expect(await otp.verifyOtp(PHONE, DEV_CODE)).toBe(true);
   });
 
-  it('لا يُقبل لرقم لم يُطلب له رمز — هذا ما يمنع الاستيلاء على الحسابات',
-    async () => {
-      const otp = new OtpService(devEnabled);
-      await otp.requestOtp(PHONE);
+  it('لا يُقبل لرقم لم يُطلب له رمز — هذا ما يمنع الاستيلاء على الحسابات', async () => {
+    const otp = new OtpService(devEnabled);
+    await otp.requestOtp(PHONE);
 
-      expect(await otp.verifyOtp(OTHER, DEV_CODE)).toBe(false);
-    });
+    expect(await otp.verifyOtp(OTHER, DEV_CODE)).toBe(false);
+  });
 
   it('لا يُقبل بعد انتهاء صلاحية الطلب', async () => {
     const otp = new OtpService(devEnabled);
     await otp.requestOtp(PHONE);
 
     // تقديم الساعة خمس دقائق: مدة صلاحية الرمز.
-    const store = (otp as unknown as {
-      store: Map<string, { expiresAt: Date }>;
-    }).store;
+    const store = (
+      otp as unknown as {
+        store: Map<string, { expiresAt: Date }>;
+      }
+    ).store;
     store.get(PHONE)!.expiresAt = new Date(Date.now() - 1000);
 
     expect(await otp.verifyOtp(PHONE, DEV_CODE)).toBe(false);
@@ -59,9 +67,11 @@ describe('DEV_OTP_CODE — رمز التجربة', () => {
   it('الرمز الحقيقي يبقى مقبولاً بوجود رمز التجربة', async () => {
     const otp = new OtpService(devEnabled);
     await otp.requestOtp(PHONE);
-    const real = (otp as unknown as {
-      store: Map<string, { code: string }>;
-    }).store.get(PHONE)!.code;
+    const real = (
+      otp as unknown as {
+        store: Map<string, { code: string }>;
+      }
+    ).store.get(PHONE)!.code;
 
     expect(await otp.verifyOtp(PHONE, real)).toBe(true);
   });
@@ -75,19 +85,23 @@ describe('DEV_OTP_CODE — الشروط التي تعطّله', () => {
     expect(await otp.verifyOtp(PHONE, DEV_CODE)).toBe(false);
   });
 
-  it('معطّل في بيئة الإنتاج ولو كان مضبوطاً', async () => {
+  it('الإنتاج يفشل مغلقاً عند غياب Twilio حتى لو كان رمز التجربة مضبوطاً', async () => {
     const otp = new OtpService(
       configOf({ DEV_OTP_CODE: DEV_CODE, NODE_ENV: 'production' }),
     );
-    await otp.requestOtp(PHONE);
 
-    expect(await otp.verifyOtp(PHONE, DEV_CODE)).toBe(false);
+    await expect(otp.requestOtp(PHONE)).rejects.toBeInstanceOf(
+      ServiceUnavailableException,
+    );
   });
 
   it('معطّل حين يكون Twilio مضبوطاً — التحقق الحقيقي يسبقه', async () => {
     // Twilio يرد أن الرمز غير معتمد؛ رمز التجربة يجب ألا يُنقذه.
-    vi.stubGlobal('fetch', async () =>
-      new Response(JSON.stringify({ status: 'pending' }), { status: 200 }));
+    vi.stubGlobal('fetch', (): Promise<Response> =>
+      Promise.resolve(
+        new Response(JSON.stringify({ status: 'pending' }), { status: 200 }),
+      ),
+    );
 
     const otp = new OtpService(
       configOf({ DEV_OTP_CODE: DEV_CODE, NODE_ENV: 'development', ...TWILIO }),

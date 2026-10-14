@@ -65,7 +65,11 @@ export class KyselyOutboxRepository implements OutboxRepository {
     const result = await this.db.transaction().execute(async (trx) => {
       const row = await trx
         .selectFrom('notify.notification_outbox_messages as o')
-        .leftJoin('notify.notification_messages as m', 'm.id', 'o.notification_message_id')
+        .leftJoin(
+          'notify.notification_messages as m',
+          'm.id',
+          'o.notification_message_id',
+        )
         .leftJoin('notify.notification_templates as t', 't.id', 'm.template_id')
         .select([
           'o.id',
@@ -196,7 +200,10 @@ export class KyselyOutboxRepository implements OutboxRepository {
           .execute();
       } catch (err) {
         // Suppress or log error if database schemas aren't fully deployed yet
-        console.warn(`[Worker] Failed to write successful delivery attempt to DB:`, err);
+        console.warn(
+          `[Worker] Failed to write successful delivery attempt to DB:`,
+          err,
+        );
       }
     });
   }
@@ -224,7 +231,9 @@ export class KyselyOutboxRepository implements OutboxRepository {
           last_error: safeReasonCode,
           next_attempt_at: isDead
             ? null
-            : new Date(Date.now() + Math.min(300000, 5000 * Math.pow(2, attemptCount))),
+            : new Date(
+                Date.now() + Math.min(300000, 5000 * Math.pow(2, attemptCount)),
+              ),
         })
         .where('id', '=', messageId)
         .execute();
@@ -253,7 +262,10 @@ export class KyselyOutboxRepository implements OutboxRepository {
           .execute();
       } catch (err) {
         // Suppress or log error if database schemas aren't fully deployed yet
-        console.warn(`[Worker] Failed to write failed delivery attempt to DB:`, err);
+        console.warn(
+          `[Worker] Failed to write failed delivery attempt to DB:`,
+          err,
+        );
       }
     });
   }

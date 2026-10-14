@@ -19,7 +19,15 @@ export interface RequestItem {
   tin: string;
   serviceType: string;
   submissionDate: string;
-  status: 'مقدم' | 'تحت_المعالجة' | 'قيد_النزول' | 'بانتظار السداد' | 'مكتمل' | 'مرفوض';
+  /** المفاتيح الستة المعروفة، أو تسمية عربية لرمز آخر من سير العمل. */
+  status:
+    | 'مقدم'
+    | 'تحت_المعالجة'
+    | 'قيد_النزول'
+    | 'بانتظار السداد'
+    | 'مكتمل'
+    | 'مرفوض'
+    | (string & {});
   assignedEmployee?: string;
   notes?: string;
 }
@@ -69,7 +77,8 @@ export interface TaxService {
   id: string;
   title: string;
   description: string;
-  category: 'تسجيل وقيد' | 'إقرارات وربط' | 'شهادات وبراءات' | 'اعتراضات وشكاوى';
+  category:
+    'تسجيل وقيد' | 'إقرارات وربط' | 'شهادات وبراءات' | 'اعتراضات وشكاوى';
   requiredDocuments: string[];
   processingDays: number;
   fees: string;

@@ -9,7 +9,7 @@ import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import type { PermissionCode } from '@marib-tax/contracts';
 import request from 'supertest';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, it } from 'vitest';
 import { BearerActorContextResolver } from '../src/authn/bearer-actor-context.resolver.js';
 import type {
   AccessTokenVerifier,
@@ -31,18 +31,18 @@ import { ApiExceptionFilter } from '../src/http/api-exception.filter.js';
 class ProbeController {
   @Get('me')
   @AuthenticatedEndpoint()
-  me() {
+  me(): { ok: boolean } {
     return { ok: true };
   }
 
   @Get('guarded')
   @RequirePermission('user.manage')
-  guarded() {
+  guarded(): { ok: boolean } {
     return { ok: true };
   }
 
   @Get('unannotated')
-  unannotated() {
+  unannotated(): { ok: boolean } {
     return { ok: true };
   }
 }
@@ -85,7 +85,7 @@ describe('AuthenticatedEndpoint', () => {
         },
         {
           provide: AUTHORIZATION_POLICY_EVALUATOR,
-          useValue: { evaluate: () => Promise.resolve(true) },
+          useValue: { evaluate: (): Promise<boolean> => Promise.resolve(true) },
         },
         {
           provide: AUTHORIZATION_AUDIT_HOOK,
@@ -104,8 +104,10 @@ describe('AuthenticatedEndpoint', () => {
 
   afterEach(async () => app.close());
 
-  const get = (path: string, token?: string) => {
-    const req = request(app.getHttpServer()).get(path);
+  const get = (path: string, token?: string): request.Test => {
+    const req = request(
+      app.getHttpServer() as Parameters<typeof request>[0],
+    ).get(path);
     return token ? req.set('Authorization', `Bearer ${token}`) : req;
   };
 

@@ -51,7 +51,9 @@ export class DuesPaymentsKyselyRepository implements DuesPaymentsRepository {
     return this.dues.get(id) ?? null;
   }
 
-  async findDuesByRequestId(serviceRequestId: string): Promise<StoredPaymentDue[]> {
+  async findDuesByRequestId(
+    serviceRequestId: string,
+  ): Promise<StoredPaymentDue[]> {
     if (this.dbService.isInitialized) {
       const rows = await this.dbService.db
         .selectFrom('dues.payment_dues')
@@ -76,7 +78,9 @@ export class DuesPaymentsKyselyRepository implements DuesPaymentsRepository {
         archivedAt: row.archived_at,
       }));
     }
-    return [...this.dues.values()].filter((d) => d.serviceRequestId === serviceRequestId);
+    return [...this.dues.values()].filter(
+      (d) => d.serviceRequestId === serviceRequestId,
+    );
   }
 
   async createDue(due: StoredPaymentDue): Promise<StoredPaymentDue> {
@@ -107,7 +111,10 @@ export class DuesPaymentsKyselyRepository implements DuesPaymentsRepository {
     return due;
   }
 
-  async updateDue(id: string, updates: Partial<StoredPaymentDue>): Promise<StoredPaymentDue> {
+  async updateDue(
+    id: string,
+    updates: Partial<StoredPaymentDue>,
+  ): Promise<StoredPaymentDue> {
     if (this.dbService.isInitialized) {
       const dbUpdates: {
         amount?: number;
@@ -116,8 +123,10 @@ export class DuesPaymentsKyselyRepository implements DuesPaymentsRepository {
         updated_by_profile_id?: string | null;
       } = {};
       if (updates.amount !== undefined) dbUpdates.amount = updates.amount;
-      if (updates.statusCode !== undefined) dbUpdates.status_code = updates.statusCode;
-      if (updates.updatedAt !== undefined) dbUpdates.updated_at = updates.updatedAt;
+      if (updates.statusCode !== undefined)
+        dbUpdates.status_code = updates.statusCode;
+      if (updates.updatedAt !== undefined)
+        dbUpdates.updated_at = updates.updatedAt;
       if (updates.updatedByProfileId !== undefined)
         dbUpdates.updated_by_profile_id = updates.updatedByProfileId;
 
@@ -184,7 +193,9 @@ export class DuesPaymentsKyselyRepository implements DuesPaymentsRepository {
     return this.basisReferences.filter((r) => r.paymentDueId === paymentDueId);
   }
 
-  async createCorrection(correction: StoredDueCorrection): Promise<StoredDueCorrection> {
+  async createCorrection(
+    correction: StoredDueCorrection,
+  ): Promise<StoredDueCorrection> {
     if (this.dbService.isInitialized) {
       await this.dbService.db
         .insertInto('dues.due_corrections')
@@ -207,7 +218,9 @@ export class DuesPaymentsKyselyRepository implements DuesPaymentsRepository {
     return correction;
   }
 
-  async listCorrectionsForDue(paymentDueId: string): Promise<StoredDueCorrection[]> {
+  async listCorrectionsForDue(
+    paymentDueId: string,
+  ): Promise<StoredDueCorrection[]> {
     if (this.dbService.isInitialized) {
       const rows = await this.dbService.db
         .selectFrom('dues.due_corrections')
@@ -254,7 +267,9 @@ export class DuesPaymentsKyselyRepository implements DuesPaymentsRepository {
     return this.receipts.get(id) ?? null;
   }
 
-  async listReceiptsForDue(paymentDueId: string): Promise<StoredPaymentReceipt[]> {
+  async listReceiptsForDue(
+    paymentDueId: string,
+  ): Promise<StoredPaymentReceipt[]> {
     if (this.dbService.isInitialized) {
       const rows = await this.dbService.db
         .selectFrom('dues.payment_receipts')
@@ -276,10 +291,14 @@ export class DuesPaymentsKyselyRepository implements DuesPaymentsRepository {
         updatedByProfileId: row.updated_by_profile_id,
       }));
     }
-    return [...this.receipts.values()].filter((r) => r.paymentDueId === paymentDueId);
+    return [...this.receipts.values()].filter(
+      (r) => r.paymentDueId === paymentDueId,
+    );
   }
 
-  async createReceipt(receipt: StoredPaymentReceipt): Promise<StoredPaymentReceipt> {
+  async createReceipt(
+    receipt: StoredPaymentReceipt,
+  ): Promise<StoredPaymentReceipt> {
     if (this.dbService.isInitialized) {
       await this.dbService.db
         .insertInto('dues.payment_receipts')
@@ -305,7 +324,10 @@ export class DuesPaymentsKyselyRepository implements DuesPaymentsRepository {
     return receipt;
   }
 
-  async updateReceipt(id: string, updates: Partial<StoredPaymentReceipt>): Promise<StoredPaymentReceipt> {
+  async updateReceipt(
+    id: string,
+    updates: Partial<StoredPaymentReceipt>,
+  ): Promise<StoredPaymentReceipt> {
     if (this.dbService.isInitialized) {
       const dbUpdates: {
         acceptance_status_code?: string;
@@ -313,7 +335,8 @@ export class DuesPaymentsKyselyRepository implements DuesPaymentsRepository {
       } = {};
       if (updates.acceptanceStatusCode !== undefined)
         dbUpdates.acceptance_status_code = updates.acceptanceStatusCode;
-      if (updates.updatedAt !== undefined) dbUpdates.updated_at = updates.updatedAt;
+      if (updates.updatedAt !== undefined)
+        dbUpdates.updated_at = updates.updatedAt;
 
       await this.dbService.db
         .updateTable('dues.payment_receipts')
@@ -333,7 +356,9 @@ export class DuesPaymentsKyselyRepository implements DuesPaymentsRepository {
     return updated;
   }
 
-  async createConfirmation(conf: StoredPaymentConfirmation): Promise<StoredPaymentConfirmation> {
+  async createConfirmation(
+    conf: StoredPaymentConfirmation,
+  ): Promise<StoredPaymentConfirmation> {
     if (this.dbService.isInitialized) {
       await this.dbService.db
         .insertInto('dues.payment_confirmations')

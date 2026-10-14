@@ -8,24 +8,29 @@ async function bootstrap(): Promise<void> {
   const environment = validateEnvironment(process.env);
   const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
-  // رمز التجربة يتجاوز التحقق الحقيقي، فلا يمر مفعّلاً بلا أن يُرى.
   if (environment.DEV_OTP_CODE) {
     const logger = new Logger('Bootstrap');
-    if (environment.NODE_ENV === 'production') {
-      logger.error(
-        '⚠ DEV_OTP_CODE مضبوط في بيئة الإنتاج — مُتجاهَل. أزِله من الإعدادات فوراً.',
-      );
-    } else {
-      logger.warn(
-        `⚠ رمز تحقق التجربة مُفعّل (DEV_OTP_CODE) في بيئة ${environment.NODE_ENV}. ` +
-          'يجب ألا يُضبط في الإنتاج إطلاقاً.',
-      );
-    }
+    logger.warn(
+      `⚠ رمز تحقق التجربة مُفعّل (DEV_OTP_CODE) في بيئة ${environment.NODE_ENV}. ` +
+        'يجب ألا يُضبط في الإنتاج إطلاقاً.',
+    );
   }
+
+  const configuredOrigins = (environment.CORS_ALLOWED_ORIGINS ?? '')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+
   app.enableCors({
-    origin: true,
+    origin:
+      configuredOrigins.length > 0
+        ? configuredOrigins
+        : environment.NODE_ENV === 'production'
+          ? false
+          : true,
     credentials: true,
   });
+
   app.enableShutdownHooks();
   await app.listen(environment.PORT, '0.0.0.0');
 }

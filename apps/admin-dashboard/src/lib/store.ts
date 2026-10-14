@@ -38,14 +38,16 @@ export const useStore = create<AppState>()(
         },
       ],
       addNotification: (notification) =>
-        set((state) => ({ notifications: [notification, ...state.notifications] })),
+        set((state) => ({
+          notifications: [notification, ...state.notifications],
+        })),
       markAsRead: (id) =>
         set((state) => ({
           notifications: state.notifications.map((n) =>
-            n.id === id ? { ...n, read: true } : n
+            n.id === id ? { ...n, read: true } : n,
           ),
         })),
     }),
-    { name: 'marib-tax-admin-storage' }
-  )
+    { name: 'marib-tax-admin-storage' },
+  ),
 );

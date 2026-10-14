@@ -100,7 +100,9 @@ export class StorageService {
       );
 
       req.on('timeout', () => {
-        req.destroy(new Error(`انتهت مهلة الرفع بعد ${timeoutMs / 60000} دقيقة`));
+        req.destroy(
+          new Error(`انتهت مهلة الرفع بعد ${timeoutMs / 60000} دقيقة`),
+        );
       });
       req.on('error', reject);
       req.end(buffer);
@@ -126,7 +128,8 @@ export class StorageService {
       const arrayBuffer = await res.arrayBuffer();
       return {
         buffer: Buffer.from(arrayBuffer),
-        contentType: res.headers.get('content-type') ?? 'application/octet-stream',
+        contentType:
+          res.headers.get('content-type') ?? 'application/octet-stream',
       };
     } catch {
       return null;

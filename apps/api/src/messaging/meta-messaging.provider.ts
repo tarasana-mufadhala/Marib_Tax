@@ -67,7 +67,9 @@ export class MetaMessagingProvider implements MessagingProvider {
         const detail = message.containsSecret
           ? `HTTP ${response.status}`
           : `HTTP ${response.status} ${(await response.text()).slice(0, 200)}`;
-        this.logger.error(`فشل إرسال رسالة إلى ${maskPhone(message.to)}: ${detail}`);
+        this.logger.error(
+          `فشل إرسال رسالة إلى ${maskPhone(message.to)}: ${detail}`,
+        );
         return { accepted: false, reason: 'تعذّر إرسال الرسالة، حاول لاحقاً' };
       }
 

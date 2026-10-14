@@ -21,7 +21,7 @@ import {
   RefreshIcon,
   ArrowRightIcon,
 } from '@marib-tax/web-ui';
-import { api, RequestItem } from '@/lib/api-client';
+import { api, displayStatus, RequestItem } from '@/lib/api-client';
 
 const springTransition = { type: 'spring' as const, stiffness: 120, damping: 18 };
 
@@ -233,7 +233,7 @@ export default function DashboardOverviewPage() {
                           {req.requestNumber} • {req.serviceType} • {req.submissionDate}
                         </p>
                       </div>
-                      <Badge variant={req.status === 'مقدم' ? 'warning' : 'default'}>{req.status}</Badge>
+                      <Badge variant={req.status === 'مقدم' ? 'warning' : 'default'}>{displayStatus(req.status)}</Badge>
                     </motion.div>
                   ))}
                 </div>

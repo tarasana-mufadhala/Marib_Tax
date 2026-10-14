@@ -35,6 +35,19 @@ import {
   type StoredPaymentConfirmation,
 } from './dues-payments.repository.js';
 
+/** مستحق كما يراه المكلف في شاشة مستحقاته. */
+interface TaxpayerDueSummary {
+  id: string;
+  publicRef: string | null;
+  amount: number;
+  currencyCode: string;
+  statusCode: string;
+  assessedAt: Date | null;
+  createdAt: Date;
+  requestRef: string | null;
+  serviceName: string | null;
+}
+
 @Controller('api/v1/dues')
 export class DuesPaymentsController {
   constructor(
@@ -72,7 +85,9 @@ export class DuesPaymentsController {
   @Get('me')
   @HttpCode(200)
   @RequirePermission('request.read')
-  async myDues(@Req() request: AuthenticatedRequest) {
+  async myDues(
+    @Req() request: AuthenticatedRequest,
+  ): Promise<TaxpayerDueSummary[]> {
     if (!this.db.isInitialized) return [];
     const userProfileId = this.actorId(request);
 
@@ -277,7 +292,10 @@ export class DuesPaymentsController {
     return this.service.getDue(id);
   }
 
-  private async ownsDue(userProfileId: string, dueId: string): Promise<boolean> {
+  private async ownsDue(
+    userProfileId: string,
+    dueId: string,
+  ): Promise<boolean> {
     if (!this.db.isInitialized) return false;
     const result = await sql<{ count: number }>`
       select count(*)::int as count

@@ -59,8 +59,14 @@ export class ApiExceptionFilter implements ExceptionFilter {
     const context = host.switchToHttp();
     const request = context.getRequest<Request>();
     const response = context.getResponse<Response>();
+    // مرجع غير موجود (انتهاك مفتاح أجنبي في PostgreSQL) خطأ في مدخل العميل
+    // لا عطل خادم: 422 بدل 500.
     const status =
-      exception instanceof HttpException ? exception.getStatus() : 500;
+      exception instanceof HttpException
+        ? exception.getStatus()
+        : isForeignKeyViolation(exception)
+          ? HttpStatus.UNPROCESSABLE_ENTITY
+          : 500;
     const requestedTraceId = request.header('x-request-id');
     const traceId = isSafeTraceId(requestedTraceId)
       ? requestedTraceId
@@ -98,6 +104,16 @@ export class ApiExceptionFilter implements ExceptionFilter {
     response.setHeader('x-request-id', traceId);
     response.status(status).json(envelope);
   }
+}
+
+const PG_FOREIGN_KEY_VIOLATION = '23503';
+
+function isForeignKeyViolation(exception: unknown): boolean {
+  return (
+    typeof exception === 'object' &&
+    exception !== null &&
+    (exception as { code?: unknown }).code === PG_FOREIGN_KEY_VIOLATION
+  );
 }
 
 function isSafeTraceId(value: string | undefined): value is string {

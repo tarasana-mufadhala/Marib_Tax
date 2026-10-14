@@ -69,9 +69,7 @@ export class BalaghController {
 
   @Get(':id')
   @RequirePermission('balagh.read')
-  read(
-    @Param('id', new ParseUUIDPipe()) id: string,
-  ): Promise<BalaghResponse> {
+  read(@Param('id', new ParseUUIDPipe()) id: string): Promise<BalaghResponse> {
     return this.service.read(this.actors.requireActorId(), id);
   }
 

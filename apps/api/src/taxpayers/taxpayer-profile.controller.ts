@@ -32,6 +32,23 @@ interface CompleteProfileBody {
   taxNumber?: string;
 }
 
+interface MyTaxpayerProfile {
+  taxpayerId: string;
+  taxNumber: string | null;
+  displayName: string | null;
+  statusCode: string | null;
+  tradeName: string | null;
+  legalEntityName: string | null;
+  activityType: string | null;
+  address: string | null;
+}
+
+interface CompletedProfileResult {
+  taxpayerId: string;
+  linkedToExisting: boolean;
+  statusCode: string;
+}
+
 /**
  * ملف المكلف الخاص بالمستخدم الحالي — يغطي FR-001 خطوتَي 6 و7:
  * حفظ بيانات التسجيل الكاملة وربطها بحساب المستخدم.
@@ -84,7 +101,9 @@ export class TaxpayerProfileController {
   /** ملف المكلف المرتبط بالمستخدم الحالي، أو null إن لم يُكمل بياناته بعد. */
   @RequirePermission('taxpayer.profile.read')
   @Get()
-  async myProfile(@Req() request: AuthenticatedRequest) {
+  async myProfile(
+    @Req() request: AuthenticatedRequest,
+  ): Promise<MyTaxpayerProfile | null> {
     if (!this.db.isInitialized) {
       throw new ServiceUnavailableException('قاعدة البيانات غير متاحة');
     }
@@ -150,7 +169,7 @@ export class TaxpayerProfileController {
   async completeProfile(
     @Req() request: AuthenticatedRequest,
     @Body() body: CompleteProfileBody,
-  ) {
+  ): Promise<CompletedProfileResult> {
     if (!this.db.isInitialized) {
       throw new ServiceUnavailableException('قاعدة البيانات غير متاحة');
     }

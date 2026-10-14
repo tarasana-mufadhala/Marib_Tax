@@ -21,7 +21,11 @@ export type RecordDecisionInput = z.infer<typeof recordDecisionSchema>;
 
 export const reviseDecisionSchema = z
   .object({
-    revisedOutcomeCode: z.enum(['approved', 'rejected']).nullable().optional().transform((value) => value ?? null),
+    revisedOutcomeCode: z
+      .enum(['approved', 'rejected'])
+      .nullable()
+      .optional()
+      .transform((value) => value ?? null),
     revisionSummary: optionalText,
     reason: z.string().trim().min(1),
   })
@@ -61,4 +65,6 @@ export const decisionRevisionResponseSchema = z
   })
   .strict();
 
-export type DecisionRevisionResponse = z.infer<typeof decisionRevisionResponseSchema>;
+export type DecisionRevisionResponse = z.infer<
+  typeof decisionRevisionResponseSchema
+>;

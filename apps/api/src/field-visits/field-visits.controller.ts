@@ -9,6 +9,7 @@ import {
   HttpCode,
   Inject,
   UnprocessableEntityException,
+  ForbiddenException,
 } from '@nestjs/common';
 import {
   scheduleFieldVisitSchema,
@@ -17,6 +18,7 @@ import {
 } from '@marib-tax/contracts';
 import { RequirePermission } from '../authz/authorization.decorators.js';
 import { FieldVisitsService } from './field-visits.service.js';
+import { UsersService } from '../users/users.service.js';
 import { CURRENT_ACTOR } from '../authn/authentication.contracts.js';
 import type { CurrentActorPort } from '../requests/request-draft.controller.js';
 import {
@@ -28,9 +30,23 @@ import {
 export class FieldVisitsController {
   constructor(
     private readonly visitsService: FieldVisitsService,
+    private readonly users: UsersService,
     @Inject(CURRENT_ACTOR)
     private readonly actors: CurrentActorPort,
   ) {}
+
+  /** ملف الموظف الفعّال لصاحب الجلسة؛ 403 لمن لا ملف موظف له (حساب مكلف). */
+  private async requireStaffId(actorId: string): Promise<string> {
+    const staff = await this.users
+      .findStaffByUserProfileId(actorId)
+      .catch(() => null);
+    if (!staff || !staff.isActive) {
+      throw new ForbiddenException(
+        'هذه العملية مقصورة على موظفي المكتب الفعّالين',
+      );
+    }
+    return staff.id;
+  }
 
   @Get()
   @HttpCode(200)
@@ -42,7 +58,7 @@ export class FieldVisitsController {
   @Post()
   @HttpCode(201)
   @RequirePermission('field_visit.schedule')
-  schedule(
+  async schedule(
     @Body()
     body: unknown,
   ): Promise<StoredFieldVisit> {
@@ -51,6 +67,7 @@ export class FieldVisitsController {
       throw new UnprocessableEntityException();
     }
     const actorId = this.actors.requireActorId();
+    const staffId = await this.requireStaffId(actorId);
     return this.visitsService.scheduleVisit(
       {
         serviceRequestId: parsed.data.serviceRequestId,
@@ -61,7 +78,7 @@ export class FieldVisitsController {
         locationSnapshot: parsed.data.locationSnapshot ?? null,
         notes: parsed.data.notes ?? null,
       },
-      actorId, // Using actorId as staffProfileId for local mock testing
+      staffId,
       actorId,
     );
   }
@@ -69,7 +86,7 @@ export class FieldVisitsController {
   @Post(':id/results')
   @HttpCode(201)
   @RequirePermission('field_visit.result.record')
-  recordResult(
+  async recordResult(
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body()
     body: unknown,
@@ -79,6 +96,7 @@ export class FieldVisitsController {
       throw new UnprocessableEntityException();
     }
     const actorId = this.actors.requireActorId();
+    const staffId = await this.requireStaffId(actorId);
     return this.visitsService.recordVisitResult(
       id,
       {
@@ -87,7 +105,7 @@ export class FieldVisitsController {
         actualStartedAt: new Date(parsed.data.actualStartedAt),
         actualEndedAt: new Date(parsed.data.actualEndedAt),
       },
-      actorId,
+      staffId,
       actorId,
     );
   }

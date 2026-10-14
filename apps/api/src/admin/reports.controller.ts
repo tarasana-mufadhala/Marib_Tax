@@ -1,4 +1,10 @@
-import { Controller, ForbiddenException, Get, Inject, Param } from '@nestjs/common';
+import {
+  Controller,
+  ForbiddenException,
+  Get,
+  Inject,
+  Param,
+} from '@nestjs/common';
 import { REQUEST } from '@nestjs/core';
 import { RequirePermission } from '../authz/authorization.decorators.js';
 import {
@@ -12,6 +18,22 @@ interface ReportResult {
   available: boolean;
   headers: string[];
   rows: string[][];
+}
+
+interface ExecutiveSummary {
+  totalCollections: number;
+  registeredTaxpayers: number;
+  pendingRequests: number;
+  fieldVisitsCount: number;
+  complianceRate: number;
+}
+
+interface CountRow {
+  count: string | number | bigint;
+}
+
+interface SumRow {
+  total: string | number | bigint | null;
 }
 
 const UNAVAILABLE: ReportResult = { available: false, headers: [], rows: [] };
@@ -42,8 +64,8 @@ export class ReportsController {
   }
 
   @Get('executive-summary')
-  async getExecutiveSummary() {
-    const empty = {
+  async getExecutiveSummary(): Promise<ExecutiveSummary> {
+    const empty: ExecutiveSummary = {
       totalCollections: 0,
       registeredTaxpayers: 0,
       pendingRequests: 0,
@@ -53,41 +75,68 @@ export class ReportsController {
     if (!this.db.isInitialized) return empty;
 
     try {
-      const count = async (table: string, extra?: (q: any) => any) => {
-        let q = this.db.db
-          .selectFrom(table as any)
-          .select(({ fn }: any) => [fn.countAll().as('count')]);
-        if (extra) q = extra(q);
-        const row = await q.executeTakeFirst().catch(() => ({ count: 0 }));
-        return Number((row as any)?.count ?? 0);
+      const count = async (
+        query: Promise<CountRow | undefined>,
+      ): Promise<number> => {
+        const row = await query.catch((): CountRow => ({ count: 0 }));
+        return Number(row?.count ?? 0);
       };
+      const db = this.db.db;
 
-      const [registeredTaxpayers, pendingRequests, fieldVisitsCount, totalDues, paidDues] =
-        await Promise.all([
-          count('registry.taxpayers'),
-          count('requests.service_requests', (q) =>
-            q
-              .where('archived_at' as any, 'is', null)
-              .where('status_code' as any, 'not in', ['completed', 'rejected', 'closed']),
-          ),
-          count('visits.field_visits', (q) => q.where('archived_at' as any, 'is', null)),
-          count('dues.payment_dues', (q) => q.where('archived_at' as any, 'is', null)),
-          count('dues.payment_dues', (q) =>
-            q
-              .where('archived_at' as any, 'is', null)
-              .where('status_code' as any, '=', 'paid'),
-          ),
-        ]);
+      const [
+        registeredTaxpayers,
+        pendingRequests,
+        fieldVisitsCount,
+        totalDues,
+        paidDues,
+      ] = await Promise.all([
+        count(
+          db
+            .selectFrom('registry.taxpayers')
+            .select(({ fn }) => [fn.countAll().as('count')])
+            .executeTakeFirst(),
+        ),
+        count(
+          db
+            .selectFrom('requests.service_requests')
+            .select(({ fn }) => [fn.countAll().as('count')])
+            .where('archived_at', 'is', null)
+            .where('status_code', 'not in', ['completed', 'rejected', 'closed'])
+            .executeTakeFirst(),
+        ),
+        count(
+          db
+            .selectFrom('visits.field_visits')
+            .select(({ fn }) => [fn.countAll().as('count')])
+            .where('archived_at', 'is', null)
+            .executeTakeFirst(),
+        ),
+        count(
+          db
+            .selectFrom('dues.payment_dues')
+            .select(({ fn }) => [fn.countAll().as('count')])
+            .where('archived_at', 'is', null)
+            .executeTakeFirst(),
+        ),
+        count(
+          db
+            .selectFrom('dues.payment_dues')
+            .select(({ fn }) => [fn.countAll().as('count')])
+            .where('archived_at', 'is', null)
+            .where('status_code', '=', 'paid')
+            .executeTakeFirst(),
+        ),
+      ]);
 
-      const collectionsRow = await this.db.db
-        .selectFrom('dues.payment_confirmations' as any)
-        .select(({ fn }: any) => [fn.sum('amount_confirmed').as('total')])
-        .where('outcome_code' as any, '=', 'confirmed')
+      const collectionsRow: SumRow | undefined = await db
+        .selectFrom('dues.payment_confirmations')
+        .select(({ fn }) => [fn.sum('amount_confirmed').as('total')])
+        .where('outcome_code', '=', 'confirmed')
         .executeTakeFirst()
-        .catch(() => ({ total: 0 }));
+        .catch((): SumRow => ({ total: 0 }));
 
       return {
-        totalCollections: Number((collectionsRow as any)?.total ?? 0),
+        totalCollections: Number(collectionsRow?.total ?? 0),
         registeredTaxpayers,
         pendingRequests,
         fieldVisitsCount,
@@ -112,9 +161,13 @@ export class ReportsController {
     }
   }
 
-  private async query(sqlText: string): Promise<any[]> {
-    const result = await sql.raw(sqlText).execute(this.db.db);
-    return result.rows as any[];
+  /**
+   * Runs a static, server-defined report query. The row type is declared by
+   * each caller to match the column aliases in its SQL text.
+   */
+  private async query<R>(sqlText: string): Promise<R[]> {
+    const result = await sql.raw<R>(sqlText).execute(this.db.db);
+    return result.rows;
   }
 
   private get reportBuilders(): Record<string, () => Promise<ReportResult>> {
@@ -122,8 +175,22 @@ export class ReportsController {
       // 1. تقرير الطلبات حسب الخدمة
       'rep-01': async () => ({
         available: true,
-        headers: ['الخدمة', 'المستلمة', 'المكتملة', 'المرفوضة', 'بانتظار السداد', 'نسبة الإنجاز'],
-        rows: (await this.query(`
+        headers: [
+          'الخدمة',
+          'المستلمة',
+          'المكتملة',
+          'المرفوضة',
+          'بانتظار السداد',
+          'نسبة الإنجاز',
+        ],
+        rows: (
+          await this.query<{
+            service: string;
+            total: number;
+            completed: number;
+            rejected: number;
+            payment: number;
+          }>(`
           select coalesce(st.name, '—') as service,
                  count(*)::int as total,
                  count(*) filter (where r.status_code = 'completed')::int as completed,
@@ -132,8 +199,13 @@ export class ReportsController {
           from requests.service_requests r
           left join requests.service_types st on st.id = r.service_type_id
           where r.archived_at is null
-          group by 1 order by 2 desc`)).map((r) => [
-          r.service, String(r.total), String(r.completed), String(r.rejected), String(r.payment),
+          group by 1 order by 2 desc`)
+        ).map((r) => [
+          r.service,
+          String(r.total),
+          String(r.completed),
+          String(r.rejected),
+          String(r.payment),
           r.total > 0 ? `${Math.round((r.completed / r.total) * 100)}%` : '0%',
         ]),
       }),
@@ -142,18 +214,21 @@ export class ReportsController {
       'rep-02': async () => ({
         available: true,
         headers: ['الحالة', 'عدد الطلبات'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{ status_code: string; n: number }>(`
           select status_code, count(*)::int as n
           from requests.service_requests
           where archived_at is null
-          group by 1 order by 2 desc`)).map((r) => [String(r.status_code), String(r.n)]),
+          group by 1 order by 2 desc`)
+        ).map((r) => [String(r.status_code), String(r.n)]),
       }),
 
       // 3. تقرير أعمار المعاملات
       'rep-03': async () => ({
         available: true,
         headers: ['عمر المعاملة', 'التصنيف', 'العدد'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{ bucket: string; label: string; n: number }>(`
           select case
                    when age_days <= 2 then '0–2 يوم'
                    when age_days <= 7 then '3–7 أيام'
@@ -174,14 +249,30 @@ export class ReportsController {
             from requests.service_requests
             where archived_at is null and status_code not in ('completed','rejected','cancelled','closed')
           ) t
-          group by 1, 2 order by min(age_days)`)).map((r) => [r.bucket, r.label, String(r.n)]),
+          group by 1, 2 order by min(age_days)`)
+        ).map((r) => [r.bucket, r.label, String(r.n)]),
       }),
 
       // 4. الطلبات المرفوضة والملغاة
       'rep-04': async () => ({
         available: true,
-        headers: ['رقم الطلب', 'المكلف', 'الخدمة', 'الحالة', 'سبب/ملخص القرار', 'تاريخ القرار'],
-        rows: (await this.query(`
+        headers: [
+          'رقم الطلب',
+          'المكلف',
+          'الخدمة',
+          'الحالة',
+          'سبب/ملخص القرار',
+          'تاريخ القرار',
+        ],
+        rows: (
+          await this.query<{
+            public_ref: string | null;
+            taxpayer: string;
+            service: string;
+            status_code: string;
+            reason: string;
+            decided: string;
+          }>(`
           select r.public_ref, coalesce(tp.display_name,'—') as taxpayer,
                  coalesce(st.name,'—') as service, r.status_code,
                  coalesce(d.decision_summary,'—') as reason,
@@ -191,17 +282,33 @@ export class ReportsController {
           left join requests.service_types st on st.id = r.service_type_id
           left join requests.request_decision_records d on d.service_request_id = r.id
           where r.archived_at is null and r.status_code in ('rejected','cancelled')
-          order by r.updated_at desc nulls last limit 100`)).map((r) => [
-          r.public_ref ?? '—', r.taxpayer, r.service,
-          r.status_code === 'rejected' ? 'مرفوض' : 'ملغي', r.reason, r.decided,
+          order by r.updated_at desc nulls last limit 100`)
+        ).map((r) => [
+          r.public_ref ?? '—',
+          r.taxpayer,
+          r.service,
+          r.status_code === 'rejected' ? 'مرفوض' : 'ملغي',
+          r.reason,
+          r.decided,
         ]),
       }),
 
       // 5. طلبات استكمال النواقص
       'rep-05': async () => ({
         available: true,
-        headers: ['رقم الطلب', 'المكلف', 'تاريخ طلب الاستكمال', 'حالة الاستجابة'],
-        rows: (await this.query(`
+        headers: [
+          'رقم الطلب',
+          'المكلف',
+          'تاريخ طلب الاستكمال',
+          'حالة الاستجابة',
+        ],
+        rows: (
+          await this.query<{
+            public_ref: string | null;
+            taxpayer: string;
+            requested: string | null;
+            response: string;
+          }>(`
           select r.public_ref, coalesce(tp.display_name,'—') as taxpayer,
                  to_char(c.requested_at,'YYYY-MM-DD') as requested,
                  case when resp.id is not null then 'تمت الاستجابة' else 'بانتظار المكلف' end as response
@@ -209,8 +316,12 @@ export class ReportsController {
           join requests.service_requests r on r.id = c.service_request_id
           left join registry.taxpayers tp on tp.id = r.taxpayer_id
           left join requests.request_completion_responses resp on resp.completion_request_id = c.id
-          order by c.requested_at desc limit 100`)).map((r) => [
-          r.public_ref ?? '—', r.taxpayer, r.requested ?? '—', r.response,
+          order by c.requested_at desc limit 100`)
+        ).map((r) => [
+          r.public_ref ?? '—',
+          r.taxpayer,
+          r.requested ?? '—',
+          r.response,
         ]),
       }),
 
@@ -218,30 +329,50 @@ export class ReportsController {
       'rep-06': async () => ({
         available: true,
         headers: ['نوع البلاغ', 'الإجمالي', 'المفتوحة', 'المغلقة'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{
+            type: string;
+            total: number;
+            open: number;
+            closed: number;
+          }>(`
           select coalesce(balagh_type_code,'—') as type,
                  count(*)::int as total,
                  count(*) filter (where status_code not in ('completed','closed','rejected'))::int as open,
                  count(*) filter (where status_code in ('completed','closed'))::int as closed
           from balaghat.balaghs
-          group by 1 order by 2 desc`)).map((r) => [r.type, String(r.total), String(r.open), String(r.closed)]),
+          group by 1 order by 2 desc`)
+        ).map((r) => [
+          r.type,
+          String(r.total),
+          String(r.open),
+          String(r.closed),
+        ]),
       }),
 
       // 7. نتائج البلاغات
       'rep-07': async () => ({
         available: true,
         headers: ['النتيجة', 'العدد'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{ outcome: string; n: number }>(`
           select coalesce(outcome_code,'بدون قرار بعد') as outcome, count(*)::int as n
           from balaghat.balagh_decision_records
-          group by 1 order by 2 desc`)).map((r) => [r.outcome, String(r.n)]),
+          group by 1 order by 2 desc`)
+        ).map((r) => [r.outcome, String(r.n)]),
       }),
 
       // 8. الأنشطة الموقوفة والمفعلة
       'rep-08': async () => ({
         available: true,
         headers: ['النشاط', 'المكلف', 'الحالة', 'آخر تغيير للحالة'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{
+            activity: string;
+            taxpayer: string;
+            status: string;
+            changed: string;
+          }>(`
           select coalesce(a.name,'—') as activity, coalesce(tp.display_name,'—') as taxpayer,
                  coalesce(a.status_code,'—') as status,
                  coalesce(to_char(h.changed_at,'YYYY-MM-DD'),'—') as changed
@@ -251,22 +382,33 @@ export class ReportsController {
             select changed_at from masterdata.activity_status_histories h
             where h.commercial_activity_id = a.id order by changed_at desc limit 1
           ) h on true
-          order by a.created_at desc limit 100`)).map((r) => [r.activity, r.taxpayer, r.status, r.changed]),
+          order by a.created_at desc limit 100`)
+        ).map((r) => [r.activity, r.taxpayer, r.status, r.changed]),
       }),
 
       // 9. مواعيد النزول الميداني
       'rep-09': async () => ({
         available: true,
         headers: ['رقم الزيارة', 'المكلف', 'الحالة', 'تاريخ الإنشاء'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{
+            public_ref: string | null;
+            taxpayer: string;
+            status_code: string | null;
+            created: string | null;
+          }>(`
           select v.public_ref, coalesce(tp.display_name,'—') as taxpayer,
                  v.status_code, to_char(v.created_at,'YYYY-MM-DD') as created
           from visits.field_visits v
           left join requests.service_requests r on r.id = v.service_request_id
           left join registry.taxpayers tp on tp.id = r.taxpayer_id
           where v.archived_at is null
-          order by v.created_at desc limit 100`)).map((r) => [
-          r.public_ref ?? '—', r.taxpayer, r.status_code ?? '—', r.created ?? '—',
+          order by v.created_at desc limit 100`)
+        ).map((r) => [
+          r.public_ref ?? '—',
+          r.taxpayer,
+          r.status_code ?? '—',
+          r.created ?? '—',
         ]),
       }),
 
@@ -274,13 +416,23 @@ export class ReportsController {
       'rep-10': async () => ({
         available: true,
         headers: ['رقم الزيارة', 'النتيجة', 'الملاحظات', 'التاريخ'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{
+            public_ref: string | null;
+            outcome: string;
+            notes: string;
+            created: string | null;
+          }>(`
           select v.public_ref, coalesce(res.result_code,'—') as outcome,
                  coalesce(res.result_summary,'—') as notes, to_char(res.recorded_at,'YYYY-MM-DD') as created
           from visits.visit_results res
           join visits.field_visits v on v.id = res.field_visit_id
-          order by res.recorded_at desc limit 100`)).map((r) => [
-          r.public_ref ?? '—', r.outcome, r.notes, r.created ?? '—',
+          order by res.recorded_at desc limit 100`)
+        ).map((r) => [
+          r.public_ref ?? '—',
+          r.outcome,
+          r.notes,
+          r.created ?? '—',
         ]),
       }),
 
@@ -288,7 +440,8 @@ export class ReportsController {
       'rep-11': async () => ({
         available: true,
         headers: ['الموظف', 'عدد الزيارات', 'المكتملة', 'نسبة الإنجاز'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{ staff: string; total: number; done: number }>(`
           select coalesce(up.display_name, v.created_by_staff_profile_id::text) as staff,
                  count(*)::int as total,
                  count(*) filter (where v.status_code = 'completed')::int as done
@@ -296,8 +449,11 @@ export class ReportsController {
           left join identity.staff_profiles sp on sp.id = v.created_by_staff_profile_id
           left join identity.user_profiles up on up.id = sp.user_profile_id
           where v.archived_at is null
-          group by 1 order by 2 desc`)).map((r) => [
-          r.staff, String(r.total), String(r.done),
+          group by 1 order by 2 desc`)
+        ).map((r) => [
+          r.staff,
+          String(r.total),
+          String(r.done),
           r.total > 0 ? `${Math.round((r.done / r.total) * 100)}%` : '0%',
         ]),
       }),
@@ -306,18 +462,26 @@ export class ReportsController {
       'rep-12': async () => ({
         available: true,
         headers: ['الرقم الضريبي', 'اسم المكلف', 'تاريخ التسجيل', 'الحالة'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{
+            ref: string;
+            name: string;
+            registered: string | null;
+            status: string;
+          }>(`
           select coalesce(public_ref,'—') as ref, coalesce(display_name,'—') as name,
                  to_char(created_at,'YYYY-MM-DD') as registered, coalesce(status_code,'—') as status
           from registry.taxpayers
-          order by created_at desc limit 100`)).map((r) => [r.ref, r.name, r.registered ?? '—', r.status]),
+          order by created_at desc limit 100`)
+        ).map((r) => [r.ref, r.name, r.registered ?? '—', r.status]),
       }),
 
       // 13. قاعدة المكلفين
       'rep-13': async () => ({
         available: true,
         headers: ['المؤشر', 'العدد'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{ label: string; n: number }>(`
           select 'إجمالي المكلفين' as label, count(*)::int as n from registry.taxpayers
           union all
           select 'النشطون', count(*)::int from registry.taxpayers where status_code = 'active'
@@ -327,38 +491,62 @@ export class ReportsController {
           union all
           select 'من لديهم مستحقات مسجلة', count(distinct r.taxpayer_id)::int from dues.payment_dues d
             join requests.service_requests r on r.id = d.service_request_id
-            where d.archived_at is null`)).map((r) => [r.label, String(r.n)]),
+            where d.archived_at is null`)
+        ).map((r) => [r.label, String(r.n)]),
       }),
 
       // 14. الأنشطة التجارية
       'rep-14': async () => ({
         available: true,
         headers: ['الحالة', 'عدد الأنشطة'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{ status: string; n: number }>(`
           select coalesce(status_code,'—') as status, count(*)::int as n
           from masterdata.commercial_activities
-          group by 1 order by 2 desc`)).map((r) => [r.status, String(r.n)]),
+          group by 1 order by 2 desc`)
+        ).map((r) => [r.status, String(r.n)]),
       }),
 
       // 15. الكيانات القانونية
       'rep-15': async () => ({
         available: true,
         headers: ['الكيان القانوني', 'عدد المكلفين المرتبطين', 'مفعّل'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{
+            entity: string;
+            taxpayers: number;
+            active: string;
+          }>(`
           select coalesce(le.legal_name, '—') as entity,
                  count(tla.id)::int as taxpayers,
                  case when le.is_active then 'نعم' else 'لا' end as active
           from legal.legal_entities le
           left join registry.taxpayer_legal_entity_associations tla on tla.legal_entity_id = le.id
           where le.archived_at is null
-          group by 1, le.is_active order by 2 desc`)).map((r) => [r.entity, String(r.taxpayers), r.active]),
+          group by 1, le.is_active order by 2 desc`)
+        ).map((r) => [r.entity, String(r.taxpayers), r.active]),
       }),
 
       // 16. المعاملات المتوقفة بسبب السداد
       'rep-16': async () => ({
         available: true,
-        headers: ['رقم الطلب', 'المكلف', 'المبلغ (ر.ي)', 'تاريخ إشعار السداد', 'أيام منذ الإشعار', 'حالة السداد'],
-        rows: (await this.query(`
+        headers: [
+          'رقم الطلب',
+          'المكلف',
+          'المبلغ (ر.ي)',
+          'تاريخ إشعار السداد',
+          'أيام منذ الإشعار',
+          'حالة السداد',
+        ],
+        rows: (
+          await this.query<{
+            public_ref: string | null;
+            taxpayer: string;
+            amount: string | null;
+            notified: string | null;
+            days: number | null;
+            status_code: string;
+          }>(`
           select r.public_ref, coalesce(tp.display_name,'—') as taxpayer,
                  d.amount::text, to_char(coalesce(d.assessed_at, d.created_at),'YYYY-MM-DD') as notified,
                  extract(day from now() - coalesce(d.assessed_at, d.created_at))::int as days,
@@ -367,8 +555,13 @@ export class ReportsController {
           left join requests.service_requests r on r.id = d.service_request_id
           left join registry.taxpayers tp on tp.id = r.taxpayer_id
           where d.archived_at is null
-          order by days desc limit 100`)).map((r) => [
-          r.public_ref ?? '—', r.taxpayer, r.amount ?? '0', r.notified ?? '—', String(r.days ?? 0),
+          order by days desc limit 100`)
+        ).map((r) => [
+          r.public_ref ?? '—',
+          r.taxpayer,
+          r.amount ?? '0',
+          r.notified ?? '—',
+          String(r.days ?? 0),
           r.status_code === 'paid' ? 'مسدد' : 'غير مسدد',
         ]),
       }),
@@ -377,17 +570,23 @@ export class ReportsController {
       'rep-17': async () => ({
         available: true,
         headers: ['حالة التسليم', 'عدد الرسائل', 'محاولات فاشلة'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{
+            status: string;
+            messages: number;
+            failed: number;
+          }>(`
           select coalesce(m.delivery_status_code,'—') as status,
                  count(distinct m.id)::int as messages,
                  count(a.id) filter (where a.attempt_status_code in ('failed','error'))::int as failed
           from notify.notification_messages m
           left join notify.delivery_attempts a on a.notification_message_id = m.id
-          group by 1 order by 2 desc`)).map((r) => [r.status, String(r.messages), String(r.failed)]),
+          group by 1 order by 2 desc`)
+        ).map((r) => [r.status, String(r.messages), String(r.failed)]),
       }),
 
       // 18. رموز التحقق OTP
-      'rep-18': async () => {
+      'rep-18': async (): Promise<ReportResult> => {
         const labels: Record<string, string> = {
           otp_requested: 'رموز مُرسلة',
           otp_verified: 'عمليات تحقق ناجحة',
@@ -398,13 +597,21 @@ export class ReportsController {
         return {
           available: true,
           headers: ['الحدث', 'العدد', 'آخر حدوث'],
-          rows: (await this.query(`
+          rows: (
+            await this.query<{
+              event_type: string;
+              n: number;
+              last: string | null;
+            }>(`
             select event_type, count(*)::int as n,
                    to_char(max(created_at),'YYYY-MM-DD HH24:MI') as last
             from identity.auth_events
             where event_type like 'otp%'
-            group by 1 order by 2 desc`)).map((r) => [
-            labels[r.event_type] ?? r.event_type, String(r.n), r.last ?? '—',
+            group by 1 order by 2 desc`)
+          ).map((r) => [
+            labels[r.event_type] ?? r.event_type,
+            String(r.n),
+            r.last ?? '—',
           ]),
         };
       },
@@ -413,18 +620,21 @@ export class ReportsController {
       'rep-19': async () => ({
         available: true,
         headers: ['حالة القراءة', 'عدد الإشعارات', 'أقدم إشعار (أيام)'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{ status: string; unread: number; oldest: number }>(`
           select coalesce(rs.read_status_code,'غير مقروء') as status, count(*)::int as unread,
                  coalesce(extract(day from now() - min(rs.created_at))::int, 0) as oldest
           from notify.notification_read_states rs
-          group by 1 order by 2 desc`)).map((r) => [r.status, String(r.unread), String(r.oldest)]),
+          group by 1 order by 2 desc`)
+        ).map((r) => [r.status, String(r.unread), String(r.oldest)]),
       }),
 
       // 20. المستندات الناقصة أو المرفوضة
       'rep-20': async () => ({
         available: true,
         headers: ['الفئة', 'التفصيل', 'العدد'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{ cat: string; detail: string; n: number }>(`
           select 'طلبات استكمال النواقص حسب الخدمة' as cat, coalesce(st.name,'—') as detail, count(*)::int as n
           from requests.request_completion_requests c
           join requests.service_requests r on r.id = c.service_request_id
@@ -439,51 +649,69 @@ export class ReportsController {
           select 'نماذج الرفض المرفوعة', 'مرفقات مصنفة «نموذج رفض»', count(*)::int
           from files.attachments
           where document_category_code = 'rejection_form'
-          order by 3 desc`)).map((r) => [r.cat, r.detail, String(r.n)]),
+          order by 3 desc`)
+        ).map((r) => [r.cat, r.detail, String(r.n)]),
       }),
 
       // 21. التخزين والمرفقات
       'rep-21': async () => ({
         available: true,
         headers: ['المؤشر', 'القيمة'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{ label: string; value: string }>(`
           select 'إجمالي الملفات' as label, count(*)::text as value from files.attachments
           union all
           select 'إجمالي الحجم (MB)', coalesce(round(sum(logical_file_size_bytes) / 1048576.0, 2), 0)::text from files.attachments
           union all
-          select 'الملفات المرتبطة بسجلات', count(*)::text from files.attachment_links`)).map((r) => [r.label, r.value]),
+          select 'الملفات المرتبطة بسجلات', count(*)::text from files.attachment_links`)
+        ).map((r) => [r.label, r.value]),
       }),
 
       // 22. عمليات الاستيراد
       'rep-22': async () => ({
         available: true,
         headers: ['المرجع', 'المصدر', 'الحالة', 'التاريخ'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{
+            ref: string;
+            source: string;
+            status: string;
+            created: string | null;
+          }>(`
           select coalesce(public_ref,'—') as ref, coalesce(source_label,'—') as source,
                  coalesce(status_code,'—') as status, to_char(created_at,'YYYY-MM-DD HH24:MI') as created
           from imports.import_jobs
-          order by created_at desc limit 100`)).map((r) => [r.ref, r.source, r.status, r.created ?? '—']),
+          order by created_at desc limit 100`)
+        ).map((r) => [r.ref, r.source, r.status, r.created ?? '—']),
       }),
 
       // 23. أخطاء الاستيراد
       'rep-23': async () => ({
         available: true,
         headers: ['رقم الصف', 'الحقل', 'السبب', 'عملية الاستيراد'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{
+            row: string;
+            field: string;
+            reason: string;
+            job: string;
+          }>(`
           select coalesce(rw.row_number::text,'—') as row, coalesce(e.field_name,'—') as field,
                  coalesce(e.error_message, e.error_code, '—') as reason,
                  coalesce(j.public_ref,'—') as job
           from imports.import_errors e
           left join imports.import_rows rw on rw.id = e.import_row_id
           left join imports.import_jobs j on j.id = e.import_job_id
-          order by e.created_at desc limit 100`)).map((r) => [r.row, r.field, r.reason, r.job]),
+          order by e.created_at desc limit 100`)
+        ).map((r) => [r.row, r.field, r.reason, r.job]),
       }),
 
       // 24. جودة البيانات
       'rep-24': async () => ({
         available: true,
         headers: ['التصنيف', 'الخلل', 'العدد'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{ cat: string; issue: string; n: number }>(`
           select 'تكرار' as cat, 'أرقام هواتف مشتركة بين أكثر من مكلف' as issue, count(*)::int as n
           from (select contact_value from registry.taxpayer_contacts
                 where contact_type_code = 'phone' and is_active
@@ -535,27 +763,48 @@ export class ReportsController {
           from dues.payment_dues d
           left join dues.payment_receipts pr on pr.payment_due_id = d.id
           where d.archived_at is null and d.status_code = 'paid' and pr.id is null
-          order by 1, 3 desc`)).map((r) => [r.cat, r.issue, String(r.n)]),
+          order by 1, 3 desc`)
+        ).map((r) => [r.cat, r.issue, String(r.n)]),
       }),
 
       // 25. سجل التدقيق
       'rep-25': async () => ({
         available: true,
         headers: ['الإجراء', 'الكيان/السجل', 'المنفذ', 'التاريخ والوقت'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{
+            action: string;
+            target: string;
+            actor: string;
+            at: string | null;
+          }>(`
           select coalesce(action,'—') as action,
                  coalesce(entity_type,'') || coalesce('/' || entity_id::text,'') as target,
                  coalesce(actor_profile_id::text,'النظام') as actor,
                  to_char(created_at,'YYYY-MM-DD HH24:MI') as at
           from audit.audit_logs
-          order by created_at desc limit 200`)).map((r) => [r.action, r.target || '—', r.actor, r.at ?? '—']),
+          order by created_at desc limit 200`)
+        ).map((r) => [r.action, r.target || '—', r.actor, r.at ?? '—']),
       }),
 
       // 26. العمليات الحساسة
       'rep-26': async () => ({
         available: true,
-        headers: ['العملية', 'التصنيف', 'الكيان/السجل', 'المنفذ', 'التاريخ والوقت'],
-        rows: (await this.query(`
+        headers: [
+          'العملية',
+          'التصنيف',
+          'الكيان/السجل',
+          'المنفذ',
+          'التاريخ والوقت',
+        ],
+        rows: (
+          await this.query<{
+            op: string;
+            cat: string;
+            target: string;
+            actor: string;
+            at: string | null;
+          }>(`
           select op, cat, target, actor, at from (
             select l.created_at as ts,
                    coalesce(l.action,'—') as op,
@@ -603,16 +852,21 @@ export class ReportsController {
             left join identity.user_profiles actor_up
               on actor_up.id = coalesce(ra.revoked_by_profile_id, ra.assigned_by_profile_id)
           ) t
-          order by ts desc nulls last limit 200`)).map((r) => [
-          r.op, r.cat, r.target, r.actor, r.at ?? '—',
-        ]),
+          order by ts desc nulls last limit 200`)
+        ).map((r) => [r.op, r.cat, r.target, r.actor, r.at ?? '—']),
       }),
 
       // 27. الدخول والأمان
       'rep-27': async () => ({
         available: true,
         headers: ['المؤشر', 'التفصيل', 'العدد', 'آخر حدوث'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{
+            label: string;
+            detail: string;
+            n: number;
+            last: string | null;
+          }>(`
           with masked as (
             select event_type, created_at,
                    case when length(identifier) > 7
@@ -645,16 +899,21 @@ export class ReportsController {
             from masked where event_type in ('login_failed','otp_failed')
             group by who having count(*) >= 3
           ) t
-          order by ord, n desc`)).map((r) => [
-          r.label, r.detail, String(r.n), r.last ?? '—',
-        ]),
+          order by ord, n desc`)
+        ).map((r) => [r.label, r.detail, String(r.n), r.last ?? '—']),
       }),
 
       // 28. المحتوى المنشور
       'rep-28': async () => ({
         available: true,
         headers: ['النوع', 'العنوان', 'الحالة', 'آخر تحديث'],
-        rows: (await this.query(`
+        rows: (
+          await this.query<{
+            type: string;
+            title: string | null;
+            status: string;
+            updated: string | null;
+          }>(`
           select 'إعلان' as type, title, case when is_active then 'منشور' else 'موقوف' end as status,
                  to_char(coalesce(updated_at, created_at),'YYYY-MM-DD') as updated
           from content.announcements
@@ -666,12 +925,18 @@ export class ReportsController {
           select 'وثيقة/نموذج', title, coalesce(status,'—'),
                  to_char(coalesce(updated_at, created_at),'YYYY-MM-DD')
           from content.library_documents
-          order by 4 desc nulls last limit 200`)).map((r) => [r.type, r.title ?? '—', r.status, r.updated ?? '—']),
+          order by 4 desc nulls last limit 200`)
+        ).map((r) => [r.type, r.title ?? '—', r.status, r.updated ?? '—']),
       }),
 
       // 29. استخدام الموقع
-      'rep-29': async () => {
-        const rows = await this.query(`
+      'rep-29': async (): Promise<ReportResult> => {
+        const rows = await this.query<{
+          page_path: string;
+          total: number;
+          week: number;
+          last: string | null;
+        }>(`
           select page_path,
                  count(*)::int as total,
                  count(*) filter (where created_at > now() - interval '7 days')::int as week,
@@ -679,15 +944,28 @@ export class ReportsController {
           from content.page_views
           group by 1 order by 2 desc limit 100`);
         const totals = rows.reduce(
-          (acc, r) => ({ total: acc.total + Number(r.total), week: acc.week + Number(r.week) }),
+          (acc, r) => ({
+            total: acc.total + Number(r.total),
+            week: acc.week + Number(r.week),
+          }),
           { total: 0, week: 0 },
         );
         return {
           available: true,
-          headers: ['الصفحة', 'إجمالي المشاهدات', 'مشاهدات آخر 7 أيام', 'آخر مشاهدة'],
+          headers: [
+            'الصفحة',
+            'إجمالي المشاهدات',
+            'مشاهدات آخر 7 أيام',
+            'آخر مشاهدة',
+          ],
           rows: [
             ['— الإجمالي —', String(totals.total), String(totals.week), '—'],
-            ...rows.map((r) => [r.page_path, String(r.total), String(r.week), r.last ?? '—']),
+            ...rows.map((r) => [
+              r.page_path,
+              String(r.total),
+              String(r.week),
+              r.last ?? '—',
+            ]),
           ],
         };
       },

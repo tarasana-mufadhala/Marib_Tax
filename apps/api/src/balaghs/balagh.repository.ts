@@ -18,7 +18,10 @@ export interface BalaghRepository {
   findById(id: string): Promise<StoredBalagh | null>;
   save(balagh: StoredBalagh): Promise<void>;
   /** بلاغات مالكٍ بعينه؛ بلا معرّف مالك تُعاد بلاغات الجميع (للموظفين فقط). */
-  list(ownerActorId: string | undefined, limit: number): Promise<BalaghListItem[]>;
+  list(
+    ownerActorId: string | undefined,
+    limit: number,
+  ): Promise<BalaghListItem[]>;
 }
 
 export const BALAGH_REPOSITORY = Symbol('BALAGH_REPOSITORY');

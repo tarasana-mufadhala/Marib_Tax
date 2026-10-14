@@ -16,37 +16,60 @@ interface MockAuthUser {
   password: string;
 }
 
+interface MockRequestBody {
+  phone?: string;
+  password?: string;
+  refresh_token?: string;
+}
+
+function requestUrl(input: RequestInfo | URL): string {
+  if (typeof input === 'string') return input;
+  if (input instanceof URL) return input.toString();
+  return input.url;
+}
+
 /**
  * Minimal in-memory GoTrue stub: covers the endpoints AuthnService uses.
  */
-function stubGoTrue() {
+function stubGoTrue(): { users: MockAuthUser[] } {
   const users: MockAuthUser[] = [];
 
-  vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
-    const url = String(input);
+  const handle = (input: RequestInfo | URL, init?: RequestInit): Response => {
+    const url = requestUrl(input);
     const method = init?.method ?? 'GET';
-    const body = init?.body ? JSON.parse(String(init.body)) : {};
+    const rawBody = init?.body;
+    const body: MockRequestBody =
+      typeof rawBody === 'string' && rawBody
+        ? (JSON.parse(rawBody) as MockRequestBody)
+        : {};
 
     if (method === 'POST' && url.endsWith('/auth/v1/admin/users')) {
       if (users.some((u) => u.phone === body.phone)) {
-        return new Response(JSON.stringify({ message: 'User already registered' }), { status: 422 });
+        return new Response(
+          JSON.stringify({ message: 'User already registered' }),
+          { status: 422 },
+        );
       }
       const user: MockAuthUser = {
         id: `auth-${users.length + 1}`,
         // GoTrue يخزّن الهاتف بلا علامة + — نحاكي ذلك حتى تكشف الاختبارات
         // أي اعتماد على المطابقة النصية المباشرة.
         phone: String(body.phone).replace(/^\+/, ''),
-        password: body.password,
+        password: body.password ?? '',
       };
       users.push(user);
-      return new Response(JSON.stringify({ id: user.id, phone: user.phone }), { status: 200 });
+      return new Response(JSON.stringify({ id: user.id, phone: user.phone }), {
+        status: 200,
+      });
     }
 
     if (method === 'GET' && url.includes('/auth/v1/admin/users?page=')) {
       const page = Number(new URL(url).searchParams.get('page') ?? '1');
       const batch = page === 1 ? users : [];
       return new Response(
-        JSON.stringify({ users: batch.map((u) => ({ id: u.id, phone: u.phone })) }),
+        JSON.stringify({
+          users: batch.map((u) => ({ id: u.id, phone: u.phone })),
+        }),
         { status: 200 },
       );
     }
@@ -55,17 +78,26 @@ function stubGoTrue() {
       const id = url.split('/auth/v1/admin/users/')[1];
       const user = users.find((u) => u.id === id);
       if (!user) return new Response('{}', { status: 404 });
-      user.password = body.password;
+      user.password = body.password ?? '';
       return new Response(JSON.stringify({ id: user.id }), { status: 200 });
     }
 
-    if (method === 'POST' && url.includes('/auth/v1/token?grant_type=password')) {
-      const digits = (value: string) => String(value ?? '').replace(/\D/g, '');
+    if (
+      method === 'POST' &&
+      url.includes('/auth/v1/token?grant_type=password')
+    ) {
+      const digits = (value: string | undefined): string =>
+        String(value ?? '').replace(/\D/g, '');
       const user = users.find(
-        (u) => digits(u.phone) === digits(body.phone) && u.password === body.password,
+        (u) =>
+          digits(u.phone) === digits(body.phone) &&
+          u.password === body.password,
       );
       if (!user) {
-        return new Response(JSON.stringify({ error_code: 'invalid_credentials' }), { status: 400 });
+        return new Response(
+          JSON.stringify({ error_code: 'invalid_credentials' }),
+          { status: 400 },
+        );
       }
       return new Response(
         JSON.stringify({
@@ -78,13 +110,18 @@ function stubGoTrue() {
       );
     }
 
-    if (method === 'POST' && url.includes('/auth/v1/token?grant_type=refresh_token')) {
+    if (
+      method === 'POST' &&
+      url.includes('/auth/v1/token?grant_type=refresh_token')
+    ) {
       // GoTrue يدوّر رمز التجديد عند كل استعمال: الرمز القديم يبطل فوراً،
       // ولذلك يقبل هذا المحاكي الرمز الحالي وحده ثم يُصدر غيره.
-      const sent = (body as { refresh_token?: string }).refresh_token ?? '';
+      const sent = body.refresh_token ?? '';
       const user = users.find((u) => `refresh-${u.id}` === sent);
       if (!user) {
-        return new Response(JSON.stringify({ error_code: 'invalid_grant' }), { status: 400 });
+        return new Response(JSON.stringify({ error_code: 'invalid_grant' }), {
+          status: 400,
+        });
       }
       return new Response(
         JSON.stringify({
@@ -98,7 +135,14 @@ function stubGoTrue() {
     }
 
     throw new Error(`Unhandled mock fetch: ${method} ${url}`);
-  });
+  };
+
+  // كان المحاكي دالة async: نحافظ على أن أي رمي داخله يصير رفضاً للوعد.
+  vi.stubGlobal(
+    'fetch',
+    (input: RequestInfo | URL, init?: RequestInit): Promise<Response> =>
+      Promise.resolve().then(() => handle(input, init)),
+  );
 
   return { users };
 }
@@ -107,7 +151,9 @@ const configValues: Record<string, string> = {
   SUPABASE_URL: 'https://test.supabase.co',
   SUPABASE_SERVICE_ROLE_KEY: 'test-service-role-key',
 };
-const configService = { get: (key: string) => configValues[key] } as never;
+const configService = {
+  get: (key: string): string | undefined => configValues[key],
+} as never;
 
 describe('AuthnService & OtpService & SecurityService', () => {
   afterEach(() => {
@@ -171,9 +217,7 @@ describe('AuthnService & OtpService & SecurityService', () => {
     expect(userProfileId).toBeDefined();
 
     // 7. Registering the same phone again conflicts
-    await expect(
-      authnService.requestRegistrationOtp(phone),
-    ).rejects.toThrow();
+    await expect(authnService.requestRegistrationOtp(phone)).rejects.toThrow();
 
     // 8. Login with wrong password
     await expect(
@@ -220,11 +264,21 @@ describe('AuthnService & OtpService & SecurityService', () => {
     const db = {
       isInitialized: true,
       db: {
-        insertInto: (table: string) => ({
+        insertInto: (
+          table: string,
+        ): {
           values: (row: Record<string, unknown>) => {
+            execute: () => Promise<undefined>;
+          };
+        } => ({
+          values: (
+            row: Record<string, unknown>,
+          ): { execute: () => Promise<undefined> } => {
             expect(table).toBe('identity.auth_events');
             events.push(row);
-            return { execute: async () => undefined };
+            return {
+              execute: (): Promise<undefined> => Promise.resolve(undefined),
+            };
           },
         }),
       },
@@ -246,11 +300,21 @@ describe('AuthnService & OtpService & SecurityService', () => {
 
     const { verificationId } = await authnService.requestRegistrationOtp(phone);
     expect(verificationId).toBe(phone);
-    const code = (otpService as unknown as TestOtpService).store.get(phone)!.code;
-    const { verificationToken } = await authnService.verifyRegistrationOtp(phone, code);
-    await authnService.register(phone, verificationToken, password, 'مكلف تجريبي');
+    const code = (otpService as unknown as TestOtpService).store.get(
+      phone,
+    )!.code;
+    const { verificationToken } = await authnService.verifyRegistrationOtp(
+      phone,
+      code,
+    );
+    await authnService.register(
+      phone,
+      verificationToken,
+      password,
+      'مكلف تجريبي',
+    );
 
-    const typesOf = () => events.map((e) => e.event_type);
+    const typesOf = (): unknown[] => events.map((e) => e.event_type);
 
     // 1. دخول ناجح
     await authnService.login(phone, password);
@@ -274,7 +338,9 @@ describe('AuthnService & OtpService & SecurityService', () => {
 
     // 4. محاولة أثناء القفل تُسجَّل منفصلة ولا تُحسب فشلاً جديداً
     events.length = 0;
-    await expect(authnService.login(phone, password)).rejects.toThrow(/locked/i);
+    await expect(authnService.login(phone, password)).rejects.toThrow(
+      /locked/i,
+    );
     expect(typesOf()).toEqual(['login_blocked']);
   });
 
@@ -298,7 +364,9 @@ describe('AuthnService & OtpService & SecurityService', () => {
 
     const owner = '+967771234567';
     await otpService.requestOtp(owner);
-    const code = (otpService as unknown as TestOtpService).store.get(owner)!.code;
+    const code = (otpService as unknown as TestOtpService).store.get(
+      owner,
+    )!.code;
 
     expect(await otpService.verifyOtp('+967779999999', code)).toBe(false);
     expect(await otpService.verifyOtp(owner, code)).toBe(true);
@@ -307,11 +375,18 @@ describe('AuthnService & OtpService & SecurityService', () => {
   it('عطل مزود الهوية لا يُترجَم إلى «كلمة مرور خاطئة»', async () => {
     // GoTrue يرد 422 phone_provider_disabled حين يكون المزود معطّلاً؛
     // ترجمة ذلك إلى فشل مصادقة تُضلّل المستخدم وتُوقع حسابه في القفل بلا ذنب.
-    vi.stubGlobal('fetch', async () =>
-      new Response(
-        JSON.stringify({ code: 422, error_code: 'phone_provider_disabled', msg: 'Phone logins are disabled' }),
-        { status: 422 },
-      ));
+    vi.stubGlobal('fetch', (): Promise<Response> =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            code: 422,
+            error_code: 'phone_provider_disabled',
+            msg: 'Phone logins are disabled',
+          }),
+          { status: 422 },
+        ),
+      ),
+    );
 
     const authnService = new AuthnService(
       new UsersService(new UsersMemoryRepository()),
@@ -338,16 +413,25 @@ describe('AuthnService & OtpService & SecurityService', () => {
     const phone = '+967773334444';
     const otp = new OtpService();
     await authnService.requestRegistrationOtp(phone);
-    const code = (authnService as unknown as { otpService: TestOtpService })
-      .otpService.store.get(phone)!.code;
-    const { verificationToken } = await authnService.verifyRegistrationOtp(phone, code);
-    await authnService.register(phone, verificationToken, 'StrongPassword123!', 'مكلف');
+    const code = (
+      authnService as unknown as { otpService: TestOtpService }
+    ).otpService.store.get(phone)!.code;
+    const { verificationToken } = await authnService.verifyRegistrationOtp(
+      phone,
+      code,
+    );
+    await authnService.register(
+      phone,
+      verificationToken,
+      'StrongPassword123!',
+      'مكلف',
+    );
     expect(otp).toBeDefined();
 
     // الرقم صار مسجَّلاً: طلب تسجيل جديد يجب أن يُرفض لا أن يمضي.
-    await expect(
-      authnService.requestRegistrationOtp(phone),
-    ).rejects.toThrow(/مسجَّل مسبقاً/);
+    await expect(authnService.requestRegistrationOtp(phone)).rejects.toThrow(
+      /مسجَّل مسبقاً/,
+    );
 
     // واستعادة كلمة المرور يجب أن تجده لا أن تقول «لا يوجد حساب».
     await expect(
@@ -397,7 +481,9 @@ describe('AuthnService & OtpService & SecurityService', () => {
       const phone = '+967773334444';
       const password = 'StrongPassword123!';
       await authnService.requestRegistrationOtp(phone);
-      const code = (otpService as unknown as TestOtpService).store.get(phone)!.code;
+      const code = (otpService as unknown as TestOtpService).store.get(
+        phone,
+      )!.code;
       const { verificationToken } = await authnService.verifyRegistrationOtp(
         phone,
         code,
@@ -451,7 +537,11 @@ describe('AuthnService & OtpService & SecurityService', () => {
 
       // التعطيل يقع بعد الإصدار: التجديد هو ما يُعيد فحص الصلاحية، وإلا
       // بقي الموقوف داخل حسابه ما دام يجدّد.
-      await usersService.updateUserProfile(session.userProfileId, undefined, false);
+      await usersService.updateUserProfile(
+        session.userProfileId,
+        undefined,
+        false,
+      );
 
       await expect(
         authnService.refreshSession(session.refreshToken),

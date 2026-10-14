@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell, Button, Badge, Modal, Input, LoadingState, InboxIcon } from '@marib-tax/web-ui';
-import { api, RequestItem } from '@/lib/api-client';
+import { api, displayStatus, RequestItem } from '@/lib/api-client';
 
 interface AttachmentItem {
   id: string;
@@ -147,7 +147,7 @@ export default function RequestsPage() {
                 <TableCell className="text-xs text-[var(--usr-muted)]">{req.submissionDate}</TableCell>
                 <TableCell>
                   <Badge variant={req.status === 'مكتمل' ? 'success' : req.status === 'قيد_النزول' ? 'warning' : 'default'}>
-                    {req.status}
+                    {displayStatus(req.status)}
                   </Badge>
                 </TableCell>
                 <TableCell>

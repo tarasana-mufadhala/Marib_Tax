@@ -2,6 +2,11 @@ import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { PublicEndpoint } from '../authz/authorization.decorators.js';
 import { TaxpayerCredentialsService } from './taxpayer-credentials.service.js';
 
+interface CredentialsRequestResult {
+  success: boolean;
+  message: string;
+}
+
 /**
  * طلب المكلف بيانات دخوله بعد أن أُنشئ حسابه من استيراد بيانات المكتب.
  *
@@ -16,7 +21,9 @@ export class CredentialsController {
 
   @Post('request')
   @HttpCode(200)
-  async request(@Body('phoneNumber') phoneNumber: string) {
+  async request(
+    @Body('phoneNumber') phoneNumber: string,
+  ): Promise<CredentialsRequestResult> {
     await this.credentials.requestCredentials(phoneNumber ?? '');
     return {
       success: true,

@@ -11,7 +11,8 @@ const OFFICER = '11111111-1111-1111-1111-111111111111';
 
 /** لا تُقرأ خدمة الحسابات في هذه الحالات؛ بديل صامت يكفي. */
 const AUTHN_STUB = {
-  accountContact: () => Promise.resolve({ phone: null, email: null }),
+  accountContact: (): Promise<{ phone: null; email: null }> =>
+    Promise.resolve({ phone: null, email: null }),
 };
 const TAXPAYER = '22222222-2222-2222-2222-222222222222';
 
@@ -58,15 +59,15 @@ describe('قواعد انتقال حالة ملف المكلف', () => {
   });
 
   it('تمنع حالة غير معروفة', () => {
-    expect(() =>
-      assertTransitionAllowed('active', 'deleted', ''),
-    ).toThrowError(/غير معروفة/);
+    expect(() => assertTransitionAllowed('active', 'deleted', '')).toThrowError(
+      /غير معروفة/,
+    );
   });
 
   it('توجب السبب عند الإيقاف', () => {
-    expect(() => assertTransitionAllowed('active', 'suspended', '')).toThrowError(
-      /يجب كتابة سبب/,
-    );
+    expect(() =>
+      assertTransitionAllowed('active', 'suspended', ''),
+    ).toThrowError(/يجب كتابة سبب/);
     expect(() =>
       assertTransitionAllowed('active', 'suspended', 'توقف النشاط'),
     ).not.toThrow();
@@ -106,7 +107,9 @@ describe('قواعد انتقال حالة ملف المكلف', () => {
 
   it('تُعلم اللوحة أي الإجراءات يلزمها سبب', () => {
     const options = transitionsFrom('under_review');
-    expect(options.find((t) => t.code === 'active')?.reasonRequired).toBe(false);
+    expect(options.find((t) => t.code === 'active')?.reasonRequired).toBe(
+      false,
+    );
     expect(options.find((t) => t.code === 'rejected')?.reasonRequired).toBe(
       true,
     );

@@ -11,7 +11,9 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
+import type { Selectable } from 'kysely';
 import { RequirePermission } from '../authz/authorization.decorators.js';
+import type { ContentLibraryDocumentsTable } from '../database/database.contracts.js';
 import { DatabaseService } from '../database/database.service.js';
 import { StorageService } from './storage.service.js';
 
@@ -31,7 +33,39 @@ const ALLOWED_MIME = new Set([
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ]);
 
-const ALLOWED_CATEGORIES = new Set(['attachment', 'approval_form', 'rejection_form']);
+const ALLOWED_CATEGORIES = new Set([
+  'attachment',
+  'approval_form',
+  'rejection_form',
+]);
+
+/** الحقول المستعملة فعلاً من ملف Multer المرفوع. */
+interface UploadedFilePayload {
+  originalname?: string;
+  mimetype?: string;
+  size?: number;
+  buffer?: Buffer;
+}
+
+interface ErrorResult {
+  error: string;
+}
+
+interface RequestAttachmentRow {
+  id: string;
+  original_filename: string;
+  mime_type: string;
+  logical_file_size_bytes: string;
+  document_category_code: string;
+  linked_at: Date;
+}
+
+type LibraryDocumentRow = Selectable<ContentLibraryDocumentsTable>;
+
+interface TopicAssignment {
+  id: string;
+  topicCode: string;
+}
 
 function mediaClass(mime: string): string {
   if (mime.startsWith('image/')) return 'image';
@@ -47,42 +81,60 @@ export class AttachmentsController {
 
   @RequirePermission('attachment.upload')
   @Post('requests/:id/attachments')
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }),
+  )
   async uploadRequestAttachment(
     @Param('id') requestId: string,
-    @UploadedFile() file: { originalname?: string; mimetype?: string; size?: number; buffer?: Buffer },
-    @Body() body: { category?: string },
-  ) {
+    @UploadedFile() file: UploadedFilePayload | undefined,
+    @Body() body: { category?: string } | undefined,
+  ): Promise<ErrorResult | { success: true; attachmentId: string }> {
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     if (!this.storage.enabled) return { error: 'خدمة التخزين غير مهيأة' };
     if (!file?.buffer) return { error: 'لم يتم استلام أي ملف' };
+    const buffer = file.buffer;
 
     const mime = file.mimetype ?? 'application/octet-stream';
     if (!ALLOWED_MIME.has(mime)) {
-      return { error: 'نوع الملف غير مسموح — المسموح: PDF، صور PNG/JPEG، Word (docx)، Excel (xlsx)، CSV' };
+      return {
+        error:
+          'نوع الملف غير مسموح — المسموح: PDF، صور PNG/JPEG، Word (docx)، Excel (xlsx)، CSV',
+      };
     }
-    const category = ALLOWED_CATEGORIES.has(body?.category ?? '') ? (body!.category as string) : 'attachment';
+    const requestedCategory = body?.category;
+    const category =
+      requestedCategory !== undefined &&
+      ALLOWED_CATEGORIES.has(requestedCategory)
+        ? requestedCategory
+        : 'attachment';
 
     try {
       const request = await this.db.db
-        .selectFrom('requests.service_requests' as any)
-        .select(['id'] as any)
-        .where('id' as any, '=', requestId)
+        .selectFrom('requests.service_requests')
+        .select(['id'])
+        .where('id', '=', requestId)
         .executeTakeFirst();
       if (!request) return { error: 'الطلب غير موجود' };
 
       const attachmentId = crypto.randomUUID();
-      const ext = (file.originalname ?? '').split('.').pop()?.toLowerCase() ?? 'bin';
+      const ext =
+        (file.originalname ?? '').split('.').pop()?.toLowerCase() ?? 'bin';
       const objectPath = `requests/${requestId}/${attachmentId}.${ext}`;
 
-      const uploaded = await this.storage.upload(BUCKET, objectPath, file.buffer, mime);
+      const uploaded = await this.storage.upload(
+        BUCKET,
+        objectPath,
+        buffer,
+        mime,
+      );
       if (!uploaded) return { error: 'تعذر رفع الملف إلى التخزين' };
 
       await this.db.db
-        .insertInto('files.attachments' as any)
+        .insertInto('files.attachments')
         .values({
           id: attachmentId,
-          logical_file_size_bytes: file.size ?? file.buffer.length,
+          // int8 مكتوب كنص في المخطط؛ القيمة المرسلة إلى PostgreSQL هي الرقم ذاته.
+          logical_file_size_bytes: String(file.size ?? buffer.length),
           media_content_class_code: mediaClass(mime),
           access_classification_code: 'internal',
           original_filename: file.originalname ?? `file.${ext}`,
@@ -94,11 +146,11 @@ export class AttachmentsController {
           is_current_version: true,
           storage_status_code: 'stored',
           deletion_retention_status_code: 'retained',
-        } as any)
+        })
         .execute();
 
       await this.db.db
-        .insertInto('files.attachment_links' as any)
+        .insertInto('files.attachment_links')
         .values({
           id: crypto.randomUUID(),
           attachment_id: attachmentId,
@@ -106,18 +158,22 @@ export class AttachmentsController {
           owner_id: requestId,
           link_role_code: category,
           linked_at: new Date(),
-        } as any)
+        })
         .execute();
 
       await this.db.db
-        .insertInto('audit.audit_logs' as any)
+        .insertInto('audit.audit_logs')
         .values({
           id: crypto.randomUUID(),
           action: 'attachment.uploaded',
           entity_type: 'service_request',
           entity_id: requestId,
-          metadata: JSON.stringify({ attachmentId, category, filename: file.originalname }),
-        } as any)
+          metadata: JSON.stringify({
+            attachmentId,
+            category,
+            filename: file.originalname,
+          }),
+        })
         .execute()
         .catch(() => undefined);
 
@@ -129,12 +185,18 @@ export class AttachmentsController {
 
   @RequirePermission('attachment.read')
   @Get('requests/:id/attachments')
-  async getRequestAttachments(@Param('id') requestId: string) {
+  async getRequestAttachments(
+    @Param('id') requestId: string,
+  ): Promise<RequestAttachmentRow[]> {
     if (!this.db.isInitialized) return [];
     try {
-      const rows = await (this.db.db
-        .selectFrom('files.attachment_links' as any) as any)
-        .innerJoin('files.attachments', 'files.attachments.id', 'files.attachment_links.attachment_id')
+      const rows = await this.db.db
+        .selectFrom('files.attachment_links')
+        .innerJoin(
+          'files.attachments',
+          'files.attachments.id',
+          'files.attachment_links.attachment_id',
+        )
         .select([
           'files.attachments.id as id',
           'files.attachments.original_filename as original_filename',
@@ -157,23 +219,27 @@ export class AttachmentsController {
 
   @RequirePermission('attachment.read')
   @Get('attachments/:id/file')
-  async downloadAttachment(@Param('id') id: string, @Res() res: Response) {
+  async downloadAttachment(
+    @Param('id') id: string,
+    @Res() res: Response,
+  ): Promise<void> {
     if (!this.db.isInitialized || !this.storage.enabled) {
       res.status(503).json({ error: 'الخدمة غير متاحة' });
       return;
     }
     try {
-      const attachment = (await this.db.db
-        .selectFrom('files.attachments' as any)
-        .select(['storage_object_path', 'original_filename', 'mime_type'] as any)
-        .where('id' as any, '=', id)
-        .executeTakeFirst()) as any;
+      const attachment = await this.db.db
+        .selectFrom('files.attachments')
+        .select(['storage_object_path', 'original_filename', 'mime_type'])
+        .where('id', '=', id)
+        .executeTakeFirst();
       if (!attachment?.storage_object_path) {
         res.status(404).json({ error: 'المرفق غير موجود' });
         return;
       }
+      // split() يعيد عنصراً واحداً على الأقل، فلا تكون bucket غير معرّفة فعلياً.
       const [bucket, ...rest] = attachment.storage_object_path.split('/');
-      const file = await this.storage.download(bucket, rest.join('/'));
+      const file = await this.storage.download(bucket ?? '', rest.join('/'));
       if (!file) {
         res.status(404).json({ error: 'تعذر جلب الملف من التخزين' });
         return;
@@ -191,13 +257,13 @@ export class AttachmentsController {
 
   @RequirePermission('content.publish')
   @Get('library-documents')
-  async getLibraryDocuments() {
+  async getLibraryDocuments(): Promise<LibraryDocumentRow[]> {
     if (!this.db.isInitialized) return [];
     try {
       return await this.db.db
-        .selectFrom('content.library_documents' as any)
+        .selectFrom('content.library_documents')
         .selectAll()
-        .orderBy('created_at' as any, 'desc')
+        .orderBy('created_at', 'desc')
         .limit(100)
         .execute();
     } catch {
@@ -214,14 +280,16 @@ export class AttachmentsController {
   @RequirePermission('content.publish')
   @Patch('library-documents/topics')
   async assignLibraryTopics(
-    @Body() body: { assignments?: { id?: string; topicCode?: string }[] },
-  ) {
+    @Body()
+    body: { assignments?: { id?: string; topicCode?: string }[] } | undefined,
+  ): Promise<ErrorResult | { success: true; updated: number }> {
     if (!this.db.isInitialized) {
       return { error: 'قاعدة البيانات غير متاحة' };
     }
     const allowed = new Set(['income_tax', 'sales_tax', 'general']);
     const assignments = (body?.assignments ?? []).filter(
-      (a) => typeof a.id === 'string' && allowed.has(a.topicCode ?? ''),
+      (a): a is TopicAssignment =>
+        typeof a.id === 'string' && allowed.has(a.topicCode ?? ''),
     );
     if (assignments.length === 0) {
       return { error: 'لا توجد إسنادات صالحة' };
@@ -230,12 +298,12 @@ export class AttachmentsController {
     let updated = 0;
     for (const assignment of assignments) {
       const result = await this.db.db
-        .updateTable('content.library_documents' as any)
-        .set({ topic_code: assignment.topicCode, updated_at: new Date() } as any)
-        .where('id' as any, '=', assignment.id)
+        .updateTable('content.library_documents')
+        .set({ topic_code: assignment.topicCode, updated_at: new Date() })
+        .where('id', '=', assignment.id)
         .executeTakeFirst()
         .catch(() => null);
-      if (result) updated += Number(result.numUpdatedRows ?? 0);
+      if (result) updated += Number(result.numUpdatedRows);
     }
 
     return { success: true, updated };
@@ -245,53 +313,76 @@ export class AttachmentsController {
   @Post('library-documents')
   // 50 ميغابايت مطابقةً لحد السلة: مستندات المصلحة الرسمية فيها مسوحات
   // ضوئية كبيرة، وحدٌّ أدنى منها كان يستبعدها بصمت.
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 50 * 1024 * 1024 } }))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: 50 * 1024 * 1024 } }),
+  )
   async uploadLibraryDocument(
-    @UploadedFile() file: { originalname?: string; mimetype?: string; size?: number; buffer?: Buffer },
-    @Body() body: { title?: string; category?: string; version?: string },
-  ) {
+    @UploadedFile() file: UploadedFilePayload | undefined,
+    @Body()
+    body: { title?: string; category?: string; version?: string } | undefined,
+  ): Promise<ErrorResult | { success: true; documentId: string }> {
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     if (!this.storage.enabled) return { error: 'خدمة التخزين غير مهيأة' };
     if (!file?.buffer) return { error: 'لم يتم استلام أي ملف' };
-    if (!body?.title?.trim()) return { error: 'عنوان المستند مطلوب' };
+    const buffer = file.buffer;
+    const title = body?.title?.trim();
+    if (!title) return { error: 'عنوان المستند مطلوب' };
 
     const mime = file.mimetype ?? 'application/octet-stream';
     if (!LIBRARY_MIME.has(mime)) {
-      return { error: 'نوع الملف غير مسموح في المكتبة — المسموح: PDF، صور PNG/JPEG' };
+      return {
+        error: 'نوع الملف غير مسموح في المكتبة — المسموح: PDF، صور PNG/JPEG',
+      };
     }
-    const category = LIBRARY_CATEGORIES.has(body?.category ?? '') ? (body!.category as string) : 'form';
+    const requestedCategory = body?.category;
+    const category =
+      requestedCategory !== undefined &&
+      LIBRARY_CATEGORIES.has(requestedCategory)
+        ? requestedCategory
+        : 'form';
 
     try {
       const docId = crypto.randomUUID();
-      const ext = (file.originalname ?? '').split('.').pop()?.toLowerCase() ?? 'bin';
+      const ext =
+        (file.originalname ?? '').split('.').pop()?.toLowerCase() ?? 'bin';
       const objectPath = `library/${docId}.${ext}`;
 
-      const uploaded = await this.storage.upload(LIBRARY_BUCKET, objectPath, file.buffer, mime);
+      const uploaded = await this.storage.upload(
+        LIBRARY_BUCKET,
+        objectPath,
+        buffer,
+        mime,
+      );
       if (!uploaded) return { error: 'تعذر رفع الملف إلى التخزين' };
 
       await this.db.db
-        .insertInto('content.library_documents' as any)
+        .insertInto('content.library_documents')
         .values({
           id: docId,
-          title: body.title.trim(),
+          title,
           category_code: category,
           file_path: `${LIBRARY_BUCKET}/${objectPath}`,
-          file_size_bytes: file.size ?? file.buffer.length,
+          // int8 مكتوب كنص في المخطط؛ القيمة المرسلة إلى PostgreSQL هي الرقم ذاته.
+          file_size_bytes: String(file.size ?? buffer.length),
           mime_type: mime,
           status: 'draft',
           version_label: body?.version?.trim() || '1.0',
-        } as any)
+        })
         .execute();
 
       await this.db.db
-        .insertInto('audit.audit_logs' as any)
+        .insertInto('audit.audit_logs')
         .values({
           id: crypto.randomUUID(),
           action: 'library.uploaded',
           entity_type: 'library_document',
           entity_id: docId,
-          metadata: JSON.stringify({ title: body.title.trim(), category, filename: file.originalname }),
-        } as any)
+          metadata: JSON.stringify({
+            title,
+            category,
+            filename: file.originalname,
+          }),
+        })
         .execute()
         .catch(() => undefined);
 
@@ -303,34 +394,36 @@ export class AttachmentsController {
 
   @RequirePermission('content.withdraw')
   @Patch('library-documents/:id/toggle')
-  async toggleLibraryDocument(@Param('id') id: string) {
+  async toggleLibraryDocument(
+    @Param('id') id: string,
+  ): Promise<ErrorResult | LibraryDocumentRow | undefined> {
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     try {
-      const current = (await this.db.db
-        .selectFrom('content.library_documents' as any)
-        .select(['status'] as any)
-        .where('id' as any, '=', id)
-        .executeTakeFirst()) as any;
+      const current = await this.db.db
+        .selectFrom('content.library_documents')
+        .select(['status'])
+        .where('id', '=', id)
+        .executeTakeFirst();
       if (!current) return { error: 'المستند غير موجود' };
       const publishing = current.status !== 'published';
       const result = await this.db.db
-        .updateTable('content.library_documents' as any)
+        .updateTable('content.library_documents')
         .set({
           status: publishing ? 'published' : 'draft',
           published_at: publishing ? new Date() : null,
           updated_at: new Date(),
-        } as any)
-        .where('id' as any, '=', id)
+        })
+        .where('id', '=', id)
         .returningAll()
         .executeTakeFirst();
       await this.db.db
-        .insertInto('audit.audit_logs' as any)
+        .insertInto('audit.audit_logs')
         .values({
           id: crypto.randomUUID(),
           action: publishing ? 'library.published' : 'library.unpublished',
           entity_type: 'library_document',
           entity_id: id,
-        } as any)
+        })
         .execute()
         .catch(() => undefined);
       return result;
@@ -341,22 +434,25 @@ export class AttachmentsController {
 
   @RequirePermission('content.publish')
   @Get('library-documents/:id/file')
-  async downloadLibraryDocument(@Param('id') id: string, @Res() res: Response) {
+  async downloadLibraryDocument(
+    @Param('id') id: string,
+    @Res() res: Response,
+  ): Promise<void> {
     if (!this.db.isInitialized || !this.storage.enabled) {
       res.status(503).json({ error: 'الخدمة غير متاحة' });
       return;
     }
     try {
-      const doc = (await this.db.db
-        .selectFrom('content.library_documents' as any)
-        .select(['file_path', 'title', 'mime_type'] as any)
-        .where('id' as any, '=', id)
-        .executeTakeFirst()) as any;
+      const doc = await this.db.db
+        .selectFrom('content.library_documents')
+        .select(['file_path', 'title', 'mime_type'])
+        .where('id', '=', id)
+        .executeTakeFirst();
       if (!doc?.file_path) {
         res.status(404).json({ error: 'المستند غير موجود' });
         return;
       }
-      const [bucket, ...rest] = String(doc.file_path).split('/');
+      const [bucket, ...rest] = doc.file_path.split('/');
       const file = await this.storage.download(bucket ?? '', rest.join('/'));
       if (!file) {
         res.status(404).json({ error: 'تعذر جلب الملف من التخزين' });

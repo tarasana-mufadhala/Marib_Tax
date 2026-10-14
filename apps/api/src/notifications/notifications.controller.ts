@@ -72,9 +72,7 @@ export class NotificationsController {
   @Delete('devices/:token')
   @HttpCode(204)
   @RequirePermission('notification.read')
-  async unregisterDevice(
-    @Param('token') token: string,
-  ): Promise<void> {
+  async unregisterDevice(@Param('token') token: string): Promise<void> {
     await this.service.unregisterDeviceToken(token);
   }
 }

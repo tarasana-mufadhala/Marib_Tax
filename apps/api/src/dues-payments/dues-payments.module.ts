@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DuesPaymentsService } from './dues-payments.service.js';
+import { AtomicDuesPaymentsService } from './atomic-dues-payments.service.js';
 import { DuesPaymentsController } from './dues-payments.controller.js';
 import { DUES_PAYMENTS_REPOSITORY } from './dues-payments.repository.js';
 import { DuesPaymentsKyselyRepository } from './dues-payments.kysely-repository.js';
@@ -12,7 +13,10 @@ import { RolesPermissionsModule } from '../roles-permissions/roles-permissions.m
   imports: [AuthnModule, UsersModule, RolesPermissionsModule, DatabaseModule],
   controllers: [DuesPaymentsController],
   providers: [
-    DuesPaymentsService,
+    {
+      provide: DuesPaymentsService,
+      useClass: AtomicDuesPaymentsService,
+    },
     {
       provide: DUES_PAYMENTS_REPOSITORY,
       useClass: DuesPaymentsKyselyRepository,

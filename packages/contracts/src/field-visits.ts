@@ -10,8 +10,16 @@ const optionalText = z
 
 export const scheduleFieldVisitSchema = z
   .object({
-    serviceRequestId: z.uuid().nullable().optional().transform((value) => value ?? null),
-    balaghId: z.uuid().nullable().optional().transform((value) => value ?? null),
+    serviceRequestId: z
+      .uuid()
+      .nullable()
+      .optional()
+      .transform((value) => value ?? null),
+    balaghId: z
+      .uuid()
+      .nullable()
+      .optional()
+      .transform((value) => value ?? null),
     scheduledStartAt: z.string().datetime(),
     scheduledEndAt: z.string().datetime(),
     teamMemberStaffIds: z.array(z.uuid()).min(1),
@@ -25,7 +33,8 @@ export const scheduleFieldVisitSchema = z
     if ((hasRequest && hasBalagh) || (!hasRequest && !hasBalagh)) {
       ctx.addIssue({
         code: 'custom',
-        message: 'Exact-one parent context (serviceRequestId XOR balaghId) is required.',
+        message:
+          'Exact-one parent context (serviceRequestId XOR balaghId) is required.',
       });
     }
   });
@@ -41,7 +50,9 @@ export const recordFieldVisitResultSchema = z
   })
   .strict();
 
-export type RecordFieldVisitResultInput = z.infer<typeof recordFieldVisitResultSchema>;
+export type RecordFieldVisitResultInput = z.infer<
+  typeof recordFieldVisitResultSchema
+>;
 
 export const cancelFieldVisitSchema = z
   .object({
@@ -84,4 +95,6 @@ export const fieldVisitResultResponseSchema = z
   })
   .strict();
 
-export type FieldVisitResultResponse = z.infer<typeof fieldVisitResultResponseSchema>;
+export type FieldVisitResultResponse = z.infer<
+  typeof fieldVisitResultResponseSchema
+>;

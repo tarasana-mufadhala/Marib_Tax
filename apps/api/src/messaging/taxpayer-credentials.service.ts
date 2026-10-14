@@ -61,7 +61,11 @@ export class TaxpayerCredentialsService {
 
     // كلمة مرور أوّلية عشوائية لا تُسجَّل ولا تُعاد — الحساب غير قابل
     // للاستعمال حتى يطلب المكلف بياناته.
-    const authUserId = await this.createIdentity(phone, generatePassword(), params.displayName);
+    const authUserId = await this.createIdentity(
+      phone,
+      generatePassword(),
+      params.displayName,
+    );
     if (authUserId === null) {
       return { created: false, reason: 'تعذّر إنشاء حساب المصادقة' };
     }
@@ -156,7 +160,10 @@ export class TaxpayerCredentialsService {
       );
     }
 
-    const updated = await this.setIdentityPassword(account.authUserId, password);
+    const updated = await this.setIdentityPassword(
+      account.authUserId,
+      password,
+    );
     if (!updated) {
       // الرسالة وصلت لكن التثبيت فشل: نُبلّغ بصدق بدل ترك المكلف يجرّب كلمة لا تعمل.
       this.logger.error(
@@ -208,7 +215,10 @@ export class TaxpayerCredentialsService {
   }
 
   private supabase(): { url: string; key: string } | null {
-    const url = (this.config.get<string>('SUPABASE_URL') ?? '').replace(/\/$/, '');
+    const url = (this.config.get<string>('SUPABASE_URL') ?? '').replace(
+      /\/$/,
+      '',
+    );
     const key = this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     return url && key ? { url, key } : null;
   }
@@ -287,15 +297,18 @@ export class TaxpayerCredentialsService {
     const supabase = this.supabase();
     if (supabase === null) return false;
     try {
-      const res = await fetch(`${supabase.url}/auth/v1/admin/users/${authUserId}`, {
-        method: 'PUT',
-        headers: {
-          apikey: supabase.key,
-          Authorization: `Bearer ${supabase.key}`,
-          'Content-Type': 'application/json',
+      const res = await fetch(
+        `${supabase.url}/auth/v1/admin/users/${authUserId}`,
+        {
+          method: 'PUT',
+          headers: {
+            apikey: supabase.key,
+            Authorization: `Bearer ${supabase.key}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ password }),
         },
-        body: JSON.stringify({ password }),
-      });
+      );
       return res.ok;
     } catch {
       return false;
@@ -332,7 +345,7 @@ export function generatePassword(): string {
   const symbols = '@#$%&*!?';
   const all = upper + lower + digits + symbols;
 
-  const pick = (set: string) => set[randomInt(set.length)]!;
+  const pick = (set: string): string => set[randomInt(set.length)]!;
   const characters = [pick(upper), pick(lower), pick(digits), pick(symbols)];
   while (characters.length < 12) characters.push(pick(all));
 

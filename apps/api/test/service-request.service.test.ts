@@ -19,22 +19,29 @@ class MemoryRepository implements ServiceRequestRepository {
   company = false;
   taxNumber = false;
 
-  async create(request: StoredServiceRequest): Promise<void> {
+  create(request: StoredServiceRequest): Promise<void> {
     this.rows.set(request.id, structuredClone(request));
+    return Promise.resolve();
   }
 
-  async findById(id: string): Promise<StoredServiceRequest | null> {
+  findById(id: string): Promise<StoredServiceRequest | null> {
     const found = this.rows.get(id);
-    return found ? structuredClone(found) : null;
+    return Promise.resolve(found ? structuredClone(found) : null);
   }
 
-  async save(request: StoredServiceRequest): Promise<void> {
+  save(request: StoredServiceRequest): Promise<void> {
     this.rows.set(request.id, structuredClone(request));
+    return Promise.resolve();
   }
 
-  async list(ownerActorId: string | undefined, limit: number): Promise<ServiceRequestListItem[]> {
-    return [...this.rows.values()]
-      .filter((r) => ownerActorId === undefined || r.ownerActorId === ownerActorId)
+  list(
+    ownerActorId: string | undefined,
+    limit: number,
+  ): Promise<ServiceRequestListItem[]> {
+    const items: ServiceRequestListItem[] = [...this.rows.values()]
+      .filter(
+        (r) => ownerActorId === undefined || r.ownerActorId === ownerActorId,
+      )
       .slice(0, limit)
       .map((r) => ({
         id: r.id,
@@ -45,22 +52,25 @@ class MemoryRepository implements ServiceRequestRepository {
         createdAt: r.createdAt,
         submittedAt: r.submittedAt,
       }));
+    return Promise.resolve(items);
   }
 
-  async attachedDocumentCodes(): Promise<string[]> {
-    return this.documents;
+  attachedDocumentCodes(): Promise<string[]> {
+    return Promise.resolve(this.documents);
   }
 
-  async isCompanyTaxpayer(): Promise<boolean> {
-    return this.company;
+  isCompanyTaxpayer(): Promise<boolean> {
+    return Promise.resolve(this.company);
   }
 
-  async hasTaxNumber(): Promise<boolean> {
-    return this.taxNumber;
+  hasTaxNumber(): Promise<boolean> {
+    return Promise.resolve(this.taxNumber);
   }
 
-  async serviceCodeOf(id: string) {
-    return this.rows.get(id)?.serviceCode ?? null;
+  serviceCodeOf(
+    id: string,
+  ): ReturnType<ServiceRequestRepository['serviceCodeOf']> {
+    return Promise.resolve(this.rows.get(id)?.serviceCode ?? null);
   }
 }
 
@@ -95,7 +105,10 @@ const FR102: CreateServiceRequest = {
   },
 };
 
-function build() {
+function build(): {
+  repository: MemoryRepository;
+  service: ServiceRequestService;
+} {
   const repository = new MemoryRepository();
   return { repository, service: new ServiceRequestService(repository) };
 }
@@ -127,7 +140,11 @@ describe('ServiceRequestService — قاعدة قبول المستندات', () 
   it('يُقدَّم بعد استيفاء المستندات الإلزامية', async () => {
     const { repository, service } = build();
     const created = await service.create(OWNER, FR101);
-    repository.documents = ['national_id_front', 'national_id_back', 'commercial_register'];
+    repository.documents = [
+      'national_id_front',
+      'national_id_back',
+      'commercial_register',
+    ];
 
     const submitted = await service.submit(OWNER, created.id);
 
@@ -138,7 +155,11 @@ describe('ServiceRequestService — قاعدة قبول المستندات', () 
   it('الشركة تحتاج مستندات إضافية لا يحتاجها الفرد', async () => {
     const { repository, service } = build();
     const created = await service.create(OWNER, FR102);
-    repository.documents = ['trade_name_registration', 'practice_license', 'insurance_card'];
+    repository.documents = [
+      'trade_name_registration',
+      'practice_license',
+      'insurance_card',
+    ];
 
     // فرد: مستوفٍ
     expect(await service.missingDocuments(OWNER, created.id)).toEqual([]);
@@ -160,10 +181,14 @@ describe('ServiceRequestService — إتاحة الخدمات', () => {
     const { repository, service } = build();
 
     repository.taxNumber = false;
-    expect((await service.catalogFor(OWNER)).map((s) => s.code)).toContain('FR-102');
+    expect((await service.catalogFor(OWNER)).map((s) => s.code)).toContain(
+      'FR-102',
+    );
 
     repository.taxNumber = true;
-    expect((await service.catalogFor(OWNER)).map((s) => s.code)).not.toContain('FR-102');
+    expect((await service.catalogFor(OWNER)).map((s) => s.code)).not.toContain(
+      'FR-102',
+    );
   });
 
   it('الرقم الضريبي يُقاس بجهة اتصال رسمية لا بالمرجع الداخلي', async () => {
@@ -198,14 +223,18 @@ describe('ServiceRequestService — الملكية وحالات الرفض', () 
     const created = await service.create(OWNER, FR101);
 
     await expect(
-      service.edit(OTHER, created.id, { form: FR101.form } as never),
+      service.edit(OTHER, created.id, { form: FR101.form }),
     ).rejects.toThrow();
   });
 
   it('لا يقدّم مكلف طلب غيره', async () => {
     const { repository, service } = build();
     const created = await service.create(OWNER, FR101);
-    repository.documents = ['national_id_front', 'national_id_back', 'commercial_register'];
+    repository.documents = [
+      'national_id_front',
+      'national_id_back',
+      'commercial_register',
+    ];
 
     await expect(service.submit(OTHER, created.id)).rejects.toThrow();
   });
@@ -213,18 +242,26 @@ describe('ServiceRequestService — الملكية وحالات الرفض', () 
   it('لا يُعدَّل الطلب بعد تقديمه', async () => {
     const { repository, service } = build();
     const created = await service.create(OWNER, FR101);
-    repository.documents = ['national_id_front', 'national_id_back', 'commercial_register'];
+    repository.documents = [
+      'national_id_front',
+      'national_id_back',
+      'commercial_register',
+    ];
     await service.submit(OWNER, created.id);
 
     await expect(
-      service.edit(OWNER, created.id, { form: FR101.form } as never),
+      service.edit(OWNER, created.id, { form: FR101.form }),
     ).rejects.toThrow();
   });
 
   it('لا يُقدَّم الطلب مرتين', async () => {
     const { repository, service } = build();
     const created = await service.create(OWNER, FR101);
-    repository.documents = ['national_id_front', 'national_id_back', 'commercial_register'];
+    repository.documents = [
+      'national_id_front',
+      'national_id_back',
+      'commercial_register',
+    ];
     await service.submit(OWNER, created.id);
 
     await expect(service.submit(OWNER, created.id)).rejects.toThrow();

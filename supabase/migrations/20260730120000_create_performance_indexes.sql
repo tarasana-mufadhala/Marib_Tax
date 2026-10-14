@@ -217,12 +217,10 @@ CREATE INDEX idx_notification_read_states_recipient
 --   WHERE idempotency_key IS NOT NULL;
 
 -- content
-CREATE INDEX idx_content_pages_status_updated 
-  ON content.content_pages (status, updated_at DESC);
-
-CREATE INDEX idx_announcements_validity 
-  ON content.announcements (starts_at, ends_at) 
-  WHERE is_active = true;
+-- Moved to 20261013120100_sync_indexes_with_production.sql: the content tables are
+-- created later (20260731120000), so creating these indexes here aborted this
+-- whole transaction on a fresh `supabase db reset`. Production already has both
+-- indexes (applied out of order); the new migration uses IF NOT EXISTS.
 
 -- reporting
 -- CREATE INDEX idx_saved_report_filters_user 

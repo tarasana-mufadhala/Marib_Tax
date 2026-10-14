@@ -38,7 +38,9 @@ export class DecisionsKyselyRepository implements DecisionsRepository {
     return this.decisions.get(id) ?? null;
   }
 
-  async findDecisionByRequestId(serviceRequestId: string): Promise<StoredDecisionRecord | null> {
+  async findDecisionByRequestId(
+    serviceRequestId: string,
+  ): Promise<StoredDecisionRecord | null> {
     if (this.dbService.isInitialized) {
       const row = await this.dbService.db
         .selectFrom('requests.request_decision_records')
@@ -60,11 +62,15 @@ export class DecisionsKyselyRepository implements DecisionsRepository {
       };
     }
     return (
-      [...this.decisions.values()].find((d) => d.serviceRequestId === serviceRequestId) ?? null
+      [...this.decisions.values()].find(
+        (d) => d.serviceRequestId === serviceRequestId,
+      ) ?? null
     );
   }
 
-  async createDecision(record: StoredDecisionRecord): Promise<StoredDecisionRecord> {
+  async createDecision(
+    record: StoredDecisionRecord,
+  ): Promise<StoredDecisionRecord> {
     if (this.dbService.isInitialized) {
       await this.dbService.db
         .insertInto('requests.request_decision_records')
@@ -87,7 +93,9 @@ export class DecisionsKyselyRepository implements DecisionsRepository {
     return record;
   }
 
-  async createRevision(revision: StoredDecisionRevision): Promise<StoredDecisionRevision> {
+  async createRevision(
+    revision: StoredDecisionRevision,
+  ): Promise<StoredDecisionRevision> {
     if (this.dbService.isInitialized) {
       await this.dbService.db
         .insertInto('requests.request_decision_revisions')
@@ -110,7 +118,9 @@ export class DecisionsKyselyRepository implements DecisionsRepository {
     return revision;
   }
 
-  async listRevisionsForDecision(decisionRecordId: string): Promise<StoredDecisionRevision[]> {
+  async listRevisionsForDecision(
+    decisionRecordId: string,
+  ): Promise<StoredDecisionRevision[]> {
     if (this.dbService.isInitialized) {
       const rows = await this.dbService.db
         .selectFrom('requests.request_decision_revisions')
@@ -130,6 +140,8 @@ export class DecisionsKyselyRepository implements DecisionsRepository {
         createdAt: row.created_at,
       }));
     }
-    return this.revisions.filter((r) => r.decisionRecordId === decisionRecordId);
+    return this.revisions.filter(
+      (r) => r.decisionRecordId === decisionRecordId,
+    );
   }
 }

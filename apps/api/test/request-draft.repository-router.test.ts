@@ -28,17 +28,31 @@ const draft: StoredRequestDraft = {
 };
 
 /** قاعدة يمكن تبديل حالتها بعد الإنشاء، كما يحدث فعلياً عند الإقلاع. */
-function mutableDatabase(initial: boolean) {
+function mutableDatabase(
+  initial: boolean,
+): DatabaseService & { isInitialized: boolean } {
   const state = { isInitialized: initial };
   return state as unknown as DatabaseService & { isInitialized: boolean };
 }
 
-function spyRepository() {
+function spyRepository(): {
+  repository: RequestDraftKyselyRepository;
+  calls: string[];
+} {
   const calls: string[] = [];
   const repository = {
-    create: async () => { calls.push('create'); },
-    findById: async () => { calls.push('findById'); return null; },
-    save: async () => { calls.push('save'); },
+    create: (): Promise<void> => {
+      calls.push('create');
+      return Promise.resolve();
+    },
+    findById: (): Promise<null> => {
+      calls.push('findById');
+      return Promise.resolve(null);
+    },
+    save: (): Promise<void> => {
+      calls.push('save');
+      return Promise.resolve();
+    },
   } as unknown as RequestDraftKyselyRepository;
   return { repository, calls };
 }
@@ -48,7 +62,11 @@ describe('RequestDraftRepositoryRouter', () => {
     const db = mutableDatabase(true);
     const persistent = spyRepository();
     const memory = new RequestDraftMemoryRepository();
-    const router = new RequestDraftRepositoryRouter(db, persistent.repository, memory);
+    const router = new RequestDraftRepositoryRouter(
+      db,
+      persistent.repository,
+      memory,
+    );
 
     await router.create(draft);
     await router.findById(draft.id);
@@ -63,7 +81,11 @@ describe('RequestDraftRepositoryRouter', () => {
     const db = mutableDatabase(false);
     const persistent = spyRepository();
     const memory = new RequestDraftMemoryRepository();
-    const router = new RequestDraftRepositoryRouter(db, persistent.repository, memory);
+    const router = new RequestDraftRepositoryRouter(
+      db,
+      persistent.repository,
+      memory,
+    );
 
     await router.create(draft);
 
@@ -75,7 +97,11 @@ describe('RequestDraftRepositoryRouter', () => {
     const db = mutableDatabase(false);
     const persistent = spyRepository();
     const memory = new RequestDraftMemoryRepository();
-    const router = new RequestDraftRepositoryRouter(db, persistent.repository, memory);
+    const router = new RequestDraftRepositoryRouter(
+      db,
+      persistent.repository,
+      memory,
+    );
 
     // نداء قبل اتصال القاعدة
     await router.findById(draft.id);
@@ -92,7 +118,11 @@ describe('RequestDraftRepositoryRouter', () => {
     const db = mutableDatabase(true);
     const persistent = spyRepository();
     const memory = new RequestDraftMemoryRepository();
-    const router = new RequestDraftRepositoryRouter(db, persistent.repository, memory);
+    const router = new RequestDraftRepositoryRouter(
+      db,
+      persistent.repository,
+      memory,
+    );
 
     await router.create(draft);
     expect(persistent.calls).toEqual(['create']);

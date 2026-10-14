@@ -31,7 +31,9 @@ function mapRole(row: Selectable<IdentityRolesTable>): StoredRole {
   };
 }
 
-function mapPermission(row: Selectable<IdentityPermissionsTable>): StoredPermission {
+function mapPermission(
+  row: Selectable<IdentityPermissionsTable>,
+): StoredPermission {
   return {
     id: row.id,
     code: row.code as PermissionCode,
@@ -114,7 +116,10 @@ export class RolesPermissionsKyselyRepository implements RolesPermissionsReposit
   async updateRole(
     id: string,
     updates: Partial<
-      Pick<StoredRole, 'nameAr' | 'description' | 'isActive' | 'updatedByProfileId'>
+      Pick<
+        StoredRole,
+        'nameAr' | 'description' | 'isActive' | 'updatedByProfileId'
+      >
     >,
   ): Promise<StoredRole> {
     const row = await this.databaseService.db
@@ -149,7 +154,9 @@ export class RolesPermissionsKyselyRepository implements RolesPermissionsReposit
     return row ? mapPermission(row) : null;
   }
 
-  async findPermissionByCode(code: PermissionCode): Promise<StoredPermission | null> {
+  async findPermissionByCode(
+    code: PermissionCode,
+  ): Promise<StoredPermission | null> {
     const row = await this.databaseService.db
       .selectFrom('identity.permissions')
       .selectAll()
@@ -160,7 +167,10 @@ export class RolesPermissionsKyselyRepository implements RolesPermissionsReposit
   }
 
   async createPermission(
-    permission: Omit<StoredPermission, 'createdAt' | 'updatedAt' | 'archivedAt'>,
+    permission: Omit<
+      StoredPermission,
+      'createdAt' | 'updatedAt' | 'archivedAt'
+    >,
   ): Promise<StoredPermission> {
     const row = await this.databaseService.db
       .insertInto('identity.permissions')
@@ -182,7 +192,9 @@ export class RolesPermissionsKyselyRepository implements RolesPermissionsReposit
     return mapPermission(row);
   }
 
-  async grantPermissionToRole(rolePermission: StoredRolePermission): Promise<void> {
+  async grantPermissionToRole(
+    rolePermission: StoredRolePermission,
+  ): Promise<void> {
     await this.databaseService.db
       .insertInto('identity.role_permissions')
       .values({
@@ -195,7 +207,10 @@ export class RolesPermissionsKyselyRepository implements RolesPermissionsReposit
       .execute();
   }
 
-  async revokePermissionFromRole(roleId: string, permissionId: string): Promise<void> {
+  async revokePermissionFromRole(
+    roleId: string,
+    permissionId: string,
+  ): Promise<void> {
     await this.databaseService.db
       .deleteFrom('identity.role_permissions')
       .where('role_id', '=', roleId)
@@ -261,7 +276,9 @@ export class RolesPermissionsKyselyRepository implements RolesPermissionsReposit
     return mapAssignment(row);
   }
 
-  async findAssignmentById(id: string): Promise<StoredStaffRoleAssignment | null> {
+  async findAssignmentById(
+    id: string,
+  ): Promise<StoredStaffRoleAssignment | null> {
     const row = await this.databaseService.db
       .selectFrom('identity.staff_role_assignments')
       .selectAll()
@@ -281,10 +298,7 @@ export class RolesPermissionsKyselyRepository implements RolesPermissionsReposit
       .where('revoked_at', 'is', null)
       .where('effective_from', '<=', now)
       .where((eb) =>
-        eb.or([
-          eb('effective_to', 'is', null),
-          eb('effective_to', '>', now),
-        ]),
+        eb.or([eb('effective_to', 'is', null), eb('effective_to', '>', now)]),
       )
       .execute();
     return rows.map(mapAssignment);

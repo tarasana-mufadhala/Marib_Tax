@@ -32,7 +32,11 @@ describe('تصنيف أخطاء مزوّد البريد', () => {
 
     // `create_user: false` يجعل GoTrue يرد بهذا الرمز للعنوان غير المسجَّل.
     await expect(
-      classify(service, { error_code: 'otp_disabled', msg: 'Signups not allowed' }, 422),
+      classify(
+        service,
+        { error_code: 'otp_disabled', msg: 'Signups not allowed' },
+        422,
+      ),
     ).resolves.toBeNull();
 
     await expect(
@@ -43,7 +47,10 @@ describe('تصنيف أخطاء مزوّد البريد', () => {
   it('يُظهر تجاوز حد الإرسال ويرشد إلى بديل الهاتف', async () => {
     const issue = await classify(
       serviceStub(),
-      { error_code: 'over_email_send_rate_limit', msg: 'email rate limit exceeded' },
+      {
+        error_code: 'over_email_send_rate_limit',
+        msg: 'email rate limit exceeded',
+      },
       429,
     );
 

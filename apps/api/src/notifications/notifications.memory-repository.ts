@@ -177,13 +177,17 @@ export class NotificationsMemoryRepository implements NotificationsRepository {
     return updated;
   }
 
-  async registerDeviceToken(token: StoredDeviceToken): Promise<StoredDeviceToken> {
+  async registerDeviceToken(
+    token: StoredDeviceToken,
+  ): Promise<StoredDeviceToken> {
     await Promise.resolve();
     this.deviceTokens.set(token.deviceToken, token);
     return token;
   }
 
-  async listDeviceTokensForUser(userProfileId: string): Promise<StoredDeviceToken[]> {
+  async listDeviceTokensForUser(
+    userProfileId: string,
+  ): Promise<StoredDeviceToken[]> {
     await Promise.resolve();
     return [...this.deviceTokens.values()].filter(
       (t) => t.userProfileId === userProfileId && t.isActive,
