@@ -17,7 +17,10 @@ const code = check.status ?? 1;
 if (code !== 0 && process.env.GITHUB_ACTIONS === 'true') {
   const files = `${check.stdout ?? ''}\n${check.stderr ?? ''}`
     .split('\n')
-    .map((l) => /^\[warn\] (\S+\.(?:ts|json|yaml))$/.exec(l.trim())?.[1])
+    .map((l) =>
+      // eslint-disable-next-line no-control-regex
+      /\[warn\] (\S+\.(?:ts|json|yaml))$/.exec(l.replace(/\u001b\[[0-9;]*m/g, '').trim())?.[1],
+    )
     .filter((f) => typeof f === 'string');
   print(
     'notice',
