@@ -97,12 +97,10 @@ describe('DEV_OTP_CODE — الشروط التي تعطّله', () => {
 
   it('معطّل حين يكون Twilio مضبوطاً — التحقق الحقيقي يسبقه', async () => {
     // Twilio يرد أن الرمز غير معتمد؛ رمز التجربة يجب ألا يُنقذه.
-    vi.stubGlobal(
-      'fetch',
-      (): Promise<Response> =>
-        Promise.resolve(
-          new Response(JSON.stringify({ status: 'pending' }), { status: 200 }),
-        ),
+    vi.stubGlobal('fetch', (): Promise<Response> =>
+      Promise.resolve(
+        new Response(JSON.stringify({ status: 'pending' }), { status: 200 }),
+      ),
     );
 
     const otp = new OtpService(

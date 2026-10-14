@@ -64,9 +64,8 @@ describe('التحقق من رموز البريد', () => {
   it('يرفض رمزاً خاطئاً برسالة عربية واحدة لا تكشف السبب', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(
-        (): Promise<Response> =>
-          Promise.resolve(new Response('{}', { status: 401 })),
+      vi.fn((): Promise<Response> =>
+        Promise.resolve(new Response('{}', { status: 401 })),
       ),
     );
 
@@ -81,9 +80,8 @@ describe('التحقق من رموز البريد', () => {
   it('يرفض رداً ناجحاً بلا معرّف حساب بدل المضي على فراغ', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(
-        (): Promise<Response> =>
-          Promise.resolve(new Response(JSON.stringify({}), { status: 200 })),
+      vi.fn((): Promise<Response> =>
+        Promise.resolve(new Response(JSON.stringify({}), { status: 200 })),
       ),
     );
 

@@ -375,19 +375,17 @@ describe('AuthnService & OtpService & SecurityService', () => {
   it('عطل مزود الهوية لا يُترجَم إلى «كلمة مرور خاطئة»', async () => {
     // GoTrue يرد 422 phone_provider_disabled حين يكون المزود معطّلاً؛
     // ترجمة ذلك إلى فشل مصادقة تُضلّل المستخدم وتُوقع حسابه في القفل بلا ذنب.
-    vi.stubGlobal(
-      'fetch',
-      (): Promise<Response> =>
-        Promise.resolve(
-          new Response(
-            JSON.stringify({
-              code: 422,
-              error_code: 'phone_provider_disabled',
-              msg: 'Phone logins are disabled',
-            }),
-            { status: 422 },
-          ),
+    vi.stubGlobal('fetch', (): Promise<Response> =>
+      Promise.resolve(
+        new Response(
+          JSON.stringify({
+            code: 422,
+            error_code: 'phone_provider_disabled',
+            msg: 'Phone logins are disabled',
+          }),
+          { status: 422 },
         ),
+      ),
     );
 
     const authnService = new AuthnService(

@@ -40,8 +40,7 @@ interface PublicStats {
 }
 
 type ContactMessageResult =
-  | { error: string }
-  | { success: true; id: string | undefined };
+  { error: string } | { success: true; id: string | undefined };
 
 type PageViewResult = { error: string } | { success: boolean };
 

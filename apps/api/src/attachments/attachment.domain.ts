@@ -7,10 +7,7 @@ import type {
 import { attachmentFileDescriptorSchema } from '@marib-tax/contracts';
 
 export type AttachmentRetentionState =
-  | 'active'
-  | 'archived'
-  | 'legal_hold'
-  | 'permanent_operational_archive';
+  'active' | 'archived' | 'legal_hold' | 'permanent_operational_archive';
 
 export interface AttachmentVersion {
   readonly id: string;

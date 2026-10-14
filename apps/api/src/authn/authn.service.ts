@@ -129,8 +129,7 @@ export class AuthnService {
         );
       }
       const data = (await res.json()) as
-        | { users?: GoTrueUser[] }
-        | GoTrueUser[];
+        { users?: GoTrueUser[] } | GoTrueUser[];
       const users = Array.isArray(data) ? data : (data.users ?? []);
       // GoTrue يخزّن الهاتف بلا علامة + بينما نبحث بصيغة E.164، فلا تتطابق
       // المقارنة النصية المباشرة أبداً: كانت استعادة كلمة المرور تقول

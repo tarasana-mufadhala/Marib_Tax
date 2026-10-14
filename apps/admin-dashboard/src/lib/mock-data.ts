@@ -78,10 +78,7 @@ export interface TaxService {
   title: string;
   description: string;
   category:
-    | 'تسجيل وقيد'
-    | 'إقرارات وربط'
-    | 'شهادات وبراءات'
-    | 'اعتراضات وشكاوى';
+    'تسجيل وقيد' | 'إقرارات وربط' | 'شهادات وبراءات' | 'اعتراضات وشكاوى';
   requiredDocuments: string[];
   processingDays: number;
   fees: string;
