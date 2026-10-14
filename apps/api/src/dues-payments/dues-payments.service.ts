@@ -281,7 +281,11 @@ export class DuesPaymentsService {
       actorProfileId,
     );
 
-    await this.confirmPayment(receipt.id, { notes: input.notes }, actorProfileId);
+    await this.confirmPayment(
+      receipt.id,
+      { notes: input.notes },
+      actorProfileId,
+    );
 
     const updated = await this.repository.findDueById(dueId);
     if (!updated) {

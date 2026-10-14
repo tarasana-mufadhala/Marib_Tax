@@ -1,7 +1,4 @@
-import type {
-  Announcement,
-  TaxService,
-} from './mock-data';
+import type { Announcement, TaxService } from './mock-data';
 
 export * from './mock-data';
 
@@ -15,12 +12,16 @@ const getBaseUrl = () => {
 const fmtDate = (value: string | null | undefined): string => {
   if (!value) return '';
   const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString('ar-YE');
+  return Number.isNaN(d.getTime())
+    ? String(value)
+    : d.toLocaleDateString('ar-YE');
 };
 
 async function safeFetch<T>(endpoint: string, fallback: T): Promise<T> {
   try {
-    const res = await fetch(`${getBaseUrl()}${endpoint}`, { cache: 'no-store' });
+    const res = await fetch(`${getBaseUrl()}${endpoint}`, {
+      cache: 'no-store',
+    });
     if (!res.ok) return fallback;
     return (await res.json()) as T;
   } catch {
@@ -68,7 +69,9 @@ export const publicApi = {
       id: String(r.id),
       title: r.title ?? '',
       summary: r.body ?? '',
-      category: (Number(r.priority ?? 0) > 50 ? 'إعلان مهم' : 'تعميم ضريبي') as any,
+      category: (Number(r.priority ?? 0) > 50
+        ? 'إعلان مهم'
+        : 'تعميم ضريبي') as any,
       date: fmtDate(r.published_at ?? r.created_at),
       isImportant: Number(r.priority ?? 0) > 0,
     }));
@@ -78,7 +81,11 @@ export const publicApi = {
     const rows = await safeFetch<any[]>('/public/services', []);
     const cleanRows = (rows ?? []).filter((r) => {
       const name = String(r.name || r.title || '');
-      return !name.includes('اختبار') && !name.includes('تجريب') && !name.includes('test');
+      return (
+        !name.includes('اختبار') &&
+        !name.includes('تجريب') &&
+        !name.includes('test')
+      );
     });
     return cleanRows.map((r) => ({
       id: String(r.id),
@@ -106,7 +113,10 @@ export const publicApi = {
     if (category) params.set('category', category);
     if (topic) params.set('topic', topic);
     const query = params.toString() ? `?${params}` : '';
-    const rows = await safeFetch<any[]>(`/public/library-documents${query}`, []);
+    const rows = await safeFetch<any[]>(
+      `/public/library-documents${query}`,
+      [],
+    );
     return (rows ?? []).map((r) => ({
       id: String(r.id),
       title: r.title ?? '',
@@ -139,7 +149,12 @@ export const publicApi = {
     });
   },
 
-  submitContactMessage: async (data: { fullName: string; phone: string; email?: string; message: string }) => {
+  submitContactMessage: async (data: {
+    fullName: string;
+    phone: string;
+    email?: string;
+    message: string;
+  }) => {
     try {
       const res = await fetch(`${getBaseUrl()}/public/contact-messages`, {
         method: 'POST',

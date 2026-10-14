@@ -53,11 +53,9 @@ function buildController(
     },
   } as unknown as RequestsQueryService;
 
-  const controller = new RequestDraftController(
-    {} as never,
-    queryService,
-    { requireActorId: (): string => actorId },
-  );
+  const controller = new RequestDraftController({} as never, queryService, {
+    requireActorId: (): string => actorId,
+  });
 
   const request = {
     [VERIFIED_ACTOR]: {

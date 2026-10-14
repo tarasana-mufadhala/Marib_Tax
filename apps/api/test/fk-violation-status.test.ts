@@ -14,7 +14,11 @@ function run(exception: unknown): { status: number; body: unknown } {
   };
   const host = {
     switchToHttp: () => ({
-      getRequest: () => ({ header: (): undefined => undefined, method: 'POST', url: '/x' }),
+      getRequest: () => ({
+        header: (): undefined => undefined,
+        method: 'POST',
+        url: '/x',
+      }),
       getResponse: () => response,
     }),
   } as unknown as ArgumentsHost;
@@ -24,7 +28,9 @@ function run(exception: unknown): { status: number; body: unknown } {
 
 describe('ApiExceptionFilter foreign key violations', () => {
   it('maps a Postgres FK violation to 422', () => {
-    const err = Object.assign(new Error('violates foreign key'), { code: '23503' });
+    const err = Object.assign(new Error('violates foreign key'), {
+      code: '23503',
+    });
     expect(run(err).status).toBe(422);
   });
 

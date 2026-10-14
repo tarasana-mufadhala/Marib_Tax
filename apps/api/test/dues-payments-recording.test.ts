@@ -38,7 +38,8 @@ describe('مخطط تسجيل السداد', () => {
 
   it('لا يقبل حقلاً للحالة — الحالة تُشتق من المبلغ لا تُكتب باليد', () => {
     expect(
-      recordPaymentSchema.safeParse({ amount: 100, statusCode: 'paid' }).success,
+      recordPaymentSchema.safeParse({ amount: 100, statusCode: 'paid' })
+        .success,
     ).toBe(false);
   });
 

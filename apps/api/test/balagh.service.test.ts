@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { BalaghType, CreateBalaghDraft } from '@marib-tax/contracts';
-import { BalaghService, requiresFieldVisit } from '../src/balaghs/balagh.service.js';
+import {
+  BalaghService,
+  requiresFieldVisit,
+} from '../src/balaghs/balagh.service.js';
 import type {
   BalaghListItem,
   BalaghRepository,
@@ -26,9 +29,14 @@ class MemoryBalaghRepository implements BalaghRepository {
     return Promise.resolve();
   }
 
-  list(ownerActorId: string | undefined, limit: number): Promise<BalaghListItem[]> {
+  list(
+    ownerActorId: string | undefined,
+    limit: number,
+  ): Promise<BalaghListItem[]> {
     const items: BalaghListItem[] = [...this.rows.values()]
-      .filter((b) => ownerActorId === undefined || b.ownerActorId === ownerActorId)
+      .filter(
+        (b) => ownerActorId === undefined || b.ownerActorId === ownerActorId,
+      )
       .slice(0, limit)
       .map((b) => ({
         id: b.id,
@@ -97,7 +105,10 @@ function draftOf(balaghType: BalaghType): CreateBalaghDraft {
   } as CreateBalaghDraft;
 }
 
-function build(): { repository: MemoryBalaghRepository; service: BalaghService } {
+function build(): {
+  repository: MemoryBalaghRepository;
+  service: BalaghService;
+} {
   const repository = new MemoryBalaghRepository();
   return { repository, service: new BalaghService(repository) };
 }
@@ -138,7 +149,10 @@ describe('BalaghService', () => {
 
     await expect(
       service.edit(OWNER, created.id, {
-        formData: { activityId: '11111111-1111-4111-8111-111111111111', workerCount: 5 },
+        formData: {
+          activityId: '11111111-1111-4111-8111-111111111111',
+          workerCount: 5,
+        },
       } as never),
     ).rejects.toThrow();
   });
@@ -158,7 +172,10 @@ describe('BalaghService', () => {
 
     await expect(
       service.edit(OTHER, created.id, {
-        formData: { activityId: '11111111-1111-4111-8111-111111111111', workerCount: 9 },
+        formData: {
+          activityId: '11111111-1111-4111-8111-111111111111',
+          workerCount: 9,
+        },
       } as never),
     ).rejects.toThrow();
   });
@@ -252,7 +269,13 @@ describe('BalaghService', () => {
 
 describe('requiresFieldVisit — القسم 4.4', () => {
   it('البلاغات الخمسة الأولى يتبعها نزول ميداني', () => {
-    for (const type of ['FR-201', 'FR-202', 'FR-203', 'FR-204', 'FR-205'] as BalaghType[]) {
+    for (const type of [
+      'FR-201',
+      'FR-202',
+      'FR-203',
+      'FR-204',
+      'FR-205',
+    ] as BalaghType[]) {
       expect(requiresFieldVisit(type)).toBe(true);
     }
   });

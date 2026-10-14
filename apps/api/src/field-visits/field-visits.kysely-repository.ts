@@ -107,7 +107,10 @@ export class FieldVisitsKyselyRepository implements FieldVisitsRepository {
     return visit;
   }
 
-  async updateVisit(id: string, updates: Partial<StoredFieldVisit>): Promise<StoredFieldVisit> {
+  async updateVisit(
+    id: string,
+    updates: Partial<StoredFieldVisit>,
+  ): Promise<StoredFieldVisit> {
     if (this.dbService.isInitialized) {
       const dbUpdates: {
         status_code?: string;
@@ -117,12 +120,16 @@ export class FieldVisitsKyselyRepository implements FieldVisitsRepository {
         updated_at?: Date | null;
         updated_by_profile_id?: string | null;
       } = {};
-      if (updates.statusCode !== undefined) dbUpdates.status_code = updates.statusCode;
-      if (updates.actualStartedAt !== undefined) dbUpdates.actual_started_at = updates.actualStartedAt;
-      if (updates.actualEndedAt !== undefined) dbUpdates.actual_ended_at = updates.actualEndedAt;
+      if (updates.statusCode !== undefined)
+        dbUpdates.status_code = updates.statusCode;
+      if (updates.actualStartedAt !== undefined)
+        dbUpdates.actual_started_at = updates.actualStartedAt;
+      if (updates.actualEndedAt !== undefined)
+        dbUpdates.actual_ended_at = updates.actualEndedAt;
       if (updates.cancellationReason !== undefined)
         dbUpdates.cancellation_reason = updates.cancellationReason;
-      if (updates.updatedAt !== undefined) dbUpdates.updated_at = updates.updatedAt;
+      if (updates.updatedAt !== undefined)
+        dbUpdates.updated_at = updates.updatedAt;
       if (updates.updatedByProfileId !== undefined)
         dbUpdates.updated_by_profile_id = updates.updatedByProfileId;
 
@@ -144,7 +151,9 @@ export class FieldVisitsKyselyRepository implements FieldVisitsRepository {
     return updated;
   }
 
-  async createSchedule(schedule: StoredVisitSchedule): Promise<StoredVisitSchedule> {
+  async createSchedule(
+    schedule: StoredVisitSchedule,
+  ): Promise<StoredVisitSchedule> {
     if (this.dbService.isInitialized) {
       await this.dbService.db
         .insertInto('visits.visit_schedules')
@@ -169,7 +178,9 @@ export class FieldVisitsKyselyRepository implements FieldVisitsRepository {
     return schedule;
   }
 
-  async listSchedulesForVisit(fieldVisitId: string): Promise<StoredVisitSchedule[]> {
+  async listSchedulesForVisit(
+    fieldVisitId: string,
+  ): Promise<StoredVisitSchedule[]> {
     if (this.dbService.isInitialized) {
       const rows = await this.dbService.db
         .selectFrom('visits.visit_schedules')
@@ -186,10 +197,14 @@ export class FieldVisitsKyselyRepository implements FieldVisitsRepository {
         scheduleChangeReason: row.schedule_change_reason,
       }));
     }
-    return [...this.schedules.values()].filter((s) => s.fieldVisitId === fieldVisitId);
+    return [...this.schedules.values()].filter(
+      (s) => s.fieldVisitId === fieldVisitId,
+    );
   }
 
-  async addTeamMember(member: StoredVisitTeamMember): Promise<StoredVisitTeamMember> {
+  async addTeamMember(
+    member: StoredVisitTeamMember,
+  ): Promise<StoredVisitTeamMember> {
     if (this.dbService.isInitialized) {
       await this.dbService.db
         .insertInto('visits.visit_team_members')
@@ -211,7 +226,9 @@ export class FieldVisitsKyselyRepository implements FieldVisitsRepository {
     return member;
   }
 
-  async listTeamMembersForVisit(fieldVisitId: string): Promise<StoredVisitTeamMember[]> {
+  async listTeamMembersForVisit(
+    fieldVisitId: string,
+  ): Promise<StoredVisitTeamMember[]> {
     if (this.dbService.isInitialized) {
       const rows = await this.dbService.db
         .selectFrom('visits.visit_team_members')
@@ -227,7 +244,9 @@ export class FieldVisitsKyselyRepository implements FieldVisitsRepository {
         effectiveTo: row.effective_to,
       }));
     }
-    return [...this.teamMembers.values()].filter((m) => m.fieldVisitId === fieldVisitId);
+    return [...this.teamMembers.values()].filter(
+      (m) => m.fieldVisitId === fieldVisitId,
+    );
   }
 
   async recordResult(result: StoredVisitResult): Promise<StoredVisitResult> {
@@ -254,7 +273,9 @@ export class FieldVisitsKyselyRepository implements FieldVisitsRepository {
     return result;
   }
 
-  async findResultByVisitId(fieldVisitId: string): Promise<StoredVisitResult | null> {
+  async findResultByVisitId(
+    fieldVisitId: string,
+  ): Promise<StoredVisitResult | null> {
     if (this.dbService.isInitialized) {
       const row = await this.dbService.db
         .selectFrom('visits.visit_results')

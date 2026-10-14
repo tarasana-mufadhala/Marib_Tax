@@ -49,8 +49,8 @@ export class OtpService {
   private isTwilioConfigured(): boolean {
     return Boolean(
       this.config?.get<string>('TWILIO_ACCOUNT_SID') &&
-        this.config?.get<string>('TWILIO_AUTH_TOKEN') &&
-        this.config?.get<string>('TWILIO_VERIFY_SERVICE_SID'),
+      this.config?.get<string>('TWILIO_AUTH_TOKEN') &&
+      this.config?.get<string>('TWILIO_VERIFY_SERVICE_SID'),
     );
   }
 
@@ -87,7 +87,9 @@ export class OtpService {
 
     if (accountSid && authToken && verifyServiceSid) {
       try {
-        const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+        const auth = Buffer.from(`${accountSid}:${authToken}`).toString(
+          'base64',
+        );
         const params = new URLSearchParams({
           To: phoneNumber,
           Channel: 'sms',
@@ -163,7 +165,9 @@ export class OtpService {
 
     if (accountSid && authToken && verifyServiceSid) {
       try {
-        const auth = Buffer.from(`${accountSid}:${authToken}`).toString('base64');
+        const auth = Buffer.from(`${accountSid}:${authToken}`).toString(
+          'base64',
+        );
         const params = new URLSearchParams({ To: phoneNumber, Code: code });
         const res = await fetch(
           `https://verify.twilio.com/v2/Services/${verifyServiceSid}/VerificationCheck`,

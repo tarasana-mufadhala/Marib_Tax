@@ -59,15 +59,15 @@ describe('قواعد انتقال حالة ملف المكلف', () => {
   });
 
   it('تمنع حالة غير معروفة', () => {
-    expect(() =>
-      assertTransitionAllowed('active', 'deleted', ''),
-    ).toThrowError(/غير معروفة/);
+    expect(() => assertTransitionAllowed('active', 'deleted', '')).toThrowError(
+      /غير معروفة/,
+    );
   });
 
   it('توجب السبب عند الإيقاف', () => {
-    expect(() => assertTransitionAllowed('active', 'suspended', '')).toThrowError(
-      /يجب كتابة سبب/,
-    );
+    expect(() =>
+      assertTransitionAllowed('active', 'suspended', ''),
+    ).toThrowError(/يجب كتابة سبب/);
     expect(() =>
       assertTransitionAllowed('active', 'suspended', 'توقف النشاط'),
     ).not.toThrow();
@@ -107,7 +107,9 @@ describe('قواعد انتقال حالة ملف المكلف', () => {
 
   it('تُعلم اللوحة أي الإجراءات يلزمها سبب', () => {
     const options = transitionsFrom('under_review');
-    expect(options.find((t) => t.code === 'active')?.reasonRequired).toBe(false);
+    expect(options.find((t) => t.code === 'active')?.reasonRequired).toBe(
+      false,
+    );
     expect(options.find((t) => t.code === 'rejected')?.reasonRequired).toBe(
       true,
     );

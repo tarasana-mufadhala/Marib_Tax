@@ -30,9 +30,7 @@ export class AuthnController {
 
   @Post('otp/email/request')
   @HttpCode(200)
-  requestEmailOtp(
-    @Body('email') email: string,
-  ): Promise<{ sent: boolean }> {
+  requestEmailOtp(@Body('email') email: string): Promise<{ sent: boolean }> {
     return this.authnService.requestEmailOtp(email);
   }
 

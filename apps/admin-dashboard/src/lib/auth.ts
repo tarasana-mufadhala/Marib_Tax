@@ -34,7 +34,8 @@ export const register = async (data: RegisterRequest) => {
     phone: data.phone,
     verificationToken: data.verificationToken ?? '',
     password: data.password ?? '',
-    displayName: [data.firstName, data.lastName].filter(Boolean).join(' ') || undefined,
+    displayName:
+      [data.firstName, data.lastName].filter(Boolean).join(' ') || undefined,
   });
   if (response.token) {
     setToken(response.token);
@@ -55,7 +56,11 @@ export const verifyOtp = async (phone: string, code: string) => {
   return response;
 };
 
-export const resetPassword = async (phone: string, code: string, newPassword: string) => {
+export const resetPassword = async (
+  phone: string,
+  code: string,
+  newPassword: string,
+) => {
   return await api.auth.resetPassword({ phone, code, newPassword });
 };
 

@@ -32,11 +32,7 @@ import { StorageService } from '../admin/storage.service.js';
 const BUCKET = 'taxpayer-documents';
 const MAX_BYTES = 5 * 1024 * 1024;
 
-const ALLOWED_MIME = new Set([
-  'application/pdf',
-  'image/png',
-  'image/jpeg',
-]);
+const ALLOWED_MIME = new Set(['application/pdf', 'image/png', 'image/jpeg']);
 
 /** الحالات التي يُسمح فيها للمكلف برفع مستند. */
 const UPLOADABLE_STATUSES = new Set(['draft', 'need_more_info']);
@@ -86,7 +82,8 @@ export class ServiceRequestAttachmentsController {
     @Body('documentCode') documentCodeInput: string,
   ): Promise<UploadedAttachmentResult> {
     this.assertReady();
-    const { status, serviceCode, taxpayerId } = await this.ownedRequest(requestId);
+    const { status, serviceCode, taxpayerId } =
+      await this.ownedRequest(requestId);
 
     if (!UPLOADABLE_STATUSES.has(status)) {
       throw new ConflictException(
@@ -110,7 +107,12 @@ export class ServiceRequestAttachmentsController {
     // المسار يبدأ بمعرّف المكلف لتوافق سياسة السلة.
     const objectPath = `${taxpayerId}/service-requests/${requestId}/${attachmentId}.${extension}`;
 
-    const uploaded = await this.storage.upload(BUCKET, objectPath, file.buffer, mime);
+    const uploaded = await this.storage.upload(
+      BUCKET,
+      objectPath,
+      file.buffer,
+      mime,
+    );
     if (!uploaded) {
       throw new ServiceUnavailableException('تعذّر رفع الملف إلى التخزين');
     }
@@ -274,7 +276,8 @@ export class ServiceRequestAttachmentsController {
     if (code === '') {
       throw new BadRequestException('رمز المستند مطلوب مع الملف');
     }
-    const definition = serviceCatalog[serviceCode as keyof typeof serviceCatalog];
+    const definition =
+      serviceCatalog[serviceCode as keyof typeof serviceCatalog];
     if (!definition) throw new BadRequestException('خدمة غير معروفة');
     if (!definition.documents.some((document) => document.code === code)) {
       throw new UnprocessableEntityException(

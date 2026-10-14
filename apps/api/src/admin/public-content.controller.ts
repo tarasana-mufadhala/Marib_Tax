@@ -39,7 +39,9 @@ interface PublicStats {
   documentsCount: number;
 }
 
-type ContactMessageResult = { error: string } | { success: true; id: string | undefined };
+type ContactMessageResult =
+  | { error: string }
+  | { success: true; id: string | undefined };
 
 type PageViewResult = { error: string } | { success: boolean };
 
@@ -111,7 +113,9 @@ export class PublicContentController {
   }
 
   @Get('content-pages/:key')
-  async getContentPage(@Param('key') key: string): Promise<ContentPageRow | null> {
+  async getContentPage(
+    @Param('key') key: string,
+  ): Promise<ContentPageRow | null> {
     if (!this.db.isInitialized) return null;
     try {
       const page = await this.db.db
@@ -161,7 +165,10 @@ export class PublicContentController {
   }
 
   @Get('library-documents/:id/file')
-  async downloadLibraryDocument(@Param('id') id: string, @Res() res: Response): Promise<void> {
+  async downloadLibraryDocument(
+    @Param('id') id: string,
+    @Res() res: Response,
+  ): Promise<void> {
     if (!this.db.isInitialized || !this.storage.enabled) {
       res.status(503).json({ error: 'الخدمة غير متاحة' });
       return;
@@ -244,7 +251,13 @@ export class PublicContentController {
 
   @Post('contact-messages')
   async submitContactMessage(
-    @Body() body: { fullName?: string; phone?: string; email?: string; message?: string },
+    @Body()
+    body: {
+      fullName?: string;
+      phone?: string;
+      email?: string;
+      message?: string;
+    },
   ): Promise<ContactMessageResult> {
     const fullName = String(body?.fullName ?? '').trim();
     const phone = String(body?.phone ?? '').trim();
@@ -253,7 +266,12 @@ export class PublicContentController {
     if (!fullName || !phone || !message) {
       return { error: 'الاسم ورقم الهاتف ونص الرسالة حقول إلزامية' };
     }
-    if (fullName.length > 150 || phone.length > 30 || email.length > 150 || message.length > 4000) {
+    if (
+      fullName.length > 150 ||
+      phone.length > 30 ||
+      email.length > 150 ||
+      message.length > 4000
+    ) {
       return { error: 'تجاوز الحد المسموح لطول البيانات' };
     }
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
@@ -278,10 +296,17 @@ export class PublicContentController {
   }
 
   @Post('page-views')
-  async trackPageView(@Body() body: { path?: string; referrer?: string }): Promise<PageViewResult> {
-    const path = String(body?.path ?? '').trim().slice(0, 200);
+  async trackPageView(
+    @Body() body: { path?: string; referrer?: string },
+  ): Promise<PageViewResult> {
+    const path = String(body?.path ?? '')
+      .trim()
+      .slice(0, 200);
     if (!path || !path.startsWith('/')) return { error: 'مسار غير صالح' };
-    const referrer = String(body?.referrer ?? '').trim().slice(0, 300) || null;
+    const referrer =
+      String(body?.referrer ?? '')
+        .trim()
+        .slice(0, 300) || null;
     if (!this.db.isInitialized) return { success: false };
     try {
       await this.db.db

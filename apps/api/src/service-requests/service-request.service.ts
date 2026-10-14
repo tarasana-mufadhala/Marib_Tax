@@ -36,7 +36,10 @@ export class ServiceRequestService {
     input: CreateServiceRequest,
   ): Promise<ServiceRequestResponse> {
     // FR-102 مقصورة على من لا يملك رقماً ضريبياً — يُفرَض على الخادم لا في الواجهة.
-    if (serviceCatalog[input.serviceCode].availability === 'without_tax_number_only') {
+    if (
+      serviceCatalog[input.serviceCode].availability ===
+      'without_tax_number_only'
+    ) {
       if (await this.repository.hasTaxNumber(ownerActorId)) {
         throw DomainException.conflict(
           'هذه الخدمة متاحة لمن لا يملك رقماً ضريبياً مسبقاً',
@@ -62,7 +65,10 @@ export class ServiceRequestService {
     return toResponse((await this.repository.findById(request.id)) ?? request);
   }
 
-  async read(ownerActorId: string, id: string): Promise<ServiceRequestResponse> {
+  async read(
+    ownerActorId: string,
+    id: string,
+  ): Promise<ServiceRequestResponse> {
     return toResponse(await this.owned(ownerActorId, id));
   }
 
@@ -70,7 +76,10 @@ export class ServiceRequestService {
     ownerActorId: string | undefined,
     limit = 50,
   ): Promise<ServiceRequestListItem[]> {
-    return this.repository.list(ownerActorId, Math.min(Math.max(limit, 1), 200));
+    return this.repository.list(
+      ownerActorId,
+      Math.min(Math.max(limit, 1), 200),
+    );
   }
 
   async edit(
@@ -118,7 +127,10 @@ export class ServiceRequestService {
       throw DomainException.unprocessable(
         'لا يمكن تقديم الطلب قبل إرفاق المستندات الإلزامية',
         {
-          missingDocuments: missing.map((d) => ({ code: d.code, label: d.label })),
+          missingDocuments: missing.map((d) => ({
+            code: d.code,
+            label: d.label,
+          })),
         },
         'MISSING_REQUIRED_DOCUMENTS',
       );
@@ -166,7 +178,8 @@ export class ServiceRequestService {
 /** نوع وثيقة الهوية المختارة في النموذج، إن كانت الخدمة تطلبها. */
 function identityTypeOf(form: unknown): IdentityDocumentType | null {
   if (typeof form !== 'object' || form === null) return null;
-  const value = (form as { identityDocumentType?: unknown }).identityDocumentType;
+  const value = (form as { identityDocumentType?: unknown })
+    .identityDocumentType;
   return value === 'national_id' || value === 'passport' ? value : null;
 }
 

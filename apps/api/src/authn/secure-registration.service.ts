@@ -194,7 +194,9 @@ export class SecureRegistrationService {
         phone: phoneNumber,
         password,
         phone_confirm: true,
-        ...(displayName ? { user_metadata: { display_name: displayName } } : {}),
+        ...(displayName
+          ? { user_metadata: { display_name: displayName } }
+          : {}),
       }),
     });
 

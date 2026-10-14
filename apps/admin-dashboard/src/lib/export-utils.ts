@@ -1,8 +1,17 @@
-export function exportToCsv(filename: string, headers: string[], rows: (string | number)[][]) {
+export function exportToCsv(
+  filename: string,
+  headers: string[],
+  rows: (string | number)[][],
+) {
   const bom = '\uFEFF';
   const csvContent =
     bom +
-    [headers.join(','), ...rows.map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))].join('\n');
+    [
+      headers.join(','),
+      ...rows.map((r) =>
+        r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','),
+      ),
+    ].join('\n');
 
   const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
@@ -14,7 +23,11 @@ export function exportToCsv(filename: string, headers: string[], rows: (string |
   document.body.removeChild(link);
 }
 
-export function printPdfReport(title: string, headers: string[], rows: (string | number)[][]) {
+export function printPdfReport(
+  title: string,
+  headers: string[],
+  rows: (string | number)[][],
+) {
   const printWindow = window.open('', '_blank');
   if (!printWindow) return;
 

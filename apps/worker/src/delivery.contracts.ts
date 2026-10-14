@@ -27,7 +27,9 @@ export interface OutboxRepository {
 
 export interface NotificationProviderPort {
   readonly providerKey: 'disabled' | 'twilio' | 'fcm' | 'local' | 'composite';
-  deliver(message: ClaimedOutboxMessage): Promise<{ providerReference?: string } | void>;
+  deliver(
+    message: ClaimedOutboxMessage,
+  ): Promise<{ providerReference?: string } | void>;
 }
 
 export class DisabledNotificationProvider implements NotificationProviderPort {
@@ -59,7 +61,9 @@ export class TwilioNotificationProvider implements NotificationProviderPort {
     private readonly fromNumber?: string,
   ) {}
 
-  async deliver(message: ClaimedOutboxMessage): Promise<{ providerReference?: string } | void> {
+  async deliver(
+    message: ClaimedOutboxMessage,
+  ): Promise<{ providerReference?: string } | void> {
     if (!this.accountSid || !this.authToken || !this.fromNumber) {
       console.log(
         `[Twilio SMS Mock] Send SMS to ${message.targetPhoneNumber || 'N/A'}: ${message.payloadReference}`,
@@ -72,7 +76,9 @@ export class TwilioNotificationProvider implements NotificationProviderPort {
       throw new Error('NO_TARGET_PHONE_NUMBER');
     }
 
-    const auth = Buffer.from(`${this.accountSid}:${this.authToken}`).toString('base64');
+    const auth = Buffer.from(`${this.accountSid}:${this.authToken}`).toString(
+      'base64',
+    );
     const params = new URLSearchParams({
       To: toPhone,
       From: this.fromNumber,
@@ -84,7 +90,7 @@ export class TwilioNotificationProvider implements NotificationProviderPort {
       {
         method: 'POST',
         headers: {
-          'Authorization': `Basic ${auth}`,
+          Authorization: `Basic ${auth}`,
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: params.toString(),
@@ -110,7 +116,9 @@ export class FcmNotificationProvider implements NotificationProviderPort {
     private readonly privateKey?: string,
   ) {}
 
-  async deliver(message: ClaimedOutboxMessage): Promise<{ providerReference?: string } | void> {
+  async deliver(
+    message: ClaimedOutboxMessage,
+  ): Promise<{ providerReference?: string } | void> {
     if (!this.projectId || !this.clientEmail || !this.privateKey) {
       console.log(
         `[FCM Push Mock] Send Push to tokens [${(message.targetDeviceTokens || []).join(', ')}]: ${message.payloadReference}`,
@@ -120,7 +128,9 @@ export class FcmNotificationProvider implements NotificationProviderPort {
 
     const tokens = message.targetDeviceTokens;
     if (!tokens || tokens.length === 0) {
-      console.log(`[FCM] No active device tokens found for user ${message.recipientProfileId || 'N/A'}. Skipped.`);
+      console.log(
+        `[FCM] No active device tokens found for user ${message.recipientProfileId || 'N/A'}. Skipped.`,
+      );
       return;
     }
 
@@ -153,7 +163,9 @@ export class FcmNotificationProvider implements NotificationProviderPort {
 
     if (!tokenRes.ok) {
       const errText = await tokenRes.text();
-      throw new Error(`FCM Google OAuth authentication failed: ${tokenRes.status} - ${errText}`);
+      throw new Error(
+        `FCM Google OAuth authentication failed: ${tokenRes.status} - ${errText}`,
+      );
     }
 
     const tokenData = (await tokenRes.json()) as { access_token: string };
@@ -170,7 +182,7 @@ export class FcmNotificationProvider implements NotificationProviderPort {
           {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${accessToken}`,
+              Authorization: `Bearer ${accessToken}`,
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
@@ -214,7 +226,9 @@ export class CompositeNotificationProvider implements NotificationProviderPort {
     private readonly localProvider: NotificationProviderPort,
   ) {}
 
-  async deliver(message: ClaimedOutboxMessage): Promise<{ providerReference?: string } | void> {
+  async deliver(
+    message: ClaimedOutboxMessage,
+  ): Promise<{ providerReference?: string } | void> {
     if (message.channel === 'sms') {
       return this.smsProvider.deliver(message);
     } else if (message.channel === 'push') {

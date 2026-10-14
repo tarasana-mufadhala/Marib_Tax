@@ -52,8 +52,15 @@ describe('field visits: staff profile id, not user profile id', () => {
     ['a citizen without a staff profile', citizenUsers],
     ['an inactive staff profile', inactiveUsers],
   ])('403 for %s', async (_name, users) => {
-    const service = { scheduleVisit: (): Promise<never> => Promise.reject(new Error('must not run')) };
-    const c = new FieldVisitsController(service as never, users as never, actors);
+    const service = {
+      scheduleVisit: (): Promise<never> =>
+        Promise.reject(new Error('must not run')),
+    };
+    const c = new FieldVisitsController(
+      service as never,
+      users as never,
+      actors,
+    );
     await expect(c.schedule(visitBody)).rejects.toMatchObject({ status: 403 });
   });
 });
@@ -67,15 +74,26 @@ describe('decisions: staff profile id, not user profile id', () => {
         return Promise.resolve({});
       },
     };
-    const c = new DecisionsController(service as never, staffUsers as never, actors);
+    const c = new DecisionsController(
+      service as never,
+      staffUsers as never,
+      actors,
+    );
     await c.record(decisionBody);
     expect(seen[1]).toBe(STAFF);
     expect(seen[2]).toBe(USER);
   });
 
   it('403 for a citizen without a staff profile', async () => {
-    const service = { recordDecision: (): Promise<never> => Promise.reject(new Error('must not run')) };
-    const c = new DecisionsController(service as never, citizenUsers as never, actors);
+    const service = {
+      recordDecision: (): Promise<never> =>
+        Promise.reject(new Error('must not run')),
+    };
+    const c = new DecisionsController(
+      service as never,
+      citizenUsers as never,
+      actors,
+    );
     await expect(c.record(decisionBody)).rejects.toMatchObject({ status: 403 });
   });
 });

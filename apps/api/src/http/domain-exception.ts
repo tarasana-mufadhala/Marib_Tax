@@ -29,15 +29,24 @@ export class DomainException extends HttpException {
     return this.getResponse() as DomainErrorPayload;
   }
 
-  static notFound(message: string, code = 'RESOURCE_NOT_FOUND'): DomainException {
+  static notFound(
+    message: string,
+    code = 'RESOURCE_NOT_FOUND',
+  ): DomainException {
     return new DomainException(HttpStatus.NOT_FOUND, { code, message });
   }
 
-  static forbidden(message: string, code = 'PERMISSION_DENIED'): DomainException {
+  static forbidden(
+    message: string,
+    code = 'PERMISSION_DENIED',
+  ): DomainException {
     return new DomainException(HttpStatus.FORBIDDEN, { code, message });
   }
 
-  static conflict(message: string, code = 'RESOURCE_CONFLICT'): DomainException {
+  static conflict(
+    message: string,
+    code = 'RESOURCE_CONFLICT',
+  ): DomainException {
     return new DomainException(HttpStatus.CONFLICT, { code, message });
   }
 
@@ -61,13 +70,19 @@ export class DomainException extends HttpException {
     message: string,
     code = 'PRECONDITION_FAILED',
   ): DomainException {
-    return new DomainException(HttpStatus.PRECONDITION_FAILED, { code, message });
+    return new DomainException(HttpStatus.PRECONDITION_FAILED, {
+      code,
+      message,
+    });
   }
 
   static unavailable(
     message: string,
     code = 'SERVICE_UNAVAILABLE',
   ): DomainException {
-    return new DomainException(HttpStatus.SERVICE_UNAVAILABLE, { code, message });
+    return new DomainException(HttpStatus.SERVICE_UNAVAILABLE, {
+      code,
+      message,
+    });
   }
 }

@@ -270,7 +270,8 @@ export class AtomicDuesPaymentsService extends DuesPaymentsService {
 
   private async requireActiveStaffActor(actorProfileId: string): Promise<void> {
     try {
-      const staff = await this.atomicUsers.findStaffByUserProfileId(actorProfileId);
+      const staff =
+        await this.atomicUsers.findStaffByUserProfileId(actorProfileId);
       if (staff?.isActive) return;
     } catch {
       // handled below

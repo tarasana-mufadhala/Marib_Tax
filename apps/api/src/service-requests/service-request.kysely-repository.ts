@@ -145,18 +145,20 @@ export class ServiceRequestKyselyRepository implements ServiceRequestRepository 
             limit ${limit}
           `.execute(this.db.db);
 
-    return result.rows.filter((row) => isServiceCode(row.service_code)).map((row) => {
-      const code = row.service_code as ServiceCode;
-      return {
-        id: row.id,
-        publicRef: row.public_ref,
-        serviceCode: code,
-        serviceTitle: serviceCatalog[code].title,
-        status: row.status_code as ServiceRequestStatus,
-        createdAt: row.created_at.toISOString(),
-        submittedAt: row.submitted_at?.toISOString() ?? null,
-      };
-    });
+    return result.rows
+      .filter((row) => isServiceCode(row.service_code))
+      .map((row) => {
+        const code = row.service_code as ServiceCode;
+        return {
+          id: row.id,
+          publicRef: row.public_ref,
+          serviceCode: code,
+          serviceTitle: serviceCatalog[code].title,
+          status: row.status_code as ServiceRequestStatus,
+          createdAt: row.created_at.toISOString(),
+          submittedAt: row.submitted_at?.toISOString() ?? null,
+        };
+      });
   }
 
   async attachedDocumentCodes(requestId: string): Promise<string[]> {
@@ -170,7 +172,9 @@ export class ServiceRequestKyselyRepository implements ServiceRequestRepository 
 
     return result.rows
       .map((row) => row.link_role_code)
-      .filter((code): code is string => typeof code === 'string' && code.length > 0);
+      .filter(
+        (code): code is string => typeof code === 'string' && code.length > 0,
+      );
   }
 
   async isCompanyTaxpayer(ownerActorId: string): Promise<boolean> {

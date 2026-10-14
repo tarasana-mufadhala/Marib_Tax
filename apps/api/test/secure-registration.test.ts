@@ -76,10 +76,7 @@ describe('SecureRegistrationService', () => {
     await expect(
       service.register(PHONE, verificationToken, 'Strong!Pass1', 'Test User'),
     ).resolves.toEqual({ userProfileId: 'profile-1' });
-    expect(createUserProfile).toHaveBeenCalledWith(
-      'auth-user-1',
-      'Test User',
-    );
+    expect(createUserProfile).toHaveBeenCalledWith('auth-user-1', 'Test User');
 
     await expect(
       service.register(PHONE, verificationToken, 'Strong!Pass1', 'Test User'),

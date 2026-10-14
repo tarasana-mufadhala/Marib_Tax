@@ -292,7 +292,10 @@ export class DuesPaymentsController {
     return this.service.getDue(id);
   }
 
-  private async ownsDue(userProfileId: string, dueId: string): Promise<boolean> {
+  private async ownsDue(
+    userProfileId: string,
+    dueId: string,
+  ): Promise<boolean> {
     if (!this.db.isInitialized) return false;
     const result = await sql<{ count: number }>`
       select count(*)::int as count

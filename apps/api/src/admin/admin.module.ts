@@ -15,7 +15,17 @@ import { MessagingModule } from '../messaging/messaging.module.js';
 
 @Module({
   imports: [DatabaseModule, MessagingModule, AuthnModule],
-  controllers: [AdminController, TaxpayerAdminController, DuesAdminController, SystemHealthController, AccessControlController, AttachmentsController, ImportsController, PublicContentController, ReportsController],
+  controllers: [
+    AdminController,
+    TaxpayerAdminController,
+    DuesAdminController,
+    SystemHealthController,
+    AccessControlController,
+    AttachmentsController,
+    ImportsController,
+    PublicContentController,
+    ReportsController,
+  ],
   providers: [StorageService],
   // تستعمله وحدة الخدمات لرفع مرفقات المكلف.
   exports: [StorageService],

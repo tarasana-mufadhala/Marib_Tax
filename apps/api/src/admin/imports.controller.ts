@@ -101,13 +101,58 @@ interface ContactRow {
   contact_value: string;
 }
 
-const NAME_HEADERS = ['الاسم', 'الاسم الكامل', 'اسم المكلف', 'name', 'display_name', 'full_name', 'fullname'];
-const PHONE_HEADERS = ['الهاتف', 'رقم الهاتف', 'هاتف', 'الجوال', 'رقم الجوال', 'phone', 'mobile', 'phone_number'];
-const TAX_HEADERS = ['الرقم الضريبي', 'رقم ضريبي', 'tax_number', 'tin', 'tax_no', 'taxnumber'];
+const NAME_HEADERS = [
+  'الاسم',
+  'الاسم الكامل',
+  'اسم المكلف',
+  'name',
+  'display_name',
+  'full_name',
+  'fullname',
+];
+const PHONE_HEADERS = [
+  'الهاتف',
+  'رقم الهاتف',
+  'هاتف',
+  'الجوال',
+  'رقم الجوال',
+  'phone',
+  'mobile',
+  'phone_number',
+];
+const TAX_HEADERS = [
+  'الرقم الضريبي',
+  'رقم ضريبي',
+  'tax_number',
+  'tin',
+  'tax_no',
+  'taxnumber',
+];
 const ADDRESS_HEADERS = ['العنوان', 'address', 'المديرية', 'المنطقة'];
-const ACTIVITY_NAME_HEADERS = ['اسم النشاط', 'النشاط', 'activity_name', 'activity', 'اسم المنشأة', 'اسم المحل'];
-const REQUEST_REF_HEADERS = ['مرجع الطلب', 'رقم الطلب', 'رقم مرجع الطلب', 'request_ref', 'request', 'request_number'];
-const AMOUNT_HEADERS = ['المبلغ', 'مبلغ المستحق', 'المستحق', 'amount', 'due_amount', 'total'];
+const ACTIVITY_NAME_HEADERS = [
+  'اسم النشاط',
+  'النشاط',
+  'activity_name',
+  'activity',
+  'اسم المنشأة',
+  'اسم المحل',
+];
+const REQUEST_REF_HEADERS = [
+  'مرجع الطلب',
+  'رقم الطلب',
+  'رقم مرجع الطلب',
+  'request_ref',
+  'request',
+  'request_number',
+];
+const AMOUNT_HEADERS = [
+  'المبلغ',
+  'مبلغ المستحق',
+  'المستحق',
+  'amount',
+  'due_amount',
+  'total',
+];
 const CURRENCY_HEADERS = ['العملة', 'currency', 'currency_code'];
 
 function normalizeDigits(value: string): string {
@@ -119,7 +164,8 @@ function normalizeDigits(value: string): string {
 function normalizePhone(value: string): string {
   let digits = normalizeDigits(value).replace(/\D/g, '');
   if (digits.startsWith('00967')) digits = digits.slice(5);
-  else if (digits.startsWith('967') && digits.length > 9) digits = digits.slice(3);
+  else if (digits.startsWith('967') && digits.length > 9)
+    digits = digits.slice(3);
   return digits;
 }
 
@@ -136,8 +182,15 @@ function randomRef(prefix: string): string {
 }
 
 /** يعيد قيمة jsonb ككائن، أو كائناً فارغاً إن لم تكن كائناً. */
-function asRecord(value: JsonValue | null | undefined): Record<string, JsonValue> {
-  if (value !== null && value !== undefined && typeof value === 'object' && !Array.isArray(value)) {
+function asRecord(
+  value: JsonValue | null | undefined,
+): Record<string, JsonValue> {
+  if (
+    value !== null &&
+    value !== undefined &&
+    typeof value === 'object' &&
+    !Array.isArray(value)
+  ) {
     return value;
   }
   return {};
@@ -147,7 +200,8 @@ function asRecord(value: JsonValue | null | undefined): Record<string, JsonValue
 function jsonText(value: JsonValue | undefined, fallback: string): string {
   if (value === undefined || value === null) return fallback;
   if (typeof value === 'string') return value;
-  if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+  if (typeof value === 'number' || typeof value === 'boolean')
+    return String(value);
   return JSON.stringify(value);
 }
 
@@ -168,22 +222,35 @@ export class ImportsController {
 
   @RequirePermission('import.preview')
   @Post('imports/upload')
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: 5 * 1024 * 1024 } }),
+  )
   async uploadImport(
-    @UploadedFile() file: { originalname?: string; mimetype?: string; size?: number; buffer?: Buffer },
+    @UploadedFile()
+    file: {
+      originalname?: string;
+      mimetype?: string;
+      size?: number;
+      buffer?: Buffer;
+    },
     @Body() body: { importType?: string },
   ): Promise<ImportErrorResponse | UploadImportResponse> {
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     const importType = (body?.importType ?? '') as ImportType;
     if (!['taxpayers', 'activities', 'dues'].includes(importType)) {
-      return { error: 'نوع الاستيراد غير معروف — اختر: مكلفون أو أنشطة تجارية أو مستحقات' };
+      return {
+        error:
+          'نوع الاستيراد غير معروف — اختر: مكلفون أو أنشطة تجارية أو مستحقات',
+      };
     }
     if (!file?.buffer) return { error: 'لم يتم استلام أي ملف' };
 
     const fileName = file.originalname ?? 'import';
     const ext = fileName.toLowerCase().split('.').pop() ?? '';
     if (!['csv', 'xlsx', 'xls'].includes(ext)) {
-      return { error: 'صيغة الملف غير مدعومة — المسموح: .xlsx أو .xls أو .csv' };
+      return {
+        error: 'صيغة الملف غير مدعومة — المسموح: .xlsx أو .xls أو .csv',
+      };
     }
 
     let rows: ParsedRow[];
@@ -193,7 +260,8 @@ export class ImportsController {
       return { error: 'تعذرت قراءة الملف — تأكد من أنه ملف Excel أو CSV سليم' };
     }
     if (rows.length === 0) return { error: 'الملف لا يحتوي أي صفوف بيانات' };
-    if (rows.length > 5000) return { error: 'الحد الأقصى 5000 صف في العملية الواحدة' };
+    if (rows.length > 5000)
+      return { error: 'الحد الأقصى 5000 صف في العملية الواحدة' };
 
     const validated = await this.validateRows(rows, importType);
     const validCount = validated.filter((r) => r.errors.length === 0).length;
@@ -202,7 +270,11 @@ export class ImportsController {
     try {
       const jobId = crypto.randomUUID();
       const typeLabel =
-        importType === 'taxpayers' ? 'مكلفون' : importType === 'activities' ? 'أنشطة تجارية' : 'مستحقات';
+        importType === 'taxpayers'
+          ? 'مكلفون'
+          : importType === 'activities'
+            ? 'أنشطة تجارية'
+            : 'مستحقات';
 
       await this.db.db
         .insertInto('imports.import_jobs')
@@ -248,7 +320,10 @@ export class ImportsController {
             import_job_id: jobId,
             row_number: row.rowNumber,
             raw_data: JSON.stringify(row.raw),
-            normalized_data: JSON.stringify({ import_type: importType, ...row.normalized }),
+            normalized_data: JSON.stringify({
+              import_type: importType,
+              ...row.normalized,
+            }),
             validation_status: row.errors.length === 0 ? 'valid' : 'rejected',
           })
           .execute();
@@ -283,7 +358,13 @@ export class ImportsController {
         valid: validCount,
         rejected: rejectedCount,
         errors: validated
-          .flatMap((r) => r.errors.map((e) => ({ row: r.rowNumber, field: e.field ?? '', message: e.message })))
+          .flatMap((r) =>
+            r.errors.map((e) => ({
+              row: r.rowNumber,
+              field: e.field ?? '',
+              message: e.message,
+            })),
+          )
           .slice(0, 50),
       };
     } catch {
@@ -293,7 +374,9 @@ export class ImportsController {
 
   @RequirePermission('import.validate')
   @Get('imports/:id')
-  async getImportJob(@Param('id') id: string): Promise<ImportJobDetailResponse | null> {
+  async getImportJob(
+    @Param('id') id: string,
+  ): Promise<ImportJobDetailResponse | null> {
     if (!this.db.isInitialized) return null;
     try {
       const job = await this.db.db
@@ -311,11 +394,17 @@ export class ImportsController {
           count(*) as total,
           count(*) filter (where validation_status = 'valid') as valid,
           count(*) filter (where validation_status = 'rejected') as rejected
-        from imports.import_rows where import_job_id = ${id}`.execute(this.db.db);
+        from imports.import_rows where import_job_id = ${id}`.execute(
+        this.db.db,
+      );
 
       const errors: ImportJobErrorItem[] = await this.db.db
         .selectFrom('imports.import_errors')
-        .leftJoin('imports.import_rows', 'imports.import_rows.id', 'imports.import_errors.import_row_id')
+        .leftJoin(
+          'imports.import_rows',
+          'imports.import_rows.id',
+          'imports.import_errors.import_row_id',
+        )
         .select([
           'imports.import_errors.id as id',
           'imports.import_rows.row_number as row_number',
@@ -352,7 +441,9 @@ export class ImportsController {
 
   @RequirePermission('import.approve')
   @Post('imports/:id/approve')
-  async approveImport(@Param('id') id: string): Promise<ImportErrorResponse | ApproveImportResponse> {
+  async approveImport(
+    @Param('id') id: string,
+  ): Promise<ImportErrorResponse | ApproveImportResponse> {
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     try {
       const job = await this.db.db
@@ -362,7 +453,9 @@ export class ImportsController {
         .executeTakeFirst();
       if (!job) return { error: 'عملية الاستيراد غير موجودة' };
       if (job.status_code !== 'pending_review') {
-        return { error: 'لا يمكن الاعتماد — العملية ليست في حالة «بانتظار الاعتماد»' };
+        return {
+          error: 'لا يمكن الاعتماد — العملية ليست في حالة «بانتظار الاعتماد»',
+        };
       }
 
       const validRows = await this.db.db
@@ -373,14 +466,16 @@ export class ImportsController {
         .orderBy('row_number', 'asc')
         .execute();
 
-      if (validRows.length === 0) return { error: 'لا توجد صفوف صحيحة للترحيل' };
+      if (validRows.length === 0)
+        return { error: 'لا توجد صفوف صحيحة للترحيل' };
 
       const importType = asRecord(validRows[0]?.normalized_data).import_type;
       let inserted = 0;
       let skipped = 0;
       // تُجمع هنا ليُنشأ لها حسابات **بعد** نجاح المعاملة: إنشاء الهوية
       // نداء خارجي لا يتراجع مع تراجع المعاملة.
-      const provisioned: { taxpayerId: string; phone: string; name: string }[] = [];
+      const provisioned: { taxpayerId: string; phone: string; name: string }[] =
+        [];
 
       await this.db.db.transaction().execute(async (trx) => {
         for (const row of validRows) {
@@ -430,12 +525,21 @@ export class ImportsController {
           displayName: entry.name,
         });
         if (result.created) accountsCreated++;
-        else if (result.reason) accountIssues.push(`${entry.name}: ${result.reason}`);
+        else if (result.reason)
+          accountIssues.push(`${entry.name}: ${result.reason}`);
       }
 
-      await this.audit('import.approved', id, { inserted, skipped, accountsCreated });
+      await this.audit('import.approved', id, {
+        inserted,
+        skipped,
+        accountsCreated,
+      });
 
-      const response: ApproveImportResponse = { success: true, inserted, skipped };
+      const response: ApproveImportResponse = {
+        success: true,
+        inserted,
+        skipped,
+      };
       if (provisioned.length > 0) {
         response.accountsCreated = accountsCreated;
         response.accountIssues = accountIssues.slice(0, 10);
@@ -449,7 +553,9 @@ export class ImportsController {
 
   @RequirePermission('import.reject')
   @Post('imports/:id/reject')
-  async rejectImport(@Param('id') id: string): Promise<ImportErrorResponse | RejectImportResponse> {
+  async rejectImport(
+    @Param('id') id: string,
+  ): Promise<ImportErrorResponse | RejectImportResponse> {
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     try {
       const result = await this.db.db
@@ -469,7 +575,10 @@ export class ImportsController {
 
   @RequirePermission('import.validate')
   @Get('imports/:id/file')
-  async downloadImportFile(@Param('id') id: string, @Res() res: Response): Promise<void> {
+  async downloadImportFile(
+    @Param('id') id: string,
+    @Res() res: Response,
+  ): Promise<void> {
     if (!this.db.isInitialized || !this.storage.enabled) {
       res.status(503).json({ error: 'الخدمة غير متاحة' });
       return;
@@ -480,7 +589,10 @@ export class ImportsController {
         .select(['storage_path', 'file_name', 'mime_type'])
         .where('import_job_id', '=', id)
         .executeTakeFirst();
-      if (!fileRow?.storage_path || fileRow.storage_path.startsWith('inline://')) {
+      if (
+        !fileRow?.storage_path ||
+        fileRow.storage_path.startsWith('inline://')
+      ) {
         res.status(404).json({ error: 'لا يوجد ملف محفوظ لهذه العملية' });
         return;
       }
@@ -504,12 +616,17 @@ export class ImportsController {
   private parseFile(buffer: Buffer, ext: string): ParsedRow[] {
     const workbook =
       ext === 'csv'
-        ? XLSX.read(buffer.toString('utf8').replace(/^\uFEFF/, ''), { type: 'string' })
+        ? XLSX.read(buffer.toString('utf8').replace(/^\uFEFF/, ''), {
+            type: 'string',
+          })
         : XLSX.read(buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const sheet = sheetName ? workbook.Sheets[sheetName] : undefined;
     if (!sheet) return [];
-    const matrix = XLSX.utils.sheet_to_json<string[]>(sheet, { header: 1, defval: '' });
+    const matrix = XLSX.utils.sheet_to_json<string[]>(sheet, {
+      header: 1,
+      defval: '',
+    });
     if (matrix.length < 2) return [];
 
     const headerRow = matrix[0] ?? [];
@@ -529,7 +646,10 @@ export class ImportsController {
     return rows;
   }
 
-  private async validateRows(rows: ParsedRow[], importType: ImportType): Promise<ValidatedRow[]> {
+  private async validateRows(
+    rows: ParsedRow[],
+    importType: ImportType,
+  ): Promise<ValidatedRow[]> {
     const validated: ValidatedRow[] = rows.map((r) => {
       const normalized: NormalizedRow = {};
       const errors: RowError[] = [];
@@ -539,39 +659,74 @@ export class ImportsController {
         const phone = normalizePhone(pickField(r.raw, PHONE_HEADERS));
         normalized.name = name;
         normalized.phone = phone;
-        normalized.taxNumber = normalizeDigits(pickField(r.raw, TAX_HEADERS)).replace(/\s/g, '');
+        normalized.taxNumber = normalizeDigits(
+          pickField(r.raw, TAX_HEADERS),
+        ).replace(/\s/g, '');
         normalized.address = pickField(r.raw, ADDRESS_HEADERS);
 
-        if (!name) errors.push({ code: 'MISSING_NAME', message: 'الاسم مطلوب', field: 'الاسم' });
+        if (!name)
+          errors.push({
+            code: 'MISSING_NAME',
+            message: 'الاسم مطلوب',
+            field: 'الاسم',
+          });
         if (!phone) {
-          errors.push({ code: 'MISSING_PHONE', message: 'رقم الهاتف مطلوب', field: 'الهاتف' });
+          errors.push({
+            code: 'MISSING_PHONE',
+            message: 'رقم الهاتف مطلوب',
+            field: 'الهاتف',
+          });
         } else if (phone.length < 7 || phone.length > 15) {
-          errors.push({ code: 'INVALID_PHONE', message: `صيغة الهاتف غير صحيحة (${phone})`, field: 'الهاتف' });
+          errors.push({
+            code: 'INVALID_PHONE',
+            message: `صيغة الهاتف غير صحيحة (${phone})`,
+            field: 'الهاتف',
+          });
         }
       } else if (importType === 'activities') {
         const phone = normalizePhone(pickField(r.raw, PHONE_HEADERS));
-        const taxNumber = normalizeDigits(pickField(r.raw, TAX_HEADERS)).replace(/\s/g, '');
+        const taxNumber = normalizeDigits(
+          pickField(r.raw, TAX_HEADERS),
+        ).replace(/\s/g, '');
         const activityName = pickField(r.raw, ACTIVITY_NAME_HEADERS);
         normalized.phone = phone;
         normalized.taxNumber = taxNumber;
         normalized.activityName = activityName;
 
         if (!phone && !taxNumber) {
-          errors.push({ code: 'MISSING_TAXPAYER_REF', message: 'يجب تحديد هاتف المكلف أو رقمه الضريبي', field: 'المكلف' });
+          errors.push({
+            code: 'MISSING_TAXPAYER_REF',
+            message: 'يجب تحديد هاتف المكلف أو رقمه الضريبي',
+            field: 'المكلف',
+          });
         }
         if (!activityName) {
-          errors.push({ code: 'MISSING_ACTIVITY', message: 'اسم النشاط مطلوب', field: 'النشاط' });
+          errors.push({
+            code: 'MISSING_ACTIVITY',
+            message: 'اسم النشاط مطلوب',
+            field: 'النشاط',
+          });
         }
       } else {
         // مستحقات: مرجع طلب أو مرجع مكلف + مبلغ إلزامي
         const phone = normalizePhone(pickField(r.raw, PHONE_HEADERS));
-        const taxNumber = normalizeDigits(pickField(r.raw, TAX_HEADERS)).replace(/\s/g, '');
-        const requestRef = normalizeDigits(pickField(r.raw, REQUEST_REF_HEADERS)).replace(/\s/g, '').toUpperCase();
+        const taxNumber = normalizeDigits(
+          pickField(r.raw, TAX_HEADERS),
+        ).replace(/\s/g, '');
+        const requestRef = normalizeDigits(
+          pickField(r.raw, REQUEST_REF_HEADERS),
+        )
+          .replace(/\s/g, '')
+          .toUpperCase();
         normalized.phone = phone;
         normalized.taxNumber = taxNumber;
         normalized.requestRef = requestRef;
-        normalized.currency = (pickField(r.raw, CURRENCY_HEADERS) || 'YER').toUpperCase();
-        const amountRaw = normalizeDigits(pickField(r.raw, AMOUNT_HEADERS)).replace(/[,\s]/g, '');
+        normalized.currency = (
+          pickField(r.raw, CURRENCY_HEADERS) || 'YER'
+        ).toUpperCase();
+        const amountRaw = normalizeDigits(
+          pickField(r.raw, AMOUNT_HEADERS),
+        ).replace(/[,\s]/g, '');
         const amount = Number(amountRaw);
 
         if (!requestRef && !phone && !taxNumber) {
@@ -582,11 +737,23 @@ export class ImportsController {
           });
         }
         if (!amountRaw) {
-          errors.push({ code: 'MISSING_AMOUNT', message: 'المبلغ مطلوب', field: 'المبلغ' });
+          errors.push({
+            code: 'MISSING_AMOUNT',
+            message: 'المبلغ مطلوب',
+            field: 'المبلغ',
+          });
         } else if (!Number.isFinite(amount) || amount <= 0) {
-          errors.push({ code: 'INVALID_AMOUNT', message: `المبلغ غير صالح (${amountRaw})`, field: 'المبلغ' });
+          errors.push({
+            code: 'INVALID_AMOUNT',
+            message: `المبلغ غير صالح (${amountRaw})`,
+            field: 'المبلغ',
+          });
         } else if (amount > 1_000_000_000_000) {
-          errors.push({ code: 'AMOUNT_TOO_LARGE', message: 'المبلغ يتجاوز الحد المسموح', field: 'المبلغ' });
+          errors.push({
+            code: 'AMOUNT_TOO_LARGE',
+            message: 'المبلغ يتجاوز الحد المسموح',
+            field: 'المبلغ',
+          });
         } else {
           normalized.amount = amount;
         }
@@ -604,12 +771,20 @@ export class ImportsController {
         const tax = row.normalized.taxNumber;
         if (phone) {
           if (seenPhones.has(phone)) {
-            row.errors.push({ code: 'DUPLICATE_PHONE_FILE', message: `الهاتف ${phone} مكرر داخل الملف`, field: 'الهاتف' });
+            row.errors.push({
+              code: 'DUPLICATE_PHONE_FILE',
+              message: `الهاتف ${phone} مكرر داخل الملف`,
+              field: 'الهاتف',
+            });
           } else seenPhones.add(phone);
         }
         if (tax) {
           if (seenTax.has(tax)) {
-            row.errors.push({ code: 'DUPLICATE_TAX_FILE', message: `الرقم الضريبي ${tax} مكرر داخل الملف`, field: 'الرقم الضريبي' });
+            row.errors.push({
+              code: 'DUPLICATE_TAX_FILE',
+              message: `الرقم الضريبي ${tax} مكرر داخل الملف`,
+              field: 'الرقم الضريبي',
+            });
           } else seenTax.add(tax);
         }
       }
@@ -634,22 +809,39 @@ export class ImportsController {
         .execute()
         .catch((): ContactRow[] => []);
     }
-    const existingPhones = new Set(existing.filter((e) => e.contact_type_code === 'phone').map((e) => e.contact_value));
-    const existingTax = new Set(existing.filter((e) => e.contact_type_code === 'tax_number').map((e) => e.contact_value));
+    const existingPhones = new Set(
+      existing
+        .filter((e) => e.contact_type_code === 'phone')
+        .map((e) => e.contact_value),
+    );
+    const existingTax = new Set(
+      existing
+        .filter((e) => e.contact_type_code === 'tax_number')
+        .map((e) => e.contact_value),
+    );
 
     for (const row of validated) {
       const phone = row.normalized.phone;
       const tax = row.normalized.taxNumber;
       if (importType === 'taxpayers') {
         if (phone && existingPhones.has(phone)) {
-          row.errors.push({ code: 'DUPLICATE_PHONE_DB', message: `الهاتف ${phone} مسجل مسبقاً في القاعدة`, field: 'الهاتف' });
+          row.errors.push({
+            code: 'DUPLICATE_PHONE_DB',
+            message: `الهاتف ${phone} مسجل مسبقاً في القاعدة`,
+            field: 'الهاتف',
+          });
         }
         if (tax && existingTax.has(tax)) {
-          row.errors.push({ code: 'DUPLICATE_TAX_DB', message: `الرقم الضريبي ${tax} مسجل مسبقاً في القاعدة`, field: 'الرقم الضريبي' });
+          row.errors.push({
+            code: 'DUPLICATE_TAX_DB',
+            message: `الرقم الضريبي ${tax} مسجل مسبقاً في القاعدة`,
+            field: 'الرقم الضريبي',
+          });
         }
       } else {
         // استيراد الأنشطة والمستحقات: المكلف يجب أن يكون موجوداً
-        const found = (phone && existingPhones.has(phone)) || (tax && existingTax.has(tax));
+        const found =
+          (phone && existingPhones.has(phone)) || (tax && existingTax.has(tax));
         if ((phone || tax) && !found) {
           row.errors.push({
             code: 'TAXPAYER_NOT_FOUND',
@@ -849,7 +1041,8 @@ export class ImportsController {
         taxpayer_id: taxpayerId,
         service_request_id: requestId,
         amount,
-        currency_code: typeof currency === 'string' && currency ? currency : 'YER',
+        currency_code:
+          typeof currency === 'string' && currency ? currency : 'YER',
         status_code: 'unpaid',
         assessed_at: new Date(),
         created_at: new Date(),
@@ -858,7 +1051,11 @@ export class ImportsController {
     return true;
   }
 
-  private async audit(action: string, jobId: string, metadata: AuditMetadata): Promise<void> {
+  private async audit(
+    action: string,
+    jobId: string,
+    metadata: AuditMetadata,
+  ): Promise<void> {
     await this.db.db
       .insertInto('audit.audit_logs')
       .values({

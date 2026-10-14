@@ -33,7 +33,11 @@ const ALLOWED_MIME = new Set([
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
 ]);
 
-const ALLOWED_CATEGORIES = new Set(['attachment', 'approval_form', 'rejection_form']);
+const ALLOWED_CATEGORIES = new Set([
+  'attachment',
+  'approval_form',
+  'rejection_form',
+]);
 
 /** الحقول المستعملة فعلاً من ملف Multer المرفوع. */
 interface UploadedFilePayload {
@@ -77,7 +81,9 @@ export class AttachmentsController {
 
   @RequirePermission('attachment.upload')
   @Post('requests/:id/attachments')
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }),
+  )
   async uploadRequestAttachment(
     @Param('id') requestId: string,
     @UploadedFile() file: UploadedFilePayload | undefined,
@@ -90,11 +96,15 @@ export class AttachmentsController {
 
     const mime = file.mimetype ?? 'application/octet-stream';
     if (!ALLOWED_MIME.has(mime)) {
-      return { error: 'نوع الملف غير مسموح — المسموح: PDF، صور PNG/JPEG، Word (docx)، Excel (xlsx)، CSV' };
+      return {
+        error:
+          'نوع الملف غير مسموح — المسموح: PDF، صور PNG/JPEG، Word (docx)، Excel (xlsx)، CSV',
+      };
     }
     const requestedCategory = body?.category;
     const category =
-      requestedCategory !== undefined && ALLOWED_CATEGORIES.has(requestedCategory)
+      requestedCategory !== undefined &&
+      ALLOWED_CATEGORIES.has(requestedCategory)
         ? requestedCategory
         : 'attachment';
 
@@ -107,10 +117,16 @@ export class AttachmentsController {
       if (!request) return { error: 'الطلب غير موجود' };
 
       const attachmentId = crypto.randomUUID();
-      const ext = (file.originalname ?? '').split('.').pop()?.toLowerCase() ?? 'bin';
+      const ext =
+        (file.originalname ?? '').split('.').pop()?.toLowerCase() ?? 'bin';
       const objectPath = `requests/${requestId}/${attachmentId}.${ext}`;
 
-      const uploaded = await this.storage.upload(BUCKET, objectPath, buffer, mime);
+      const uploaded = await this.storage.upload(
+        BUCKET,
+        objectPath,
+        buffer,
+        mime,
+      );
       if (!uploaded) return { error: 'تعذر رفع الملف إلى التخزين' };
 
       await this.db.db
@@ -152,7 +168,11 @@ export class AttachmentsController {
           action: 'attachment.uploaded',
           entity_type: 'service_request',
           entity_id: requestId,
-          metadata: JSON.stringify({ attachmentId, category, filename: file.originalname }),
+          metadata: JSON.stringify({
+            attachmentId,
+            category,
+            filename: file.originalname,
+          }),
         })
         .execute()
         .catch(() => undefined);
@@ -165,12 +185,18 @@ export class AttachmentsController {
 
   @RequirePermission('attachment.read')
   @Get('requests/:id/attachments')
-  async getRequestAttachments(@Param('id') requestId: string): Promise<RequestAttachmentRow[]> {
+  async getRequestAttachments(
+    @Param('id') requestId: string,
+  ): Promise<RequestAttachmentRow[]> {
     if (!this.db.isInitialized) return [];
     try {
       const rows = await this.db.db
         .selectFrom('files.attachment_links')
-        .innerJoin('files.attachments', 'files.attachments.id', 'files.attachment_links.attachment_id')
+        .innerJoin(
+          'files.attachments',
+          'files.attachments.id',
+          'files.attachment_links.attachment_id',
+        )
         .select([
           'files.attachments.id as id',
           'files.attachments.original_filename as original_filename',
@@ -193,7 +219,10 @@ export class AttachmentsController {
 
   @RequirePermission('attachment.read')
   @Get('attachments/:id/file')
-  async downloadAttachment(@Param('id') id: string, @Res() res: Response): Promise<void> {
+  async downloadAttachment(
+    @Param('id') id: string,
+    @Res() res: Response,
+  ): Promise<void> {
     if (!this.db.isInitialized || !this.storage.enabled) {
       res.status(503).json({ error: 'الخدمة غير متاحة' });
       return;
@@ -251,14 +280,16 @@ export class AttachmentsController {
   @RequirePermission('content.publish')
   @Patch('library-documents/topics')
   async assignLibraryTopics(
-    @Body() body: { assignments?: { id?: string; topicCode?: string }[] } | undefined,
+    @Body()
+    body: { assignments?: { id?: string; topicCode?: string }[] } | undefined,
   ): Promise<ErrorResult | { success: true; updated: number }> {
     if (!this.db.isInitialized) {
       return { error: 'قاعدة البيانات غير متاحة' };
     }
     const allowed = new Set(['income_tax', 'sales_tax', 'general']);
     const assignments = (body?.assignments ?? []).filter(
-      (a): a is TopicAssignment => typeof a.id === 'string' && allowed.has(a.topicCode ?? ''),
+      (a): a is TopicAssignment =>
+        typeof a.id === 'string' && allowed.has(a.topicCode ?? ''),
     );
     if (assignments.length === 0) {
       return { error: 'لا توجد إسنادات صالحة' };
@@ -282,10 +313,13 @@ export class AttachmentsController {
   @Post('library-documents')
   // 50 ميغابايت مطابقةً لحد السلة: مستندات المصلحة الرسمية فيها مسوحات
   // ضوئية كبيرة، وحدٌّ أدنى منها كان يستبعدها بصمت.
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 50 * 1024 * 1024 } }))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: 50 * 1024 * 1024 } }),
+  )
   async uploadLibraryDocument(
     @UploadedFile() file: UploadedFilePayload | undefined,
-    @Body() body: { title?: string; category?: string; version?: string } | undefined,
+    @Body()
+    body: { title?: string; category?: string; version?: string } | undefined,
   ): Promise<ErrorResult | { success: true; documentId: string }> {
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     if (!this.storage.enabled) return { error: 'خدمة التخزين غير مهيأة' };
@@ -296,20 +330,29 @@ export class AttachmentsController {
 
     const mime = file.mimetype ?? 'application/octet-stream';
     if (!LIBRARY_MIME.has(mime)) {
-      return { error: 'نوع الملف غير مسموح في المكتبة — المسموح: PDF، صور PNG/JPEG' };
+      return {
+        error: 'نوع الملف غير مسموح في المكتبة — المسموح: PDF، صور PNG/JPEG',
+      };
     }
     const requestedCategory = body?.category;
     const category =
-      requestedCategory !== undefined && LIBRARY_CATEGORIES.has(requestedCategory)
+      requestedCategory !== undefined &&
+      LIBRARY_CATEGORIES.has(requestedCategory)
         ? requestedCategory
         : 'form';
 
     try {
       const docId = crypto.randomUUID();
-      const ext = (file.originalname ?? '').split('.').pop()?.toLowerCase() ?? 'bin';
+      const ext =
+        (file.originalname ?? '').split('.').pop()?.toLowerCase() ?? 'bin';
       const objectPath = `library/${docId}.${ext}`;
 
-      const uploaded = await this.storage.upload(LIBRARY_BUCKET, objectPath, buffer, mime);
+      const uploaded = await this.storage.upload(
+        LIBRARY_BUCKET,
+        objectPath,
+        buffer,
+        mime,
+      );
       if (!uploaded) return { error: 'تعذر رفع الملف إلى التخزين' };
 
       await this.db.db
@@ -334,7 +377,11 @@ export class AttachmentsController {
           action: 'library.uploaded',
           entity_type: 'library_document',
           entity_id: docId,
-          metadata: JSON.stringify({ title, category, filename: file.originalname }),
+          metadata: JSON.stringify({
+            title,
+            category,
+            filename: file.originalname,
+          }),
         })
         .execute()
         .catch(() => undefined);
@@ -387,7 +434,10 @@ export class AttachmentsController {
 
   @RequirePermission('content.publish')
   @Get('library-documents/:id/file')
-  async downloadLibraryDocument(@Param('id') id: string, @Res() res: Response): Promise<void> {
+  async downloadLibraryDocument(
+    @Param('id') id: string,
+    @Res() res: Response,
+  ): Promise<void> {
     if (!this.db.isInitialized || !this.storage.enabled) {
       res.status(503).json({ error: 'الخدمة غير متاحة' });
       return;

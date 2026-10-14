@@ -112,12 +112,16 @@ describe('Operational Contracts - Decisions', () => {
       serviceRequestId: '00000000-0000-4000-8000-000000000001',
       outcomeCode: 'approved',
     };
-    expect(recordDecisionSchema.parse(validDecision)).toMatchObject(validDecision);
+    expect(recordDecisionSchema.parse(validDecision)).toMatchObject(
+      validDecision,
+    );
 
     const validRevision = {
       reason: 'Updated proof provided',
     };
-    expect(reviseDecisionSchema.parse(validRevision)).toMatchObject(validRevision);
+    expect(reviseDecisionSchema.parse(validRevision)).toMatchObject(
+      validRevision,
+    );
   });
 });
 

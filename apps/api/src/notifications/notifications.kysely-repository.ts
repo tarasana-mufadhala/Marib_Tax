@@ -16,7 +16,10 @@ export class NotificationsKyselyRepository implements NotificationsRepository {
   // In-memory fallback
   private readonly deviceTokens = new Map<string, StoredDeviceToken>();
   private readonly templates = new Map<string, StoredNotificationTemplate>();
-  private readonly channelConfigs = new Map<string, StoredNotificationChannelConfiguration>();
+  private readonly channelConfigs = new Map<
+    string,
+    StoredNotificationChannelConfiguration
+  >();
   private readonly messages = new Map<string, StoredNotificationMessage>();
   private readonly deliveryAttempts: StoredDeliveryAttempt[] = [];
   private readonly readStates = new Map<string, StoredNotificationReadState>();
@@ -48,7 +51,9 @@ export class NotificationsKyselyRepository implements NotificationsRepository {
     return this.messages.get(id) ?? null;
   }
 
-  async createMessage(message: StoredNotificationMessage): Promise<StoredNotificationMessage> {
+  async createMessage(
+    message: StoredNotificationMessage,
+  ): Promise<StoredNotificationMessage> {
     if (this.dbService.isInitialized) {
       await this.dbService.db
         .insertInto('notify.notification_messages')
@@ -73,7 +78,10 @@ export class NotificationsKyselyRepository implements NotificationsRepository {
     return message;
   }
 
-  async updateMessageStatus(id: string, status: string): Promise<StoredNotificationMessage> {
+  async updateMessageStatus(
+    id: string,
+    status: string,
+  ): Promise<StoredNotificationMessage> {
     if (this.dbService.isInitialized) {
       await this.dbService.db
         .updateTable('notify.notification_messages')
@@ -91,7 +99,9 @@ export class NotificationsKyselyRepository implements NotificationsRepository {
     return updated;
   }
 
-  async createTemplate(template: StoredNotificationTemplate): Promise<StoredNotificationTemplate> {
+  async createTemplate(
+    template: StoredNotificationTemplate,
+  ): Promise<StoredNotificationTemplate> {
     if (this.dbService.isInitialized) {
       await this.dbService.db
         .insertInto('notify.notification_templates')
@@ -113,7 +123,9 @@ export class NotificationsKyselyRepository implements NotificationsRepository {
     return template;
   }
 
-  async findTemplateByCode(code: string): Promise<StoredNotificationTemplate | null> {
+  async findTemplateByCode(
+    code: string,
+  ): Promise<StoredNotificationTemplate | null> {
     if (this.dbService.isInitialized) {
       const row = await this.dbService.db
         .selectFrom('notify.notification_templates')
@@ -175,7 +187,9 @@ export class NotificationsKyselyRepository implements NotificationsRepository {
     return this.channelConfigs.get(channelCode) ?? null;
   }
 
-  async createDeliveryAttempt(attempt: StoredDeliveryAttempt): Promise<StoredDeliveryAttempt> {
+  async createDeliveryAttempt(
+    attempt: StoredDeliveryAttempt,
+  ): Promise<StoredDeliveryAttempt> {
     if (this.dbService.isInitialized) {
       await this.dbService.db
         .insertInto('notify.delivery_attempts')
@@ -197,7 +211,9 @@ export class NotificationsKyselyRepository implements NotificationsRepository {
     return attempt;
   }
 
-  async listAttemptsForMessage(messageId: string): Promise<StoredDeliveryAttempt[]> {
+  async listAttemptsForMessage(
+    messageId: string,
+  ): Promise<StoredDeliveryAttempt[]> {
     if (this.dbService.isInitialized) {
       const rows = await this.dbService.db
         .selectFrom('notify.delivery_attempts')
@@ -214,7 +230,9 @@ export class NotificationsKyselyRepository implements NotificationsRepository {
         attemptedAt: row.attempted_at,
       }));
     }
-    return this.deliveryAttempts.filter((a) => a.notificationMessageId === messageId);
+    return this.deliveryAttempts.filter(
+      (a) => a.notificationMessageId === messageId,
+    );
   }
 
   async findReadState(
@@ -242,7 +260,9 @@ export class NotificationsKyselyRepository implements NotificationsRepository {
     return this.readStates.get(`${messageId}:${recipientId}`) ?? null;
   }
 
-  async createReadState(state: StoredNotificationReadState): Promise<StoredNotificationReadState> {
+  async createReadState(
+    state: StoredNotificationReadState,
+  ): Promise<StoredNotificationReadState> {
     if (this.dbService.isInitialized) {
       await this.dbService.db
         .insertInto('notify.notification_read_states')
@@ -260,7 +280,10 @@ export class NotificationsKyselyRepository implements NotificationsRepository {
         .execute();
       return state;
     }
-    this.readStates.set(`${state.notificationMessageId}:${state.recipientProfileId}`, state);
+    this.readStates.set(
+      `${state.notificationMessageId}:${state.recipientProfileId}`,
+      state,
+    );
     return state;
   }
 
@@ -275,8 +298,10 @@ export class NotificationsKyselyRepository implements NotificationsRepository {
         latest_acknowledged_at?: Date | null;
         read_source_channel_code?: string | null;
       } = {};
-      if (updates.readStatusCode !== undefined) dbUpdates.read_status_code = updates.readStatusCode;
-      if (updates.firstReadAt !== undefined) dbUpdates.first_read_at = updates.firstReadAt;
+      if (updates.readStatusCode !== undefined)
+        dbUpdates.read_status_code = updates.readStatusCode;
+      if (updates.firstReadAt !== undefined)
+        dbUpdates.first_read_at = updates.firstReadAt;
       if (updates.latestAcknowledgedAt !== undefined)
         dbUpdates.latest_acknowledged_at = updates.latestAcknowledgedAt;
       if (updates.readSourceChannelCode !== undefined)
@@ -321,7 +346,9 @@ export class NotificationsKyselyRepository implements NotificationsRepository {
     return updated;
   }
 
-  async listMessagesForRecipient(recipientId: string): Promise<StoredNotificationMessage[]> {
+  async listMessagesForRecipient(
+    recipientId: string,
+  ): Promise<StoredNotificationMessage[]> {
     if (this.dbService.isInitialized) {
       const rows = await this.dbService.db
         .selectFrom('notify.notification_messages')
@@ -341,10 +368,14 @@ export class NotificationsKyselyRepository implements NotificationsRepository {
         idempotencyKey: row.idempotency_key,
       }));
     }
-    return [...this.messages.values()].filter((m) => m.recipientProfileId === recipientId);
+    return [...this.messages.values()].filter(
+      (m) => m.recipientProfileId === recipientId,
+    );
   }
 
-  async listReadStatesForRecipient(recipientId: string): Promise<StoredNotificationReadState[]> {
+  async listReadStatesForRecipient(
+    recipientId: string,
+  ): Promise<StoredNotificationReadState[]> {
     if (this.dbService.isInitialized) {
       const rows = await this.dbService.db
         .selectFrom('notify.notification_read_states')
@@ -361,7 +392,9 @@ export class NotificationsKyselyRepository implements NotificationsRepository {
         readSourceChannelCode: row.read_source_channel_code,
       }));
     }
-    return [...this.readStates.values()].filter((s) => s.recipientProfileId === recipientId);
+    return [...this.readStates.values()].filter(
+      (s) => s.recipientProfileId === recipientId,
+    );
   }
 
   async createOutboxMessage(
@@ -390,7 +423,9 @@ export class NotificationsKyselyRepository implements NotificationsRepository {
     return outboxMsg;
   }
 
-  async listPendingOutboxMessages(): Promise<StoredNotificationOutboxMessage[]> {
+  async listPendingOutboxMessages(): Promise<
+    StoredNotificationOutboxMessage[]
+  > {
     if (this.dbService.isInitialized) {
       const rows = await this.dbService.db
         .selectFrom('notify.notification_outbox_messages')
@@ -407,7 +442,9 @@ export class NotificationsKyselyRepository implements NotificationsRepository {
         nextAttemptAt: row.next_attempt_at,
       }));
     }
-    return [...this.outbox.values()].filter((o) => ['pending', 'retry'].includes(o.publicationState));
+    return [...this.outbox.values()].filter((o) =>
+      ['pending', 'retry'].includes(o.publicationState),
+    );
   }
 
   async updateOutboxMessage(
@@ -423,9 +460,12 @@ export class NotificationsKyselyRepository implements NotificationsRepository {
       } = {};
       if (updates.publicationState !== undefined)
         dbUpdates.publication_state = updates.publicationState;
-      if (updates.attemptCount !== undefined) dbUpdates.attempt_count = updates.attemptCount;
-      if (updates.lastError !== undefined) dbUpdates.last_error = updates.lastError;
-      if (updates.nextAttemptAt !== undefined) dbUpdates.next_attempt_at = updates.nextAttemptAt;
+      if (updates.attemptCount !== undefined)
+        dbUpdates.attempt_count = updates.attemptCount;
+      if (updates.lastError !== undefined)
+        dbUpdates.last_error = updates.lastError;
+      if (updates.nextAttemptAt !== undefined)
+        dbUpdates.next_attempt_at = updates.nextAttemptAt;
 
       await this.dbService.db
         .updateTable('notify.notification_outbox_messages')
@@ -457,7 +497,9 @@ export class NotificationsKyselyRepository implements NotificationsRepository {
     return updated;
   }
 
-  async registerDeviceToken(token: StoredDeviceToken): Promise<StoredDeviceToken> {
+  async registerDeviceToken(
+    token: StoredDeviceToken,
+  ): Promise<StoredDeviceToken> {
     if (this.dbService.isInitialized) {
       const existing = await this.dbService.db
         .selectFrom('notify.device_tokens')
@@ -497,7 +539,9 @@ export class NotificationsKyselyRepository implements NotificationsRepository {
     return token;
   }
 
-  async listDeviceTokensForUser(userProfileId: string): Promise<StoredDeviceToken[]> {
+  async listDeviceTokensForUser(
+    userProfileId: string,
+  ): Promise<StoredDeviceToken[]> {
     if (this.dbService.isInitialized) {
       const rows = await this.dbService.db
         .selectFrom('notify.device_tokens')

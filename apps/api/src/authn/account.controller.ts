@@ -179,7 +179,9 @@ export class AccountController {
     const current = (body?.currentPassword ?? '').trim();
     const next = (body?.newPassword ?? '').trim();
     if (current.length === 0 || next.length === 0) {
-      throw DomainException.badRequest('كلمتا المرور الحالية والجديدة مطلوبتان');
+      throw DomainException.badRequest(
+        'كلمتا المرور الحالية والجديدة مطلوبتان',
+      );
     }
     return this.authn.changePassword(this.actorId(request), current, next);
   }

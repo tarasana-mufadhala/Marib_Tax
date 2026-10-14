@@ -20,7 +20,10 @@ import { TaxpayerController } from '../src/taxpayers/taxpayer.controller.js';
 import { TaxpayerService } from '../src/taxpayers/taxpayer.service.js';
 
 const ID = '33333333-3333-3333-3333-333333333333';
-const CITIZEN_PERMISSIONS = ['taxpayer.profile.read', 'taxpayer.profile.update'];
+const CITIZEN_PERMISSIONS = [
+  'taxpayer.profile.read',
+  'taxpayer.profile.update',
+];
 const STAFF_PERMISSIONS = ['taxpayer.admin.read', 'taxpayer.admin.status'];
 
 const SERVICE_STUB = {
@@ -89,9 +92,7 @@ describe('TaxpayerController access control', () => {
   const call = (method: 'get' | 'post', url: string): request.Test => {
     const server = app.getHttpServer() as Parameters<typeof request>[0];
     const agent = request(server);
-    return agent[method](url)
-      .set('Authorization', 'Bearer t')
-      .send({});
+    return agent[method](url).set('Authorization', 'Bearer t').send({});
   };
 
   afterEach(async () => {

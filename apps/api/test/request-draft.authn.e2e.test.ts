@@ -83,7 +83,9 @@ describe('isolated authenticated request-draft runtime', () => {
         // هذه المجموعة تختبر التفويض لا الاستعلامات: نكتفي ببديل لا يمس القاعدة.
         {
           provide: RequestsQueryService,
-          useValue: { listRequests: (): Promise<unknown[]> => Promise.resolve([]) },
+          useValue: {
+            listRequests: (): Promise<unknown[]> => Promise.resolve([]),
+          },
         },
         { provide: CURRENT_ACTOR, useClass: CurrentActorService },
         { provide: ACTOR_CONTEXT_RESOLVER, useValue: actors },

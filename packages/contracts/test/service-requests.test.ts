@@ -8,7 +8,13 @@ import {
   type ServiceCode,
 } from '../src/service-requests.js';
 
-const ALL_CODES: ServiceCode[] = ['FR-101', 'FR-102', 'FR-103', 'FR-104', 'FR-105'];
+const ALL_CODES: ServiceCode[] = [
+  'FR-101',
+  'FR-102',
+  'FR-103',
+  'FR-104',
+  'FR-105',
+];
 
 /** كل مستندات الخدمة، لاختبار الحالة المستوفاة. */
 const allDocumentsOf = (code: ServiceCode): string[] =>
@@ -18,7 +24,9 @@ describe('كتالوج الخدمات — مطابقة القسم 4.3', () => {
   it('الخدمات الخمس معرَّفة بعناوينها', () => {
     expect(Object.keys(serviceCatalog).sort()).toEqual(ALL_CODES);
     expect(serviceCatalog['FR-101'].title).toBe('فتح ملف ضريبي');
-    expect(serviceCatalog['FR-105'].title).toBe('شهادة الضريبة العامة على المبيعات');
+    expect(serviceCatalog['FR-105'].title).toBe(
+      'شهادة الضريبة العامة على المبيعات',
+    );
   });
 
   it('لكل خدمة مستندات وملاحظة قبول', () => {
@@ -29,7 +37,9 @@ describe('كتالوج الخدمات — مطابقة القسم 4.3', () => {
   });
 
   it('FR-102 مقصورة على من لا يملك رقماً ضريبياً', () => {
-    expect(serviceCatalog['FR-102'].availability).toBe('without_tax_number_only');
+    expect(serviceCatalog['FR-102'].availability).toBe(
+      'without_tax_number_only',
+    );
     const withNumber = availableServices(true).map((s) => s.code);
     const withoutNumber = availableServices(false).map((s) => s.code);
 
@@ -55,7 +65,12 @@ describe('isDocumentMandatory — الشروط المشروطة', () => {
       (d) => d.code === 'lease_contract',
     )!;
     expect(isDocumentMandatory(lease, context)).toBe(false);
-    expect(isDocumentMandatory(lease, { isCompany: true, identityDocumentType: 'passport' })).toBe(false);
+    expect(
+      isDocumentMandatory(lease, {
+        isCompany: true,
+        identityDocumentType: 'passport',
+      }),
+    ).toBe(false);
   });
 
   it('مستندات الشركات تُلزم للشركات وحدها', () => {
@@ -74,11 +89,17 @@ describe('isDocumentMandatory — الشروط المشروطة', () => {
       (d) => d.code === 'passport',
     )!;
 
-    const withId = { isCompany: false, identityDocumentType: 'national_id' as const };
+    const withId = {
+      isCompany: false,
+      identityDocumentType: 'national_id' as const,
+    };
     expect(isDocumentMandatory(idFront, withId)).toBe(true);
     expect(isDocumentMandatory(passport, withId)).toBe(false);
 
-    const withPassport = { isCompany: false, identityDocumentType: 'passport' as const };
+    const withPassport = {
+      isCompany: false,
+      identityDocumentType: 'passport' as const,
+    };
     expect(isDocumentMandatory(idFront, withPassport)).toBe(false);
     expect(isDocumentMandatory(passport, withPassport)).toBe(true);
   });
@@ -190,13 +211,18 @@ describe('createServiceRequestSchema — مطابقة النموذج لرمز ا
 
   it('نموذج خدمة أخرى تحت رمز مختلف يُرفض', () => {
     const mismatched = { ...fr101, serviceCode: 'FR-104' };
-    expect(createServiceRequestSchema.safeParse(mismatched).success).toBe(false);
+    expect(createServiceRequestSchema.safeParse(mismatched).success).toBe(
+      false,
+    );
   });
 
   it('حقل إلزامي ناقص يُرفض', () => {
     const rest: Partial<typeof fr101.form> = { ...fr101.form };
     delete rest.activityName;
-    const result = createServiceRequestSchema.safeParse({ ...fr101, form: rest });
+    const result = createServiceRequestSchema.safeParse({
+      ...fr101,
+      form: rest,
+    });
     expect(result.success).toBe(false);
   });
 
@@ -209,7 +235,10 @@ describe('createServiceRequestSchema — مطابقة النموذج لرمز ا
   });
 
   it('رمز خدمة غير معروف يُرفض', () => {
-    const result = createServiceRequestSchema.safeParse({ ...fr101, serviceCode: 'FR-999' });
+    const result = createServiceRequestSchema.safeParse({
+      ...fr101,
+      serviceCode: 'FR-999',
+    });
     expect(result.success).toBe(false);
   });
 

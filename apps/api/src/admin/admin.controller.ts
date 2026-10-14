@@ -1,5 +1,15 @@
 import { randomUUID } from 'node:crypto';
-import { Controller, Get, Param, ParseUUIDPipe, Patch, Post, Delete, Body, Req } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+  Post,
+  Delete,
+  Body,
+  Req,
+} from '@nestjs/common';
 import { ALLOWED_TRANSITIONS } from '../workflow/workflow.service.js';
 import { DomainException } from '../http/domain-exception.js';
 import { DUE_STATUSES } from '../dues-payments/dues-payments.repository.js';
@@ -130,9 +140,7 @@ export class AdminController {
   ) {}
 
   /** أدوار المستخدم النشطة — استعلام مُعامَل (لا تركيب نصي). */
-  private async activeRolesOf(
-    userProfileId: string,
-  ): Promise<ActiveRoleRow[]> {
+  private async activeRolesOf(userProfileId: string): Promise<ActiveRoleRow[]> {
     const result = await sql<ActiveRoleRow>`
       select r.code, r.name_ar
       from identity.staff_role_assignments sra
@@ -156,8 +164,16 @@ export class AdminController {
     try {
       const request: AdminRequestRow | undefined = await this.db.db
         .selectFrom('requests.service_requests')
-        .leftJoin('registry.taxpayers', 'registry.taxpayers.id', 'requests.service_requests.taxpayer_id')
-        .leftJoin('requests.service_types', 'requests.service_types.id', 'requests.service_requests.service_type_id')
+        .leftJoin(
+          'registry.taxpayers',
+          'registry.taxpayers.id',
+          'requests.service_requests.taxpayer_id',
+        )
+        .leftJoin(
+          'requests.service_types',
+          'requests.service_types.id',
+          'requests.service_requests.service_type_id',
+        )
         .select([
           'requests.service_requests.id as id',
           'requests.service_requests.public_ref as public_ref',
@@ -172,14 +188,15 @@ export class AdminController {
         .executeTakeFirst();
       if (!request) return null;
 
-      const history: Selectable<RequestsRequestStatusHistoriesTable>[] = await this.db.db
-        .selectFrom('requests.request_status_histories')
-        .selectAll()
-        .where('service_request_id', '=', id)
-        .orderBy('changed_at', 'desc')
-        .limit(50)
-        .execute()
-        .catch(() => []);
+      const history: Selectable<RequestsRequestStatusHistoriesTable>[] =
+        await this.db.db
+          .selectFrom('requests.request_status_histories')
+          .selectAll()
+          .where('service_request_id', '=', id)
+          .orderBy('changed_at', 'desc')
+          .limit(50)
+          .execute()
+          .catch(() => []);
 
       return { request, history };
     } catch {
@@ -270,16 +287,28 @@ export class AdminController {
   @RequirePermission('user.manage')
   @Post('users')
   async createStaffUser(
-    @Body() body: { displayName: string; phone: string; password: string; title?: string; roleCode?: string },
+    @Body()
+    body: {
+      displayName: string;
+      phone: string;
+      password: string;
+      title?: string;
+      roleCode?: string;
+    },
   ): Promise<CreateStaffUserResponse | AdminErrorResponse> {
     if (!body?.displayName?.trim() || !body?.phone?.trim() || !body?.password) {
       return { error: 'الاسم ورقم الهاتف وكلمة المرور مطلوبة' };
     }
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
 
-    const supabaseUrl = (this.config.get<string>('SUPABASE_URL') ?? '').replace(/\/$/, '');
-    const serviceKey = this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-    if (!supabaseUrl || !serviceKey) return { error: 'إعدادات Supabase غير مكتملة' };
+    const supabaseUrl = (this.config.get<string>('SUPABASE_URL') ?? '').replace(
+      /\/$/,
+      '',
+    );
+    const serviceKey =
+      this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    if (!supabaseUrl || !serviceKey)
+      return { error: 'إعدادات Supabase غير مكتملة' };
 
     try {
       // 1. إنشاء حساب المصادقة في GoTrue
@@ -313,7 +342,12 @@ export class AdminController {
       const userProfileId = crypto.randomUUID();
       await this.db.db
         .insertInto('identity.user_profiles')
-        .values({ id: userProfileId, auth_user_id: authUserId, display_name: body.displayName.trim(), is_active: true })
+        .values({
+          id: userProfileId,
+          auth_user_id: authUserId,
+          display_name: body.displayName.trim(),
+          is_active: true,
+        })
         .execute();
 
       // 3. الملف الوظيفي
@@ -351,7 +385,11 @@ export class AdminController {
         }
       }
 
-      return { success: true, staffProfileId, displayName: body.displayName.trim() };
+      return {
+        success: true,
+        staffProfileId,
+        displayName: body.displayName.trim(),
+      };
     } catch {
       return { error: 'تعذر إنشاء الموظف' };
     }
@@ -442,8 +480,11 @@ export class AdminController {
   @Post('content-pages')
   async saveContentPage(
     @Body() body: { key: string; title: string; body: string },
-  ): Promise<Selectable<ContentContentPagesTable> | undefined | AdminErrorResponse> {
-    if (!body?.key?.trim() || !body?.title?.trim()) return { error: 'المفتاح والعنوان مطلوبان' };
+  ): Promise<
+    Selectable<ContentContentPagesTable> | undefined | AdminErrorResponse
+  > {
+    if (!body?.key?.trim() || !body?.title?.trim())
+      return { error: 'المفتاح والعنوان مطلوبان' };
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     try {
       const existing = await this.db.db
@@ -454,7 +495,12 @@ export class AdminController {
       if (existing) {
         return await this.db.db
           .updateTable('content.content_pages')
-          .set({ title: body.title.trim(), body: body.body ?? '', status: 'published', updated_at: new Date() })
+          .set({
+            title: body.title.trim(),
+            body: body.body ?? '',
+            status: 'published',
+            updated_at: new Date(),
+          })
           .where('id', '=', existing.id)
           .returningAll()
           .executeTakeFirst();
@@ -478,7 +524,9 @@ export class AdminController {
 
   @RequirePermission('content.publish')
   @Get('contact-messages')
-  async getContactMessages(): Promise<Selectable<ContentContactMessagesTable>[]> {
+  async getContactMessages(): Promise<
+    Selectable<ContentContactMessagesTable>[]
+  > {
     if (!this.db.isInitialized) return [];
     try {
       return await this.db.db
@@ -496,7 +544,9 @@ export class AdminController {
   @Patch('contact-messages/:id/read')
   async markContactMessageRead(
     @Param('id') id: string,
-  ): Promise<Selectable<ContentContactMessagesTable> | undefined | AdminErrorResponse> {
+  ): Promise<
+    Selectable<ContentContactMessagesTable> | undefined | AdminErrorResponse
+  > {
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     try {
       return await this.db.db
@@ -605,7 +655,9 @@ export class AdminController {
   @Post('announcements')
   async createAnnouncement(
     @Body() body: { title: string; body: string; priority?: number },
-  ): Promise<Selectable<ContentAnnouncementsTable> | undefined | AdminErrorResponse> {
+  ): Promise<
+    Selectable<ContentAnnouncementsTable> | undefined | AdminErrorResponse
+  > {
     if (!body?.title || !body?.body) {
       return { error: 'العنوان والنص مطلوبان' };
     }
@@ -633,7 +685,9 @@ export class AdminController {
   @Patch('announcements/:id/toggle')
   async toggleAnnouncement(
     @Param('id') id: string,
-  ): Promise<Selectable<ContentAnnouncementsTable> | undefined | AdminErrorResponse> {
+  ): Promise<
+    Selectable<ContentAnnouncementsTable> | undefined | AdminErrorResponse
+  > {
     if (!this.db.isInitialized) return { error: 'قاعدة البيانات غير متاحة' };
     try {
       const existing = await this.db.db
@@ -691,7 +745,13 @@ export class AdminController {
   @RequirePermission('content.publish')
   @Post('faqs')
   async createFaq(
-    @Body() body: { question: string; answer: string; category?: string; displayOrder?: number },
+    @Body()
+    body: {
+      question: string;
+      answer: string;
+      category?: string;
+      displayOrder?: number;
+    },
   ): Promise<Selectable<ContentFaqsTable> | undefined | AdminErrorResponse> {
     if (!body?.question?.trim() || !body?.answer?.trim()) {
       return { error: 'السؤال والإجابة حقول مطلوبة' };

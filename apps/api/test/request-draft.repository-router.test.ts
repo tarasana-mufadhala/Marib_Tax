@@ -62,7 +62,11 @@ describe('RequestDraftRepositoryRouter', () => {
     const db = mutableDatabase(true);
     const persistent = spyRepository();
     const memory = new RequestDraftMemoryRepository();
-    const router = new RequestDraftRepositoryRouter(db, persistent.repository, memory);
+    const router = new RequestDraftRepositoryRouter(
+      db,
+      persistent.repository,
+      memory,
+    );
 
     await router.create(draft);
     await router.findById(draft.id);
@@ -77,7 +81,11 @@ describe('RequestDraftRepositoryRouter', () => {
     const db = mutableDatabase(false);
     const persistent = spyRepository();
     const memory = new RequestDraftMemoryRepository();
-    const router = new RequestDraftRepositoryRouter(db, persistent.repository, memory);
+    const router = new RequestDraftRepositoryRouter(
+      db,
+      persistent.repository,
+      memory,
+    );
 
     await router.create(draft);
 
@@ -89,7 +97,11 @@ describe('RequestDraftRepositoryRouter', () => {
     const db = mutableDatabase(false);
     const persistent = spyRepository();
     const memory = new RequestDraftMemoryRepository();
-    const router = new RequestDraftRepositoryRouter(db, persistent.repository, memory);
+    const router = new RequestDraftRepositoryRouter(
+      db,
+      persistent.repository,
+      memory,
+    );
 
     // نداء قبل اتصال القاعدة
     await router.findById(draft.id);
@@ -106,7 +118,11 @@ describe('RequestDraftRepositoryRouter', () => {
     const db = mutableDatabase(true);
     const persistent = spyRepository();
     const memory = new RequestDraftMemoryRepository();
-    const router = new RequestDraftRepositoryRouter(db, persistent.repository, memory);
+    const router = new RequestDraftRepositoryRouter(
+      db,
+      persistent.repository,
+      memory,
+    );
 
     await router.create(draft);
     expect(persistent.calls).toEqual(['create']);

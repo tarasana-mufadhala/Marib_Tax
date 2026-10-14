@@ -128,7 +128,9 @@ export class AuthnService {
           'Failed to query the authentication provider.',
         );
       }
-      const data = (await res.json()) as { users?: GoTrueUser[] } | GoTrueUser[];
+      const data = (await res.json()) as
+        | { users?: GoTrueUser[] }
+        | GoTrueUser[];
       const users = Array.isArray(data) ? data : (data.users ?? []);
       // GoTrue يخزّن الهاتف بلا علامة + بينما نبحث بصيغة E.164، فلا تتطابق
       // المقارنة النصية المباشرة أبداً: كانت استعادة كلمة المرور تقول
@@ -154,7 +156,9 @@ export class AuthnService {
         phone: phoneNumber,
         password,
         phone_confirm: true,
-        ...(displayName ? { user_metadata: { display_name: displayName } } : {}),
+        ...(displayName
+          ? { user_metadata: { display_name: displayName } }
+          : {}),
       }),
     });
     if (res.status === 422) {
@@ -263,10 +267,7 @@ export class AuthnService {
   /**
    * دخول المكلفين برقم الهاتف. يتطلب تفعيل مزود الهاتف في Supabase.
    */
-  async login(
-    phoneNumber: string,
-    password: string,
-  ): Promise<IssuedSession> {
+  async login(phoneNumber: string, password: string): Promise<IssuedSession> {
     const phone = this.normalizePhoneNumber(phoneNumber);
     return this.passwordGrant({
       identifier: phone,
@@ -284,7 +285,9 @@ export class AuthnService {
     emailAddress: string,
     password: string,
   ): Promise<IssuedSession> {
-    const email = String(emailAddress ?? '').trim().toLowerCase();
+    const email = String(emailAddress ?? '')
+      .trim()
+      .toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw new BadRequestException('A valid email address is required.');
     }
@@ -547,7 +550,9 @@ export class AuthnService {
     emailAddress: string,
     currentPassword: string,
   ): Promise<{ pending: boolean }> {
-    const email = String(emailAddress ?? '').trim().toLowerCase();
+    const email = String(emailAddress ?? '')
+      .trim()
+      .toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw DomainException.badRequest('أدخل بريداً إلكترونياً صحيحاً');
     }
@@ -564,7 +569,9 @@ export class AuthnService {
     // كلمة المرور تُطلب حتى لا تكفي جلسة مسروقة لربط بريد المهاجم بالحساب
     // ثم الدخول به لاحقاً برمز.
     const verified = await this.verifyPassword(
-      currentPhone.length > 0 ? { phone: currentPhone } : { email: currentEmail },
+      currentPhone.length > 0
+        ? { phone: currentPhone }
+        : { email: currentEmail },
       currentPassword,
     );
     if (!verified) {
@@ -636,7 +643,9 @@ export class AuthnService {
   async requestEmailPasswordReset(
     emailAddress: string,
   ): Promise<{ sent: boolean }> {
-    const email = String(emailAddress ?? '').trim().toLowerCase();
+    const email = String(emailAddress ?? '')
+      .trim()
+      .toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw DomainException.badRequest('أدخل بريداً إلكترونياً صحيحاً');
     }
@@ -690,7 +699,9 @@ export class AuthnService {
     code: string,
     newPassword: string,
   ): Promise<{ success: boolean }> {
-    const email = String(emailAddress ?? '').trim().toLowerCase();
+    const email = String(emailAddress ?? '')
+      .trim()
+      .toLowerCase();
     const token = String(code ?? '').trim();
     if (token.length === 0) {
       throw DomainException.badRequest('رمز التحقق مطلوب');
@@ -729,7 +740,9 @@ export class AuthnService {
     emailAddress: string,
     code: string,
   ): Promise<{ confirmed: boolean }> {
-    const email = String(emailAddress ?? '').trim().toLowerCase();
+    const email = String(emailAddress ?? '')
+      .trim()
+      .toLowerCase();
     const token = String(code ?? '').trim();
     if (token.length === 0) {
       throw DomainException.badRequest('رمز التحقق مطلوب');
@@ -883,7 +896,9 @@ export class AuthnService {
    * أي بريد مجهول حساباً بمجرد طلب رمز.
    */
   async requestEmailOtp(emailAddress: string): Promise<{ sent: boolean }> {
-    const email = String(emailAddress ?? '').trim().toLowerCase();
+    const email = String(emailAddress ?? '')
+      .trim()
+      .toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw DomainException.badRequest('أدخل بريداً إلكترونياً صحيحاً');
     }
@@ -935,7 +950,9 @@ export class AuthnService {
     emailAddress: string,
     code: string,
   ): Promise<IssuedSession> {
-    const email = String(emailAddress ?? '').trim().toLowerCase();
+    const email = String(emailAddress ?? '')
+      .trim()
+      .toLowerCase();
     const token = String(code ?? '').trim();
     if (token.length === 0) {
       throw DomainException.badRequest('رمز التحقق مطلوب');
@@ -979,7 +996,13 @@ export class AuthnService {
       throw DomainException.forbidden('لا يوجد حساب فعّال بهذا البريد');
     }
 
-    recordAuthEvent(this.db, 'login_succeeded', email, 'دخول برمز بريد', 'email');
+    recordAuthEvent(
+      this.db,
+      'login_succeeded',
+      email,
+      'دخول برمز بريد',
+      'email',
+    );
     return {
       accessToken,
       refreshToken: payload.refresh_token ?? '',
@@ -1093,10 +1116,10 @@ export class AuthnService {
    * إعداد سليم على الورق لا يعني رسالة تصل: الحد والقوالب والعنوان المرسِل
    * كلها تسقط بعده. هذه النقطة تُجري المحاولة وتُعيد سبب الفشل كما هو.
    */
-  async sendTestEmail(
-    emailAddress: string,
-  ): Promise<TestEmailResult> {
-    const email = String(emailAddress ?? '').trim().toLowerCase();
+  async sendTestEmail(emailAddress: string): Promise<TestEmailResult> {
+    const email = String(emailAddress ?? '')
+      .trim()
+      .toLowerCase();
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       throw DomainException.badRequest('أدخل بريداً إلكترونياً صحيحاً');
     }
@@ -1171,9 +1194,7 @@ export class AuthnService {
       );
     }
     if (newPassword === currentPassword) {
-      throw DomainException.badRequest(
-        'كلمة المرور الجديدة مطابقة للحالية',
-      );
+      throw DomainException.badRequest('كلمة المرور الجديدة مطابقة للحالية');
     }
 
     const verified = await this.verifyPassword(

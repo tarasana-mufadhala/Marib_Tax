@@ -14,13 +14,17 @@ const build = (overrides: {
 }): ConcreteActorProfileRepository =>
   new ConcreteActorProfileRepository(
     {
-      findUserByAuthUserId: overrides.findUser ?? ((): Promise<unknown> => Promise.resolve(staffUser)),
+      findUserByAuthUserId:
+        overrides.findUser ??
+        ((): Promise<unknown> => Promise.resolve(staffUser)),
       findStaffByUserProfileId:
-        overrides.findStaff ?? ((): Promise<unknown> => Promise.resolve(staffProfile)),
+        overrides.findStaff ??
+        ((): Promise<unknown> => Promise.resolve(staffProfile)),
     } as unknown as UsersService,
     {
       listActiveAssignmentsForStaff:
-        overrides.listAssignments ?? ((): Promise<unknown> => Promise.resolve([{ roleId: 'role-1' }])),
+        overrides.listAssignments ??
+        ((): Promise<unknown> => Promise.resolve([{ roleId: 'role-1' }])),
       listPermissionsForRole: (): Promise<unknown> =>
         Promise.resolve([{ code: 'report.view', isActive: true }]),
     } as unknown as RolesPermissionsService,

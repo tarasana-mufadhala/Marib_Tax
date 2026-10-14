@@ -1,4 +1,9 @@
-import { Controller, Get, HttpStatus, type INestApplication } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  HttpStatus,
+  type INestApplication,
+} from '@nestjs/common';
 import { APP_FILTER } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
 import type { ApiErrorBody, ApiErrorEnvelope } from '@marib-tax/contracts';
@@ -75,9 +80,7 @@ describe('ApiExceptionFilter', () => {
       (errorOf(response).details as Record<string, unknown> | undefined)?.[
         'missingDocuments'
       ],
-    ).toEqual([
-      { code: 'commercial_register', label: 'صورة السجل التجاري' },
-    ]);
+    ).toEqual([{ code: 'commercial_register', label: 'صورة السجل التجاري' }]);
   });
 
   it('يبقي الأخطاء الداخلية عامة فلا تتسرب تفاصيل التنفيذ', async () => {

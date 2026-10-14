@@ -11,7 +11,9 @@ import type {
 } from '../database/database.contracts.js';
 import type { Selectable } from 'kysely';
 
-function mapUserProfile(row: Selectable<IdentityUserProfilesTable>): StoredUserProfile {
+function mapUserProfile(
+  row: Selectable<IdentityUserProfilesTable>,
+): StoredUserProfile {
   return {
     id: row.id,
     authUserId: row.auth_user_id,
@@ -25,7 +27,9 @@ function mapUserProfile(row: Selectable<IdentityUserProfilesTable>): StoredUserP
   };
 }
 
-function mapStaffProfile(row: Selectable<IdentityStaffProfilesTable>): StoredStaffProfile {
+function mapStaffProfile(
+  row: Selectable<IdentityStaffProfilesTable>,
+): StoredStaffProfile {
   return {
     id: row.id,
     userProfileId: row.user_profile_id,
@@ -56,7 +60,9 @@ export class UsersKyselyRepository implements UsersRepository {
     return row ? mapUserProfile(row) : null;
   }
 
-  async findUserByAuthUserId(authUserId: string): Promise<StoredUserProfile | null> {
+  async findUserByAuthUserId(
+    authUserId: string,
+  ): Promise<StoredUserProfile | null> {
     const row = await this.databaseService.db
       .selectFrom('identity.user_profiles')
       .selectAll()
@@ -123,7 +129,9 @@ export class UsersKyselyRepository implements UsersRepository {
     return row ? mapStaffProfile(row) : null;
   }
 
-  async findStaffByUserProfileId(userProfileId: string): Promise<StoredStaffProfile | null> {
+  async findStaffByUserProfileId(
+    userProfileId: string,
+  ): Promise<StoredStaffProfile | null> {
     const row = await this.databaseService.db
       .selectFrom('identity.staff_profiles')
       .selectAll()
@@ -161,7 +169,11 @@ export class UsersKyselyRepository implements UsersRepository {
     updates: Partial<
       Pick<
         StoredStaffProfile,
-        'staffCode' | 'title' | 'isActive' | 'effectiveTo' | 'updatedByProfileId'
+        | 'staffCode'
+        | 'title'
+        | 'isActive'
+        | 'effectiveTo'
+        | 'updatedByProfileId'
       >
     >,
   ): Promise<StoredStaffProfile> {

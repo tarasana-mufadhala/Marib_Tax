@@ -243,14 +243,20 @@ export class AccessControlController {
       );
     }
     if (nameAr === '') {
-      throw DomainException.badRequest('اسم الدور بالعربية مطلوب', 'ROLE_NAME_REQUIRED');
+      throw DomainException.badRequest(
+        'اسم الدور بالعربية مطلوب',
+        'ROLE_NAME_REQUIRED',
+      );
     }
 
     const existing = await sql<{ id: string }>`
       select id from identity.roles where code = ${code} limit 1
     `.execute(this.db.db);
     if (existing.rows[0]) {
-      throw DomainException.conflict('يوجد دور بهذا الرمز مسبقاً', 'ROLE_CODE_TAKEN');
+      throw DomainException.conflict(
+        'يوجد دور بهذا الرمز مسبقاً',
+        'ROLE_CODE_TAKEN',
+      );
     }
 
     const roleId = randomUUID();
@@ -310,13 +316,18 @@ export class AccessControlController {
     const email = (body.email ?? '').trim().toLowerCase();
     const phone = (body.phone ?? '').trim();
     const password = body.password ?? '';
-    const roleCodes = (body.roleCodes ?? []).filter((c) => typeof c === 'string');
+    const roleCodes = (body.roleCodes ?? []).filter(
+      (c) => typeof c === 'string',
+    );
 
     if (displayName === '') {
       throw DomainException.badRequest('اسم المستخدم مطلوب', 'NAME_REQUIRED');
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      throw DomainException.badRequest('أدخل بريداً إلكترونياً صحيحاً', 'INVALID_EMAIL');
+      throw DomainException.badRequest(
+        'أدخل بريداً إلكترونياً صحيحاً',
+        'INVALID_EMAIL',
+      );
     }
     if (!this.isStrongPassword(password)) {
       throw DomainException.badRequest(
@@ -345,7 +356,12 @@ export class AccessControlController {
       );
     }
 
-    const authUserId = await this.createAuthIdentity(email, phone, password, displayName);
+    const authUserId = await this.createAuthIdentity(
+      email,
+      phone,
+      password,
+      displayName,
+    );
     const actorId = request[VERIFIED_ACTOR]?.actorId ?? null;
     const userProfileId = randomUUID();
     const staffProfileId = randomUUID();
@@ -397,7 +413,9 @@ export class AccessControlController {
     @Req() request: AuthenticatedRequest,
   ): Promise<UpdatedUserRoles> {
     this.assertDatabase();
-    const roleCodes = (body.roleCodes ?? []).filter((c) => typeof c === 'string');
+    const roleCodes = (body.roleCodes ?? []).filter(
+      (c) => typeof c === 'string',
+    );
     if (roleCodes.length === 0) {
       throw DomainException.badRequest(
         'اختر دوراً واحداً على الأقل',
@@ -455,7 +473,9 @@ export class AccessControlController {
 
   /** يقبل رموز الصلاحيات المعروفة في العقود وحدها. */
   private validatedPermissions(codes: string[] | undefined): string[] {
-    const list = [...new Set((codes ?? []).filter((c) => typeof c === 'string'))];
+    const list = [
+      ...new Set((codes ?? []).filter((c) => typeof c === 'string')),
+    ];
     if (list.length === 0) {
       throw DomainException.badRequest(
         'اختر صلاحية واحدة على الأقل للدور',
@@ -499,7 +519,10 @@ export class AccessControlController {
   }
 
   private supabase(): { url: string; key: string } {
-    const url = (this.config.get<string>('SUPABASE_URL') ?? '').replace(/\/$/, '');
+    const url = (this.config.get<string>('SUPABASE_URL') ?? '').replace(
+      /\/$/,
+      '',
+    );
     const key = this.config.get<string>('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     if (!url || !key) {
       throw DomainException.unavailable('إعدادات المصادقة غير مكتملة');
@@ -530,7 +553,11 @@ export class AccessControlController {
       }),
     });
 
-    const data = (await res.json()) as { id?: string; msg?: string; message?: string };
+    const data = (await res.json()) as {
+      id?: string;
+      msg?: string;
+      message?: string;
+    };
     if (res.status === 422) {
       throw DomainException.conflict(
         'يوجد حساب بهذا البريد أو الهاتف مسبقاً',

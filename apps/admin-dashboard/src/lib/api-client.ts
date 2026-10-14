@@ -1,9 +1,4 @@
-import type {
-  Taxpayer,
-  RequestItem,
-  FieldVisit,
-  TaxDue,
-} from './mock-data';
+import type { Taxpayer, RequestItem, FieldVisit, TaxDue } from './mock-data';
 
 /**
  * رمز حالة الطلب في الخادم -> قيمة العرض. الست الأولى مفاتيح قديمة تقارنها
@@ -38,14 +33,23 @@ export const displayStatus = (status: string): string =>
 
 /** تسمية الزر في اللوحة -> رمز الحالة في الخادم. */
 const REQUEST_STATUS_CODE_BY_LABEL: Record<string, string> = {
-  'تحت_المعالجة': 'under_review',
-  'قيد_النزول': 'field_visit_scheduled',
-  'مكتمل': 'approved',
+  تحت_المعالجة: 'under_review',
+  قيد_النزول: 'field_visit_scheduled',
+  مكتمل: 'approved',
 };
 
-const mapRequestStatus = (code: string | null | undefined): RequestItem['status'] => {
+const mapRequestStatus = (
+  code: string | null | undefined,
+): RequestItem['status'] => {
   if (!code) return 'مقدم';
-  const known: string[] = ['مقدم', 'تحت_المعالجة', 'قيد_النزول', 'بانتظار السداد', 'مكتمل', 'مرفوض'];
+  const known: string[] = [
+    'مقدم',
+    'تحت_المعالجة',
+    'قيد_النزول',
+    'بانتظار السداد',
+    'مكتمل',
+    'مرفوض',
+  ];
   if (known.includes(code)) return code;
   return REQUEST_STATUS_AR[code.toLowerCase()] ?? code;
 };
@@ -57,17 +61,27 @@ const VISIT_STATUS_AR: Record<string, FieldVisit['status']> = {
   cancelled: 'ملغاة',
 };
 
-const mapVisitStatus = (code: string | null | undefined): FieldVisit['status'] => {
+const mapVisitStatus = (
+  code: string | null | undefined,
+): FieldVisit['status'] => {
   if (!code) return 'مجدولة';
-  const known: FieldVisit['status'][] = ['مجدولة', 'قيد التنفيذ', 'مكتملة', 'ملغاة'];
-  if (known.includes(code as FieldVisit['status'])) return code as FieldVisit['status'];
+  const known: FieldVisit['status'][] = [
+    'مجدولة',
+    'قيد التنفيذ',
+    'مكتملة',
+    'ملغاة',
+  ];
+  if (known.includes(code as FieldVisit['status']))
+    return code as FieldVisit['status'];
   return VISIT_STATUS_AR[code.toLowerCase()] ?? 'مجدولة';
 };
 
 const fmtDate = (value: string | null | undefined): string => {
   if (!value) return '—';
   const d = new Date(value);
-  return Number.isNaN(d.getTime()) ? String(value) : d.toLocaleDateString('ar-YE');
+  return Number.isNaN(d.getTime())
+    ? String(value)
+    : d.toLocaleDateString('ar-YE');
 };
 
 const TAXPAYER_STATUS_AR: Record<string, Taxpayer['status']> = {
@@ -78,10 +92,13 @@ const TAXPAYER_STATUS_AR: Record<string, Taxpayer['status']> = {
   inactive: 'موقوف',
 };
 
-const mapTaxpayerStatus = (code: string | null | undefined): Taxpayer['status'] => {
+const mapTaxpayerStatus = (
+  code: string | null | undefined,
+): Taxpayer['status'] => {
   if (!code) return 'نشط';
   const known: Taxpayer['status'][] = ['نشط', 'قيد المراجعة', 'موقوف', 'متأخر'];
-  if (known.includes(code as Taxpayer['status'])) return code as Taxpayer['status'];
+  if (known.includes(code as Taxpayer['status']))
+    return code as Taxpayer['status'];
   return TAXPAYER_STATUS_AR[code.toLowerCase()] ?? 'نشط';
 };
 
@@ -123,7 +140,8 @@ export const setToken = (token: string | null) => {
       document.cookie = `marib_tax_token=${token}; path=/; max-age=86400; SameSite=Lax`;
     } else {
       localStorage.removeItem('marib_tax_token');
-      document.cookie = 'marib_tax_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      document.cookie =
+        'marib_tax_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     }
   }
 };
@@ -189,7 +207,10 @@ async function readApiError(res: Response): Promise<string> {
   return `تعذّر تنفيذ العملية (${res.status})`;
 }
 
-async function apiRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+async function apiRequest<T>(
+  endpoint: string,
+  options: RequestInit = {},
+): Promise<T> {
   const baseUrl = getBaseUrl();
   const token = getToken();
   const headers: Record<string, string> = {
@@ -349,7 +370,10 @@ const BALAGH_TITLES: Record<string, string> = {
 export const api = {
   auth: {
     login: async (credentials: { phone: string; password?: string }) => {
-      const result = await apiRequest<{ accessToken: string; userProfileId: string }>('/auth/login', {
+      const result = await apiRequest<{
+        accessToken: string;
+        userProfileId: string;
+      }>('/auth/login', {
         method: 'POST',
         body: JSON.stringify({
           phoneNumber: credentials.phone,
@@ -363,8 +387,14 @@ export const api = {
     },
 
     // دخول الموظفين بالبريد — المسار العامل حالياً (مزود الهاتف معطّل في Supabase).
-    loginWithEmail: async (credentials: { email: string; password: string }) => {
-      const result = await apiRequest<{ accessToken: string; userProfileId: string }>('/auth/login/email', {
+    loginWithEmail: async (credentials: {
+      email: string;
+      password: string;
+    }) => {
+      const result = await apiRequest<{
+        accessToken: string;
+        userProfileId: string;
+      }>('/auth/login/email', {
         method: 'POST',
         body: JSON.stringify({
           email: credentials.email,
@@ -378,50 +408,74 @@ export const api = {
     },
 
     requestOtp: async (data: { phone: string }) => {
-      const result = await apiRequest<{ verificationId: string }>('/auth/otp/request', {
-        method: 'POST',
-        body: JSON.stringify({ phoneNumber: data.phone }),
-      });
+      const result = await apiRequest<{ verificationId: string }>(
+        '/auth/otp/request',
+        {
+          method: 'POST',
+          body: JSON.stringify({ phoneNumber: data.phone }),
+        },
+      );
       return { success: true, message: result.verificationId };
     },
 
     verifyOtp: async (data: { phone: string; code: string }) => {
-      const result = await apiRequest<{ verificationToken: string }>('/auth/otp/verify', {
-        method: 'POST',
-        body: JSON.stringify({ phoneNumber: data.phone, code: data.code }),
-      });
+      const result = await apiRequest<{ verificationToken: string }>(
+        '/auth/otp/verify',
+        {
+          method: 'POST',
+          body: JSON.stringify({ phoneNumber: data.phone, code: data.code }),
+        },
+      );
       return { token: null, verificationToken: result.verificationToken };
     },
 
-    register: async (taxpayerData: { phone: string; verificationToken: string; password: string; displayName?: string }) => {
-      const result = await apiRequest<{ userProfileId: string }>('/auth/register', {
-        method: 'POST',
-        body: JSON.stringify({
-          phoneNumber: taxpayerData.phone,
-          verificationToken: taxpayerData.verificationToken,
-          password: taxpayerData.password,
-          displayName: taxpayerData.displayName ?? null,
-        }),
-      });
+    register: async (taxpayerData: {
+      phone: string;
+      verificationToken: string;
+      password: string;
+      displayName?: string;
+    }) => {
+      const result = await apiRequest<{ userProfileId: string }>(
+        '/auth/register',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            phoneNumber: taxpayerData.phone,
+            verificationToken: taxpayerData.verificationToken,
+            password: taxpayerData.password,
+            displayName: taxpayerData.displayName ?? null,
+          }),
+        },
+      );
       return { token: null, user: { id: result.userProfileId } };
     },
 
     requestPasswordReset: async (data: { phone: string }) => {
-      return await apiRequest<{ verificationId: string }>('/auth/password/reset/request', {
-        method: 'POST',
-        body: JSON.stringify({ phoneNumber: data.phone }),
-      });
+      return await apiRequest<{ verificationId: string }>(
+        '/auth/password/reset/request',
+        {
+          method: 'POST',
+          body: JSON.stringify({ phoneNumber: data.phone }),
+        },
+      );
     },
 
-    resetPassword: async (data: { phone: string; code: string; newPassword?: string }) => {
-      return await apiRequest<{ success: boolean }>('/auth/password/reset/confirm', {
-        method: 'POST',
-        body: JSON.stringify({
-          phoneNumber: data.phone,
-          code: data.code,
-          newPassword: data.newPassword,
-        }),
-      });
+    resetPassword: async (data: {
+      phone: string;
+      code: string;
+      newPassword?: string;
+    }) => {
+      return await apiRequest<{ success: boolean }>(
+        '/auth/password/reset/confirm',
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            phoneNumber: data.phone,
+            code: data.code,
+            newPassword: data.newPassword,
+          }),
+        },
+      );
     },
   },
 
@@ -480,7 +534,9 @@ export const api = {
       if (params?.status) query.set('status', params.status);
       if (params?.search) query.set('search', params.search);
       const suffix = query.toString() ? `?${query.toString()}` : '';
-      return (await apiRequest<AdminTaxpayer[]>(`/admin/taxpayers${suffix}`)) ?? [];
+      return (
+        (await apiRequest<AdminTaxpayer[]>(`/admin/taxpayers${suffix}`)) ?? []
+      );
     },
 
     getAdminTaxpayer: async (id: string): Promise<AdminTaxpayerDetails> =>
@@ -550,7 +606,8 @@ export const api = {
     },
 
     getDueCorrections: async (id: string): Promise<DueCorrection[]> =>
-      (await apiRequest<DueCorrection[]>(`/admin/dues/${id}/corrections`)) ?? [],
+      (await apiRequest<DueCorrection[]>(`/admin/dues/${id}/corrections`)) ??
+      [],
 
     /** تسجيل مستحق جديد على مكلف. */
     createDue: async (input: {
@@ -592,13 +649,20 @@ export const api = {
       });
     },
 
-    updateRequestStatus: async (requestId: string, status: string, notes?: string) => {
+    updateRequestStatus: async (
+      requestId: string,
+      status: string,
+      notes?: string,
+    ) => {
       // الخادم يقبل رموز الحالة المعتمدة فقط، لا تسميات العرض العربية.
       const code = REQUEST_STATUS_CODE_BY_LABEL[status] ?? status;
-      return await apiRequest<RequestItem>(`/admin/requests/${requestId}/status`, {
-        method: 'PATCH',
-        body: JSON.stringify({ status: code, notes }),
-      });
+      return await apiRequest<RequestItem>(
+        `/admin/requests/${requestId}/status`,
+        {
+          method: 'PATCH',
+          body: JSON.stringify({ status: code, notes }),
+        },
+      );
     },
 
     getUsers: async () => {
@@ -635,7 +699,11 @@ export const api = {
       }));
     },
 
-    createAnnouncement: async (data: { title: string; body: string; priority?: number }) => {
+    createAnnouncement: async (data: {
+      title: string;
+      body: string;
+      priority?: number;
+    }) => {
       return await apiRequest<any>('/admin/announcements', {
         method: 'POST',
         body: JSON.stringify(data),
@@ -666,7 +734,12 @@ export const api = {
       }));
     },
 
-    createFaq: async (data: { question: string; answer: string; category?: string; displayOrder?: number }) => {
+    createFaq: async (data: {
+      question: string;
+      answer: string;
+      category?: string;
+      displayOrder?: number;
+    }) => {
       return await apiRequest<any>('/admin/faqs', {
         method: 'POST',
         body: JSON.stringify(data),
@@ -710,9 +783,18 @@ export const api = {
         body: formData,
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.message || data.error || `خطأ في رفع الملف (${res.status})`);
+      if (!res.ok)
+        throw new Error(
+          data.message || data.error || `خطأ في رفع الملف (${res.status})`,
+        );
       if (data?.error) throw new Error(data.error);
-      return data as { jobId: string; total: number; valid: number; rejected: number; errors: { row: number; field: string; message: string }[] };
+      return data as {
+        jobId: string;
+        total: number;
+        valid: number;
+        rejected: number;
+        errors: { row: number; field: string; message: string }[];
+      };
     },
 
     getImportJobDetails: async (id: string) => {
@@ -738,13 +820,17 @@ export const api = {
     },
 
     approveImport: async (id: string) => {
-      const result = await apiRequest<any>(`/admin/imports/${id}/approve`, { method: 'POST' });
+      const result = await apiRequest<any>(`/admin/imports/${id}/approve`, {
+        method: 'POST',
+      });
       if (result?.error) throw new Error(result.error);
       return result as { success: boolean; inserted: number; skipped: number };
     },
 
     rejectImport: async (id: string) => {
-      const result = await apiRequest<any>(`/admin/imports/${id}/reject`, { method: 'POST' });
+      const result = await apiRequest<any>(`/admin/imports/${id}/reject`, {
+        method: 'POST',
+      });
       if (result?.error) throw new Error(result.error);
       return result as { success: boolean };
     },
@@ -759,7 +845,9 @@ export const api = {
           taxpayerName: result.request.taxpayer_name ?? '—',
           tin: result.request.taxpayer_ref ?? '—',
           serviceType: result.request.service_type_name ?? '—',
-          submissionDate: fmtDate(result.request.submitted_at ?? result.request.created_at),
+          submissionDate: fmtDate(
+            result.request.submitted_at ?? result.request.created_at,
+          ),
           status: mapRequestStatus(result.request.status_code),
         },
         history: (result.history ?? []).map((h: any) => ({
@@ -773,36 +861,53 @@ export const api = {
     },
 
     getRequestAttachments: async (requestId: string) => {
-      const rows = await apiRequest<any[]>(`/admin/requests/${requestId}/attachments`);
+      const rows = await apiRequest<any[]>(
+        `/admin/requests/${requestId}/attachments`,
+      );
       return (rows ?? []).map((r) => ({
         id: String(r.id),
         filename: r.original_filename ?? 'ملف',
         mimeType: r.mime_type ?? '',
-        sizeKb: Math.max(1, Math.ceil(Number(r.logical_file_size_bytes ?? 0) / 1024)),
+        sizeKb: Math.max(
+          1,
+          Math.ceil(Number(r.logical_file_size_bytes ?? 0) / 1024),
+        ),
         category: r.document_category_code ?? 'attachment',
         uploadedAt: fmtDate(r.linked_at),
       }));
     },
 
-    uploadRequestAttachment: async (requestId: string, file: File, category: string) => {
+    uploadRequestAttachment: async (
+      requestId: string,
+      file: File,
+      category: string,
+    ) => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('category', category);
       const token = getToken();
-      const res = await fetch(`${getBaseUrl()}/admin/requests/${requestId}/attachments`, {
-        method: 'POST',
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-        body: formData,
-      });
+      const res = await fetch(
+        `${getBaseUrl()}/admin/requests/${requestId}/attachments`,
+        {
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          body: formData,
+        },
+      );
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.message || data.error || `خطأ في رفع المرفق (${res.status})`);
+      if (!res.ok)
+        throw new Error(
+          data.message || data.error || `خطأ في رفع المرفق (${res.status})`,
+        );
       if (data?.error) throw new Error(data.error);
       return data as { success: boolean; attachmentId: string };
     },
 
-    attachmentFileUrl: (attachmentId: string) => `${getBaseUrl()}/admin/attachments/${attachmentId}/file`,
+    attachmentFileUrl: (attachmentId: string) =>
+      `${getBaseUrl()}/admin/attachments/${attachmentId}/file`,
 
-    importFileUrl: (jobId: string) => `${getBaseUrl()}/admin/imports/${jobId}/file`,
+    importFileUrl: (jobId: string) =>
+      `${getBaseUrl()}/admin/imports/${jobId}/file`,
 
     getLibraryDocuments: async () => {
       const rows = await apiRequest<any[]>('/admin/library-documents');
@@ -819,7 +924,10 @@ export const api = {
       }));
     },
 
-    uploadLibraryDocument: async (file: File, data: { title: string; category: string; version: string }) => {
+    uploadLibraryDocument: async (
+      file: File,
+      data: { title: string; category: string; version: string },
+    ) => {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('title', data.title);
@@ -832,18 +940,27 @@ export const api = {
         body: formData,
       });
       const resData = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(resData.message || resData.error || `خطأ في رفع المستند (${res.status})`);
+      if (!res.ok)
+        throw new Error(
+          resData.message ||
+            resData.error ||
+            `خطأ في رفع المستند (${res.status})`,
+        );
       if (resData?.error) throw new Error(resData.error);
       return resData as { success: boolean; documentId: string };
     },
 
     toggleLibraryDocument: async (id: string) => {
-      const result = await apiRequest<any>(`/admin/library-documents/${id}/toggle`, { method: 'PATCH' });
+      const result = await apiRequest<any>(
+        `/admin/library-documents/${id}/toggle`,
+        { method: 'PATCH' },
+      );
       if (result?.error) throw new Error(result.error);
       return result;
     },
 
-    libraryDocumentFileUrl: (id: string) => `${getBaseUrl()}/admin/library-documents/${id}/file`,
+    libraryDocumentFileUrl: (id: string) =>
+      `${getBaseUrl()}/admin/library-documents/${id}/file`,
 
     getServices: async () => {
       const rows = await apiRequest<any[]>('/admin/services');
@@ -857,7 +974,9 @@ export const api = {
     },
 
     toggleService: async (id: string) => {
-      return await apiRequest<any>(`/admin/services/${id}/toggle`, { method: 'PATCH' });
+      return await apiRequest<any>(`/admin/services/${id}/toggle`, {
+        method: 'PATCH',
+      });
     },
 
     getLegalEntities: async () => {
@@ -879,7 +998,11 @@ export const api = {
 
     getRoles: async () => {
       const rows = await apiRequest<any[]>('/admin/roles');
-      return (rows ?? []).map((r) => ({ id: String(r.id), code: r.code, name: r.name_ar ?? r.code }));
+      return (rows ?? []).map((r) => ({
+        id: String(r.id),
+        code: r.code,
+        name: r.name_ar ?? r.code,
+      }));
     },
 
     /** كتالوج الصلاحيات مبوّباً بالمورد. */
@@ -955,7 +1078,11 @@ export const api = {
       }));
     },
 
-    saveContentPage: async (data: { key: string; title: string; body: string }) => {
+    saveContentPage: async (data: {
+      key: string;
+      title: string;
+      body: string;
+    }) => {
       return await apiRequest<any>('/admin/content-pages', {
         method: 'POST',
         body: JSON.stringify(data),

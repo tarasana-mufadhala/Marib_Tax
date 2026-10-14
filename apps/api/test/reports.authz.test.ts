@@ -74,7 +74,9 @@ describe('ReportsController authorization', () => {
   afterEach(async () => app.close());
 
   const get = (path: string, token?: string): request.Test => {
-    const req = request(app.getHttpServer() as Parameters<typeof request>[0]).get(path);
+    const req = request(
+      app.getHttpServer() as Parameters<typeof request>[0],
+    ).get(path);
     return token ? req.set('Authorization', `Bearer ${token}`) : req;
   };
 

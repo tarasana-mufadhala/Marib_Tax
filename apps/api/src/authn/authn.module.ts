@@ -20,7 +20,12 @@ import { ACTOR_CONTEXT_RESOLVER } from '../authz/authorization.contracts.js';
 import { CurrentActorService } from './current-actor.service.js';
 
 @Module({
-  imports: [UsersModule, SecurityModule, RolesPermissionsModule, DatabaseModule],
+  imports: [
+    UsersModule,
+    SecurityModule,
+    RolesPermissionsModule,
+    DatabaseModule,
+  ],
   controllers: [AuthnController, AccountController],
   providers: [
     AuthnService,

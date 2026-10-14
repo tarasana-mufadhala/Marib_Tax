@@ -114,8 +114,10 @@ describe('operational modules E2E flows (visits, decisions, dues, payments, noti
         {
           provide: UsersService,
           useValue: {
-            findStaffByUserProfileId: (): Promise<{ id: string; isActive: boolean }> =>
-              Promise.resolve({ id: actorId, isActive: true }),
+            findStaffByUserProfileId: (): Promise<{
+              id: string;
+              isActive: boolean;
+            }> => Promise.resolve({ id: actorId, isActive: true }),
           },
         },
         FieldVisitsService,

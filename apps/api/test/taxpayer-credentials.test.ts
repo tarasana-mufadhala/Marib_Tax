@@ -4,7 +4,10 @@ import {
   generatePassword,
   normalizeYemeniPhone,
 } from '../src/messaging/taxpayer-credentials.service.js';
-import { MetaMessagingProvider, maskPhone } from '../src/messaging/meta-messaging.provider.js';
+import {
+  MetaMessagingProvider,
+  maskPhone,
+} from '../src/messaging/meta-messaging.provider.js';
 
 const configOf = (values: Record<string, string | undefined>): ConfigService =>
   ({
@@ -38,14 +41,21 @@ describe('generatePassword — كلمة المرور المُولَّدة', () =
 
   it('تتجنّب الأحرف الملتبسة في القراءة', () => {
     const confusing = /[IOl01]/;
-    const sample = Array.from({ length: 300 }, () => generatePassword()).join('');
+    const sample = Array.from({ length: 300 }, () => generatePassword()).join(
+      '',
+    );
     expect(confusing.test(sample)).toBe(false);
   });
 });
 
 describe('normalizeYemeniPhone', () => {
   it('يقبل الصيغ الأربع ويوحّدها', () => {
-    for (const input of ['771234567', '+967771234567', '967771234567', '00967771234567']) {
+    for (const input of [
+      '771234567',
+      '+967771234567',
+      '967771234567',
+      '00967771234567',
+    ]) {
       expect(normalizeYemeniPhone(input)).toBe('+967771234567');
     }
   });
@@ -55,7 +65,13 @@ describe('normalizeYemeniPhone', () => {
   });
 
   it('يرفض غير الصالح', () => {
-    for (const input of ['', '123', '112345678', '+966771234567', '7712345678']) {
+    for (const input of [
+      '',
+      '123',
+      '112345678',
+      '+966771234567',
+      '7712345678',
+    ]) {
       expect(normalizeYemeniPhone(input), input).toBeNull();
     }
   });

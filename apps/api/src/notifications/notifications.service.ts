@@ -214,7 +214,9 @@ export class NotificationsService {
     deviceType: string;
   }): Promise<StoredDeviceToken> {
     if (!['ios', 'android', 'web'].includes(input.deviceType)) {
-      throw new BadRequestException('Invalid device type. Must be ios, android, or web.');
+      throw new BadRequestException(
+        'Invalid device type. Must be ios, android, or web.',
+      );
     }
     const token: StoredDeviceToken = {
       id: randomUUID(),

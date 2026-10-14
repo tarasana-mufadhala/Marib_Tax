@@ -151,9 +151,17 @@ describe('DuesPaymentsService', () => {
 
     it('recordPayment rejects an amount above the remainder without storing a receipt', async () => {
       const { service, due, actorId } = await setup();
-      await service.recordPayment(due.id, { amount: 4000, notes: null }, actorId);
+      await service.recordPayment(
+        due.id,
+        { amount: 4000, notes: null },
+        actorId,
+      );
       await expect(
-        service.recordPayment(due.id, { amount: 6000.01, notes: null }, actorId),
+        service.recordPayment(
+          due.id,
+          { amount: 6000.01, notes: null },
+          actorId,
+        ),
       ).rejects.toThrow(ConflictException);
       const paid = await service.recordPayment(
         due.id,

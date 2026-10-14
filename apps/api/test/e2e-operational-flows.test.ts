@@ -6,7 +6,15 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
-import { Controller, Post, Body, Param, Inject, NotFoundException, HttpCode } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Param,
+  Inject,
+  NotFoundException,
+  HttpCode,
+} from '@nestjs/common';
 
 // Authn & Authz imports
 import { BearerActorContextResolver } from '../src/authn/bearer-actor-context.resolver.js';
@@ -23,12 +31,20 @@ import {
   AUTHORIZATION_POLICY_EVALUATOR,
 } from '../src/authz/authorization.contracts.js';
 import { ApiExceptionFilter } from '../src/http/api-exception.filter.js';
-import { PublicEndpoint, RequirePermission } from '../src/authz/authorization.decorators.js';
+import {
+  PublicEndpoint,
+  RequirePermission,
+} from '../src/authz/authorization.decorators.js';
 
 // Core domain imports & controllers
 import { TaxpayerController } from '../src/taxpayers/taxpayer.controller.js';
 import { TaxpayerService } from '../src/taxpayers/taxpayer.service.js';
-import { TAXPAYER_REPOSITORY, type TaxpayerRepository, type StoredTaxpayer, type StoredTaxpayerAccountLink } from '../src/taxpayers/taxpayer.repository.js';
+import {
+  TAXPAYER_REPOSITORY,
+  type TaxpayerRepository,
+  type StoredTaxpayer,
+  type StoredTaxpayerAccountLink,
+} from '../src/taxpayers/taxpayer.repository.js';
 
 import { ActivitiesBranchesController } from '../src/activities-branches/activities-branches.controller.js';
 import { ActivitiesBranchesService } from '../src/activities-branches/activities-branches.service.js';
@@ -215,7 +231,11 @@ class TestDecisionsController {
 class TestDuesPaymentsService extends DuesPaymentsService {
   override async uploadReceipt(
     dueId: string,
-    input: { amount: number; currencyCode: string; replacesReceiptId: string | null },
+    input: {
+      amount: number;
+      currencyCode: string;
+      replacesReceiptId: string | null;
+    },
     actorProfileId: string,
   ): Promise<any> {
     const due = await this.repository.findDueById(dueId);
@@ -245,7 +265,7 @@ class TestDuesPaymentsService extends DuesPaymentsService {
   ): Promise<any> {
     const receipt = await this.repository.findReceiptById(receiptId);
     if (!receipt) throw new NotFoundException('Payment receipt not found.');
-    
+
     const due = await this.repository.findDueById(receipt.paymentDueId);
     if (!due) throw new NotFoundException('Associated payment due not found.');
 
@@ -256,7 +276,9 @@ class TestDuesPaymentsService extends DuesPaymentsService {
 
     const isOverpaid = receipt.amount > due.amount;
     const overpayment_amount = isOverpaid ? receipt.amount - due.amount : 0;
-    const credit_balance_after = isOverpaid ? overpayment_amount.toString() : '0';
+    const credit_balance_after = isOverpaid
+      ? overpayment_amount.toString()
+      : '0';
 
     await this.repository.updateDue(due.id, {
       statusCode: 'paid',
@@ -284,15 +306,26 @@ class TaxpayerMemoryRepository implements TaxpayerRepository {
     return this.taxpayers.get(id) || null;
   }
   async search(query: string): Promise<StoredTaxpayer[]> {
-    return Array.from(this.taxpayers.values()).filter(t => t.displayName.includes(query));
+    return Array.from(this.taxpayers.values()).filter((t) =>
+      t.displayName.includes(query),
+    );
   }
   async list(limit: number): Promise<StoredTaxpayer[]> {
     return Array.from(this.taxpayers.values()).slice(0, limit);
   }
-  async findActiveLinkByProfileId(userProfileId: string): Promise<StoredTaxpayerAccountLink | null> {
-    return Array.from(this.links.values()).find(l => l.userProfileId === userProfileId && l.activeStateCode === 'active') || null;
+  async findActiveLinkByProfileId(
+    userProfileId: string,
+  ): Promise<StoredTaxpayerAccountLink | null> {
+    return (
+      Array.from(this.links.values()).find(
+        (l) =>
+          l.userProfileId === userProfileId && l.activeStateCode === 'active',
+      ) || null
+    );
   }
-  async createLink(link: StoredTaxpayerAccountLink): Promise<StoredTaxpayerAccountLink> {
+  async createLink(
+    link: StoredTaxpayerAccountLink,
+  ): Promise<StoredTaxpayerAccountLink> {
     this.links.set(link.id, link);
     return link;
   }
@@ -329,13 +362,21 @@ class ActivitiesBranchesMemoryRepository implements ActivitiesBranchesRepository
   async findBranchById(id: string): Promise<StoredBranch | null> {
     return this.branches.get(id) || null;
   }
-  async findActivitiesByTaxpayerId(taxpayerId: string): Promise<StoredCommercialActivity[]> {
-    return Array.from(this.activities.values()).filter(a => a.taxpayerId === taxpayerId);
+  async findActivitiesByTaxpayerId(
+    taxpayerId: string,
+  ): Promise<StoredCommercialActivity[]> {
+    return Array.from(this.activities.values()).filter(
+      (a) => a.taxpayerId === taxpayerId,
+    );
   }
   async findBranchesByActivityId(activityId: string): Promise<StoredBranch[]> {
-    return Array.from(this.branches.values()).filter(b => b.commercialActivityId === activityId);
+    return Array.from(this.branches.values()).filter(
+      (b) => b.commercialActivityId === activityId,
+    );
   }
-  async createActivity(activity: StoredCommercialActivity): Promise<StoredCommercialActivity> {
+  async createActivity(
+    activity: StoredCommercialActivity,
+  ): Promise<StoredCommercialActivity> {
     this.activities.set(activity.id, activity);
     return activity;
   }
@@ -343,12 +384,20 @@ class ActivitiesBranchesMemoryRepository implements ActivitiesBranchesRepository
     this.branches.set(branch.id, branch);
     return branch;
   }
-  async createAddress(address: StoredActivityAddress): Promise<StoredActivityAddress> {
+  async createAddress(
+    address: StoredActivityAddress,
+  ): Promise<StoredActivityAddress> {
     this.addresses.set(address.id, address);
     return address;
   }
-  async findAddressByBranchId(branchId: string): Promise<StoredActivityAddress | null> {
-    return Array.from(this.addresses.values()).find(a => a.branchId === branchId) || null;
+  async findAddressByBranchId(
+    branchId: string,
+  ): Promise<StoredActivityAddress | null> {
+    return (
+      Array.from(this.addresses.values()).find(
+        (a) => a.branchId === branchId,
+      ) || null
+    );
   }
 }
 
@@ -360,24 +409,40 @@ class PropertiesMemoryRepository implements PropertiesRepository {
   async findPropertyById(id: string): Promise<StoredProperty | null> {
     return this.properties.get(id) || null;
   }
-  async findPropertyUnitsByPropertyId(propertyId: string): Promise<StoredPropertyUnit[]> {
-    return Array.from(this.units.values()).filter(u => u.propertyId === propertyId);
+  async findPropertyUnitsByPropertyId(
+    propertyId: string,
+  ): Promise<StoredPropertyUnit[]> {
+    return Array.from(this.units.values()).filter(
+      (u) => u.propertyId === propertyId,
+    );
   }
-  async findOwnershipRecordsByPropertyId(propertyId: string): Promise<StoredPropertyOwnershipRecord[]> {
-    return Array.from(this.ownership.values()).filter(o => o.propertyId === propertyId);
+  async findOwnershipRecordsByPropertyId(
+    propertyId: string,
+  ): Promise<StoredPropertyOwnershipRecord[]> {
+    return Array.from(this.ownership.values()).filter(
+      (o) => o.propertyId === propertyId,
+    );
   }
-  async findOwnershipRecordsByTaxpayerId(taxpayerId: string): Promise<StoredPropertyOwnershipRecord[]> {
-    return Array.from(this.ownership.values()).filter(o => o.taxpayerId === taxpayerId);
+  async findOwnershipRecordsByTaxpayerId(
+    taxpayerId: string,
+  ): Promise<StoredPropertyOwnershipRecord[]> {
+    return Array.from(this.ownership.values()).filter(
+      (o) => o.taxpayerId === taxpayerId,
+    );
   }
   async createProperty(property: StoredProperty): Promise<StoredProperty> {
     this.properties.set(property.id, property);
     return property;
   }
-  async createPropertyUnit(unit: StoredPropertyUnit): Promise<StoredPropertyUnit> {
+  async createPropertyUnit(
+    unit: StoredPropertyUnit,
+  ): Promise<StoredPropertyUnit> {
     this.units.set(unit.id, unit);
     return unit;
   }
-  async createOwnershipRecord(record: StoredPropertyOwnershipRecord): Promise<StoredPropertyOwnershipRecord> {
+  async createOwnershipRecord(
+    record: StoredPropertyOwnershipRecord,
+  ): Promise<StoredPropertyOwnershipRecord> {
     this.ownership.set(record.id, record);
     return record;
   }
@@ -386,21 +451,40 @@ class PropertiesMemoryRepository implements PropertiesRepository {
 class LegalEntitiesMemoryRepository implements LegalEntitiesRepository {
   private entities = new Map<string, StoredLegalEntity>();
   private taxNumbers = new Map<string, StoredTaxNumber>();
-  private associations = new Map<string, StoredTaxpayerLegalEntityAssociation>();
+  private associations = new Map<
+    string,
+    StoredTaxpayerLegalEntityAssociation
+  >();
 
   async findLegalEntityById(id: string): Promise<StoredLegalEntity | null> {
     return this.entities.get(id) || null;
   }
   async findTaxNumberByValue(value: string): Promise<StoredTaxNumber | null> {
-    return Array.from(this.taxNumbers.values()).find(t => t.taxNumberValue === value) || null;
+    return (
+      Array.from(this.taxNumbers.values()).find(
+        (t) => t.taxNumberValue === value,
+      ) || null
+    );
   }
-  async findTaxNumberByTaxpayerId(taxpayerId: string): Promise<StoredTaxNumber | null> {
-    return Array.from(this.taxNumbers.values()).find(t => t.taxpayerId === taxpayerId) || null;
+  async findTaxNumberByTaxpayerId(
+    taxpayerId: string,
+  ): Promise<StoredTaxNumber | null> {
+    return (
+      Array.from(this.taxNumbers.values()).find(
+        (t) => t.taxpayerId === taxpayerId,
+      ) || null
+    );
   }
-  async findAssociationsByTaxpayerId(taxpayerId: string): Promise<StoredTaxpayerLegalEntityAssociation[]> {
-    return Array.from(this.associations.values()).filter(a => a.taxpayerId === taxpayerId);
+  async findAssociationsByTaxpayerId(
+    taxpayerId: string,
+  ): Promise<StoredTaxpayerLegalEntityAssociation[]> {
+    return Array.from(this.associations.values()).filter(
+      (a) => a.taxpayerId === taxpayerId,
+    );
   }
-  async createLegalEntity(entity: StoredLegalEntity): Promise<StoredLegalEntity> {
+  async createLegalEntity(
+    entity: StoredLegalEntity,
+  ): Promise<StoredLegalEntity> {
     this.entities.set(entity.id, entity);
     return entity;
   }
@@ -408,7 +492,9 @@ class LegalEntitiesMemoryRepository implements LegalEntitiesRepository {
     this.taxNumbers.set(taxNumber.id, taxNumber);
     return taxNumber;
   }
-  async createAssociation(association: StoredTaxpayerLegalEntityAssociation): Promise<StoredTaxpayerLegalEntityAssociation> {
+  async createAssociation(
+    association: StoredTaxpayerLegalEntityAssociation,
+  ): Promise<StoredTaxpayerLegalEntityAssociation> {
     this.associations.set(association.id, association);
     return association;
   }
@@ -421,12 +507,16 @@ class ServicesVersionsMemoryRepository implements ServicesVersionsRepository {
     return this.services.get(id) || null;
   }
   async findByCode(code: string): Promise<StoredServiceType | null> {
-    return Array.from(this.services.values()).find(s => s.code === code) || null;
+    return (
+      Array.from(this.services.values()).find((s) => s.code === code) || null
+    );
   }
   async listActive(): Promise<StoredServiceType[]> {
-    return Array.from(this.services.values()).filter(s => s.isActive);
+    return Array.from(this.services.values()).filter((s) => s.isActive);
   }
-  async createServiceType(serviceType: StoredServiceType): Promise<StoredServiceType> {
+  async createServiceType(
+    serviceType: StoredServiceType,
+  ): Promise<StoredServiceType> {
     this.services.set(serviceType.id, serviceType);
     return serviceType;
   }
@@ -493,8 +583,10 @@ describe('AG-3 Backend E2E Operational Flows (FR-101, FR-102, FR-201, Overpaymen
         {
           provide: UsersService,
           useValue: {
-            findStaffByUserProfileId: (): Promise<{ id: string; isActive: boolean }> =>
-              Promise.resolve({ id: actorId, isActive: true }),
+            findStaffByUserProfileId: (): Promise<{
+              id: string;
+              isActive: boolean;
+            }> => Promise.resolve({ id: actorId, isActive: true }),
           },
         },
         TaxpayerService,
@@ -502,17 +594,35 @@ describe('AG-3 Backend E2E Operational Flows (FR-101, FR-102, FR-201, Overpaymen
         ActivitiesBranchesService,
         ActivityOwnershipService,
         { provide: ACTIVITY_OWNERSHIP_LOOKUP, useValue: OWNERSHIP_LOOKUP_STUB },
-        { provide: ACTIVITIES_BRANCHES_REPOSITORY, useClass: ActivitiesBranchesMemoryRepository },
+        {
+          provide: ACTIVITIES_BRANCHES_REPOSITORY,
+          useClass: ActivitiesBranchesMemoryRepository,
+        },
         PropertiesService,
-        { provide: PROPERTIES_REPOSITORY, useClass: PropertiesMemoryRepository },
+        {
+          provide: PROPERTIES_REPOSITORY,
+          useClass: PropertiesMemoryRepository,
+        },
         LegalEntitiesService,
-        { provide: LEGAL_ENTITIES_REPOSITORY, useClass: LegalEntitiesMemoryRepository },
+        {
+          provide: LEGAL_ENTITIES_REPOSITORY,
+          useClass: LegalEntitiesMemoryRepository,
+        },
         ServicesVersionsService,
-        { provide: SERVICES_VERSIONS_REPOSITORY, useClass: ServicesVersionsMemoryRepository },
+        {
+          provide: SERVICES_VERSIONS_REPOSITORY,
+          useClass: ServicesVersionsMemoryRepository,
+        },
         RequestDraftService,
-        { provide: REQUEST_DRAFT_REPOSITORY, useClass: RequestDraftMemoryRepository },
+        {
+          provide: REQUEST_DRAFT_REPOSITORY,
+          useClass: RequestDraftMemoryRepository,
+        },
         FieldVisitsService,
-        { provide: FIELD_VISITS_REPOSITORY, useClass: FieldVisitsMemoryRepository },
+        {
+          provide: FIELD_VISITS_REPOSITORY,
+          useClass: FieldVisitsMemoryRepository,
+        },
         DecisionsService,
         { provide: DECISIONS_REPOSITORY, useClass: DecisionsMemoryRepository },
         { provide: DuesPaymentsService, useClass: TestDuesPaymentsService },
@@ -520,10 +630,16 @@ describe('AG-3 Backend E2E Operational Flows (FR-101, FR-102, FR-201, Overpaymen
         // في الذاكرة بلا قاعدة، فقاعدة غير مُهيّأة تُسقط فحص الملكية
         // وتُبقي المسار الوظيفي المُختبَر كما هو.
         { provide: DatabaseService, useValue: { isInitialized: false } },
-        { provide: DUES_PAYMENTS_REPOSITORY, useClass: DuesPaymentsMemoryRepository },
+        {
+          provide: DUES_PAYMENTS_REPOSITORY,
+          useClass: DuesPaymentsMemoryRepository,
+        },
         { provide: CURRENT_ACTOR, useClass: CurrentActorService },
         { provide: ACTOR_CONTEXT_RESOLVER, useValue: actors },
-        { provide: AUTHORIZATION_POLICY_EVALUATOR, useClass: MockPolicyEvaluator },
+        {
+          provide: AUTHORIZATION_POLICY_EVALUATOR,
+          useClass: MockPolicyEvaluator,
+        },
         {
           provide: AUTHORIZATION_AUDIT_HOOK,
           useValue: { recordDenied: (): Promise<void> => Promise.resolve() },
@@ -625,7 +741,8 @@ describe('AG-3 Backend E2E Operational Flows (FR-101, FR-102, FR-201, Overpaymen
       .post(`/api/v1/visits/${visit.id}/results`)
       .set('Authorization', 'Bearer valid')
       .send({
-        resultSummary: 'المعاينة تمت بنجاح وتم تأكيد صحة البيانات والنشاط القائم.',
+        resultSummary:
+          'المعاينة تمت بنجاح وتم تأكيد صحة البيانات والنشاط القائم.',
         resultCode: 'VERIFIED',
         actualStartedAt: new Date().toISOString(),
         actualEndedAt: new Date(Date.now() + 1800000).toISOString(),
@@ -724,7 +841,8 @@ describe('AG-3 Backend E2E Operational Flows (FR-101, FR-102, FR-201, Overpaymen
       .post(`/api/v1/visits/${visit.id}/results`)
       .set('Authorization', 'Bearer valid')
       .send({
-        resultSummary: 'النشاط قائم ومطابق للمواصفات القانونية لاستخراج الرقم الضريبي.',
+        resultSummary:
+          'النشاط قائم ومطابق للمواصفات القانونية لاستخراج الرقم الضريبي.',
         resultCode: 'VERIFIED',
         actualStartedAt: new Date().toISOString(),
         actualEndedAt: new Date(Date.now() + 1800000).toISOString(),
@@ -753,7 +871,8 @@ describe('AG-3 Backend E2E Operational Flows (FR-101, FR-102, FR-201, Overpaymen
       .set('Authorization', 'Bearer valid')
       .send({
         reporterName: 'مكتب التفتيش البلدي بمأرب',
-        details: 'تصفية وإيقاف كلي للنشاط التجاري بموجب إعلان التصفية القانوني.',
+        details:
+          'تصفية وإيقاف كلي للنشاط التجاري بموجب إعلان التصفية القانوني.',
       });
     expect(balaghRes.status).toBe(201);
     const balagh = balaghRes.body;
@@ -774,7 +893,8 @@ describe('AG-3 Backend E2E Operational Flows (FR-101, FR-102, FR-201, Overpaymen
       .send({
         balaghId: balagh.id,
         outcomeCode: 'approved',
-        decisionSummary: 'الموافقة على إيقاف وتصفية النشاط بناء على تقرير التفتيش الميداني.',
+        decisionSummary:
+          'الموافقة على إيقاف وتصفية النشاط بناء على تقرير التفتيش الميداني.',
         basisText: 'بلاغ إيقاف النشاط موثق ورسمي ومطابق لشروط الإلغاء الضريبي.',
       });
     expect(decisionRes.status).toBe(201);

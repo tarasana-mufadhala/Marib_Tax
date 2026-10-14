@@ -24,7 +24,10 @@ export interface AttachmentAuthorizationResource {
   readonly owner: AttachmentOwnerReference;
   readonly classification: AttachmentClassification;
   readonly retentionState:
-    'active' | 'archived' | 'legal_hold' | 'permanent_operational_archive';
+    | 'active'
+    | 'archived'
+    | 'legal_hold'
+    | 'permanent_operational_archive';
 }
 
 export type AttachmentAccessKind = 'metadata' | 'binary_download';

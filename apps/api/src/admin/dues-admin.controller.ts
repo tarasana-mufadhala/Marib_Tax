@@ -178,8 +178,7 @@ export class DuesAdminController {
         editable:
           row.status_code === 'unpaid' || row.status_code === 'partially_paid',
         // السداد يُسجَّل ما دام هناك متبقٍّ؛ الإلغاء ما دام لم يُقبض شيء.
-        payable:
-          row.status_code !== 'paid' && row.status_code !== 'cancelled',
+        payable: row.status_code !== 'paid' && row.status_code !== 'cancelled',
         cancellable: paid === 0 && row.status_code !== 'cancelled',
       };
     });

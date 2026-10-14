@@ -193,7 +193,10 @@ export class BalaghKyselyRepository implements BalaghRepository {
     trx: unknown,
     balagh: StoredBalagh,
   ): Promise<void> {
-    const data = balagh.formData as { activityIds?: unknown; activityId?: unknown };
+    const data = balagh.formData as {
+      activityIds?: unknown;
+      activityId?: unknown;
+    };
     const ids = Array.isArray(data?.activityIds)
       ? data.activityIds.filter((v): v is string => typeof v === 'string')
       : typeof data?.activityId === 'string'
