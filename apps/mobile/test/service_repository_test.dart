@@ -97,10 +97,13 @@ void main() {
     });
 
     test('التقديم الناجح يغيّر الحالة إلى submitted', () async {
-      final submitted = await build(InMemoryTokenStore()).submit('req-1');
+      final repository = build(InMemoryTokenStore());
+      final submitted = await repository.submit('req-1');
 
       expect(submitted.status.code, 'submitted');
       expect(submitted.isDraft, isFalse);
+      // إشارة «طلباتي» والرئيسية لإعادة التحميل.
+      expect(repository.submissions.value, 1);
     });
   });
 
@@ -117,6 +120,8 @@ void main() {
         await repository.submit('req-1');
         fail('كان يجب أن يُرفض التقديم');
       } on ApiException catch (error) {
+        // التقديم المرفوض لا يستدعي إعادة تحميل القوائم.
+        expect(repository.submissions.value, 0);
         expect(error.statusCode, 422);
         final missing = error.missingDocuments;
         expect(missing, hasLength(2));
