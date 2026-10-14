@@ -123,7 +123,7 @@ export class KyselyOutboxRepository implements OutboxRepository {
       // 1. Resolve phone number via SQL raw query on identity/auth schema
       try {
         const phoneResult = await sql<{ phone: string }>`
-          SELECT phone FROM auth.users 
+          SELECT phone FROM auth.users
           WHERE id = (SELECT auth_user_id FROM identity.user_profiles WHERE id = ${recipientProfileId})
         `.execute(this.db);
         targetPhoneNumber = phoneResult.rows[0]?.phone || null;

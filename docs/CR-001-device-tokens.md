@@ -21,7 +21,7 @@ CREATE TABLE notify.device_tokens (
   is_active boolean NOT NULL DEFAULT true,
   created_at timestamptz NOT NULL DEFAULT now(),
   updated_at timestamptz NULL,
-  
+
   CONSTRAINT device_tokens_pkey PRIMARY KEY (id),
   CONSTRAINT device_tokens_token_key UNIQUE (device_token),
   CONSTRAINT device_tokens_user_fkey FOREIGN KEY (user_profile_id)

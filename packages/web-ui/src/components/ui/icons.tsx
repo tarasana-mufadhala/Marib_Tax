@@ -397,4 +397,3 @@ export const QrCodeIcon: React.FC<IconProps> = ({ size = 20, className = '', ...
     <path d="M7 18h.01" />
   </svg>
 );
-

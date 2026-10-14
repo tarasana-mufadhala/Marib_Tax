@@ -10,4 +10,3 @@ import { supabaseTheme } from '../../../../src/themes/supabase/supabase';
 export function AstryxThemeProvider({ children }: { children: React.ReactNode }) {
   return <Theme theme={supabaseTheme}>{children}</Theme>;
 }
-

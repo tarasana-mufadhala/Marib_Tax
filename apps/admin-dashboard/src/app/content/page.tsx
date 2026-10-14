@@ -91,7 +91,7 @@ export default function AdminContentPage() {
   const [docFile, setDocFile] = useState<File | null>(null);
   const [docBusy, setDocBusy] = useState(false);
   const [messages, setMessages] = useState<ContactMessageRow[]>([]);
-  
+
   // FAQ Form
   const [faqQuestion, setFaqQuestion] = useState('');
   const [faqAnswer, setFaqAnswer] = useState('');
@@ -760,7 +760,7 @@ export default function AdminContentPage() {
                   <p className="font-bold text-[var(--usr-primary-dark)] text-xs border-b border-slate-200 pb-2">
                     بيانات التواصل وأرقام الخدمة المعتمدة
                   </p>
-                  
+
                   <div className="space-y-1">
                     <label className="block text-xs font-semibold text-emerald-800">
                       💬 رقم التواصل عبر الواتساب (يتحول تلقائياً لرابط محادثة مباشر على الموقع):
@@ -870,7 +870,7 @@ export default function AdminContentPage() {
                   <p className="font-bold text-[var(--usr-primary-dark)] text-xs border-b border-slate-200 pb-2">
                     إدارة رابط تنزيل تطبيق الجوال والنسخ المعتمدة
                   </p>
-                  
+
                   <div className="space-y-1">
                     <label className="block text-xs font-semibold text-emerald-800">
                       📱 رابط تنزيل ملف الـ APK المباشر لـ Android (APK Download URL) *:

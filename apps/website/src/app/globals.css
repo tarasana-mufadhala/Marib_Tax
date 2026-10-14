@@ -128,7 +128,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    background-image: 
+    background-image:
       radial-gradient(circle at 85% 15%, rgba(197, 138, 23, 0.18) 0%, transparent 45%),
       radial-gradient(circle at 15% 85%, rgba(2, 132, 199, 0.22) 0%, transparent 55%);
     pointer-events: none;
@@ -138,7 +138,7 @@
     content: "";
     position: absolute;
     inset: 0;
-    background-image: 
+    background-image:
       radial-gradient(circle at 85% 15%, rgba(197, 138, 23, 0.18) 0%, transparent 45%),
       radial-gradient(circle at 15% 85%, rgba(2, 132, 199, 0.22) 0%, transparent 55%),
       radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.03) 0%, transparent 70%);
