@@ -6,8 +6,9 @@
 import { spawnSync } from 'node:child_process';
 
 const glob = '{apps,packages}/**/*.{ts,json,yaml}';
-const check = spawnSync('pnpm', ['exec', 'prettier', '--check', glob], {
+const check = spawnSync(`pnpm exec prettier --check '${glob}'`, {
   encoding: 'utf8',
+  shell: true,
 });
 process.stdout.write(check.stdout ?? '');
 process.stderr.write(check.stderr ?? '');
@@ -18,10 +19,18 @@ if (code !== 0 && process.env.GITHUB_ACTIONS === 'true') {
     .split('\n')
     .map((l) => /^\[warn\] (\S+\.(?:ts|json|yaml))$/.exec(l.trim())?.[1])
     .filter((f) => typeof f === 'string');
+  print(
+    'notice',
+    'format-files',
+    `${files.length} files; spawn error: ${String(check.error ?? 'none')}\n${files.join('\n')}`,
+  );
   if (files.length > 0) {
-    spawnSync('pnpm', ['exec', 'prettier', '--write', ...files], {
+    const write = spawnSync('pnpm', ['exec', 'prettier', '--write', ...files], {
       encoding: 'utf8',
     });
+    if (write.status !== 0) {
+      print('notice', 'format-write', `${write.stdout ?? ''}${write.stderr ?? ''}`.slice(-3000));
+    }
     const diff = spawnSync('git', ['diff', '-U0', '--', ...files], {
       encoding: 'utf8',
     }).stdout;
