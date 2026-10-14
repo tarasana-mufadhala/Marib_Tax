@@ -28,9 +28,7 @@ export class PropertiesService {
     return property;
   }
 
-  async getPropertyWithUnitsAndOwners(
-    id: string,
-  ): Promise<
+  async getPropertyWithUnitsAndOwners(id: string): Promise<
     StoredProperty & {
       units: StoredPropertyUnit[];
       owners: StoredPropertyOwnershipRecord[];

@@ -1,18 +1,22 @@
 import { Body, Controller, HttpCode, Post } from '@nestjs/common';
 import { PublicEndpoint } from '../authz/authorization.decorators.js';
-import { AuthnService } from './authn.service.js';
+import { AuthnService, type IssuedSession } from './authn.service.js';
+import { SecureRegistrationService } from './secure-registration.service.js';
 
 @Controller('api/v1/auth')
 @PublicEndpoint()
 export class AuthnController {
-  constructor(private readonly authnService: AuthnService) {}
+  constructor(
+    private readonly authnService: AuthnService,
+    private readonly registration: SecureRegistrationService,
+  ) {}
 
   @Post('otp/request')
   @HttpCode(200)
   requestOtp(
     @Body('phoneNumber') phoneNumber: string,
   ): Promise<{ verificationId: string }> {
-    return this.authnService.requestRegistrationOtp(phoneNumber);
+    return this.registration.requestRegistrationOtp(phoneNumber);
   }
 
   @Post('otp/verify')
@@ -21,7 +25,44 @@ export class AuthnController {
     @Body('phoneNumber') phoneNumber: string,
     @Body('code') code: string,
   ): Promise<{ verificationToken: string }> {
-    return this.authnService.verifyRegistrationOtp(phoneNumber, code);
+    return this.registration.verifyRegistrationOtp(phoneNumber, code);
+  }
+
+  @Post('otp/email/request')
+  @HttpCode(200)
+  requestEmailOtp(@Body('email') email: string): Promise<{ sent: boolean }> {
+    return this.authnService.requestEmailOtp(email);
+  }
+
+  @Post('otp/email/verify')
+  @HttpCode(200)
+  verifyEmailOtp(
+    @Body('email') email: string,
+    @Body('code') code: string,
+  ): Promise<IssuedSession> {
+    return this.authnService.verifyEmailOtp(email, code);
+  }
+
+  @Post('password/reset/email/request')
+  @HttpCode(200)
+  requestEmailPasswordReset(
+    @Body('email') email: string,
+  ): Promise<{ sent: boolean }> {
+    return this.authnService.requestEmailPasswordReset(email);
+  }
+
+  @Post('password/reset/email/confirm')
+  @HttpCode(200)
+  confirmEmailPasswordReset(
+    @Body('email') email: string,
+    @Body('code') code: string,
+    @Body('newPassword') newPassword: string,
+  ): Promise<{ success: boolean }> {
+    return this.authnService.confirmEmailPasswordReset(
+      email,
+      code,
+      newPassword,
+    );
   }
 
   @Post('register')
@@ -32,7 +73,7 @@ export class AuthnController {
     @Body('password') password: string,
     @Body('displayName') displayName: string | null = null,
   ): Promise<{ userProfileId: string }> {
-    return this.authnService.register(
+    return this.registration.register(
       phoneNumber,
       verificationToken,
       password,
@@ -45,8 +86,23 @@ export class AuthnController {
   login(
     @Body('phoneNumber') phoneNumber: string,
     @Body('password') password: string,
-  ): Promise<{ accessToken: string; userProfileId: string }> {
+  ): Promise<IssuedSession> {
     return this.authnService.login(phoneNumber, password);
+  }
+
+  @Post('login/email')
+  @HttpCode(200)
+  loginWithEmail(
+    @Body('email') email: string,
+    @Body('password') password: string,
+  ): Promise<IssuedSession> {
+    return this.authnService.loginWithEmail(email, password);
+  }
+
+  @Post('refresh')
+  @HttpCode(200)
+  refresh(@Body('refreshToken') refreshToken: string): Promise<IssuedSession> {
+    return this.authnService.refreshSession(refreshToken);
   }
 
   @Post('password/reset/request')

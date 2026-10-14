@@ -1,5 +1,14 @@
-# Marib Tax Web
+# Web application
 
-Single Next.js App Router application for the public website and future protected admin dashboard, as required by ADR-003.
+`apps/web` contains the Next.js web surfaces for the Marib Tax System, including the administrative dashboard and public-facing web experience.
 
-The current foundation is Arabic RTL and intentionally contains no API endpoint, credential, database client, production integration, or enabled admin route. `/admin` fails closed until a server-verified authentication adapter is implemented.
+## Repository role
+
+- Uses the shared API contracts from `packages/contracts`.
+- Must not write directly to PostgreSQL/Supabase application tables.
+- Administrative mutations go through the NestJS API and its authorization layer.
+- Arabic RTL is the primary interface direction.
+
+## Validation
+
+From the repository root, run the normal monorepo gates (`typecheck`, `test`, `build`, `lint`, and `format:check`) through pnpm.

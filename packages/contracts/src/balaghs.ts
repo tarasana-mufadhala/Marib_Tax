@@ -12,16 +12,27 @@ const optionalText = z
 export const balagh201Schema = z
   .object({
     activityIds: z.array(z.uuid()).min(1),
-    branchIds: z.array(z.uuid()).optional().transform((value) => value ?? []),
+    branchIds: z
+      .array(z.uuid())
+      .optional()
+      .transform((value) => value ?? []),
     stopType: z.enum(['temporary', 'permanent']),
     stoppedAt: z.string().datetime(),
     reason: z.string().trim().min(1),
     lastWorkingDay: optionalText,
     siteStatus: optionalText,
-    hasGoodsOrEquipment: z.boolean().nullable().optional().transform((value) => value ?? null),
+    hasGoodsOrEquipment: z
+      .boolean()
+      .nullable()
+      .optional()
+      .transform((value) => value ?? null),
     siteOccupancyType: optionalText,
     rentalStatus: optionalText,
-    hasEmployees: z.boolean().nullable().optional().transform((value) => value ?? null),
+    hasEmployees: z
+      .boolean()
+      .nullable()
+      .optional()
+      .transform((value) => value ?? null),
     notes: optionalText,
     declarationConfirmed: z.literal(true),
   })
@@ -60,14 +71,16 @@ export const balagh204Schema = z
   .object({
     activityId: z.uuid(),
     branchId: optionalText,
-    newAddress: z.object({
-      district: z.string().trim().min(1),
-      street: z.string().trim().min(1),
-      neighborhood: optionalText,
-      buildingNumber: optionalText,
-      nearbyLandmark: optionalText,
-      gpsLocation: optionalText,
-    }).strict(),
+    newAddress: z
+      .object({
+        district: z.string().trim().min(1),
+        street: z.string().trim().min(1),
+        neighborhood: optionalText,
+        buildingNumber: optionalText,
+        nearbyLandmark: optionalText,
+        gpsLocation: optionalText,
+      })
+      .strict(),
     occupancyType: z.string().trim().min(1), // e.g. rented, owned
     landlordName: optionalText,
     startedAt: z.string().datetime(),
@@ -85,7 +98,13 @@ export const balagh205Schema = z
     rentalStatus: z.string().trim().min(1),
     description: optionalText,
     gpsLocation: optionalText,
-    unitCount: z.number().int().nonnegative().nullable().optional().transform((value) => value ?? null),
+    unitCount: z
+      .number()
+      .int()
+      .nonnegative()
+      .nullable()
+      .optional()
+      .transform((value) => value ?? null),
     priorOwnerName: z.string().trim().min(1),
     newOwnerName: z.string().trim().min(1),
     newOwnerPhone: z.string().trim().min(1),
@@ -96,7 +115,11 @@ export const balagh205Schema = z
     transferDate: z.string().datetime(),
     documentNumber: optionalText,
     issuingAuthority: optionalText,
-    deliveryConfirmed: z.boolean().nullable().optional().transform((value) => value ?? null),
+    deliveryConfirmed: z
+      .boolean()
+      .nullable()
+      .optional()
+      .transform((value) => value ?? null),
     relationshipCode: z.string().trim().min(1),
   })
   .strict();
@@ -127,6 +150,30 @@ export const balaghTypeSchema = z.enum([
 ]);
 
 export type BalaghType = z.infer<typeof balaghTypeSchema>;
+
+/**
+ * مخطط بيانات كل نوع بلاغ على حدة.
+ *
+ * `formData` أدناه اتحاد مفتوح، فهو وحده لا يمنع بلاغاً مُعلناً من نوع أن
+ * يحمل بيانات نوع آخر — والفرق جوهري: FR-206 يُعالَج داخل المكتب بينما
+ * FR-201 يستوجب نزولاً ميدانياً. تُستعمل هذه الخريطة للتحقق من التطابق.
+ */
+export const balaghSchemasByType = {
+  'FR-201': balagh201Schema,
+  'FR-202': balagh202Schema,
+  'FR-203': balagh203Schema,
+  'FR-204': balagh204Schema,
+  'FR-205': balagh205Schema,
+  'FR-206': balagh206Schema,
+} as const;
+
+/** هل تطابق الحمولة مخطط النوع المُعلن؟ */
+export function balaghFormMatchesType(
+  balaghType: BalaghType,
+  formData: unknown,
+): boolean {
+  return balaghSchemasByType[balaghType].safeParse(formData).success;
+}
 
 export const createBalaghDraftSchema = z
   .object({
@@ -163,10 +210,18 @@ export type EditBalaghDraft = z.infer<typeof editBalaghDraftSchema>;
 export interface BalaghResponse {
   id: string;
   publicRef: string | null;
-  status: 'draft' | 'submitted' | 'under_review' | 'field_visit_scheduled' | 'field_visit_completed' | 'approved' | 'rejected' | 'archived';
+  status:
+    | 'draft'
+    | 'submitted'
+    | 'under_review'
+    | 'field_visit_scheduled'
+    | 'field_visit_completed'
+    | 'approved'
+    | 'rejected'
+    | 'archived';
   balaghType: BalaghType;
   schemaVersion: '1.0.0';
-  formData: any;
+  formData: unknown;
   ownerActorId: string;
   createdAt: string;
   updatedAt: string;

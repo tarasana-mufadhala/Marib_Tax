@@ -24,6 +24,11 @@ import { TAXPAYER_REPOSITORY } from '../src/taxpayers/taxpayer.repository.js';
 import { TaxpayerKyselyRepository } from '../src/taxpayers/taxpayer.kysely-repository.js';
 import { ActivitiesBranchesController } from '../src/activities-branches/activities-branches.controller.js';
 import { ActivitiesBranchesService } from '../src/activities-branches/activities-branches.service.js';
+import {
+  ACTIVITY_OWNERSHIP_LOOKUP,
+  ActivityOwnershipKyselyLookup,
+  ActivityOwnershipService,
+} from '../src/activities-branches/activity-ownership.service.js';
 import { ACTIVITIES_BRANCHES_REPOSITORY } from '../src/activities-branches/activities-branches.repository.js';
 import { ActivitiesBranchesKyselyRepository } from '../src/activities-branches/activities-branches.kysely-repository.js';
 import { PropertiesController } from '../src/properties/properties.controller.js';
@@ -69,6 +74,8 @@ describe('A2 Core Modules E2E flows (Taxpayers, Activities, Properties, LegalEnt
           actorId,
           permissions: [
             'taxpayer.profile.read',
+            'taxpayer.admin.read',
+            'taxpayer.admin.status',
             'taxpayer.profile.update',
             'request.read',
             'request.review',
@@ -96,6 +103,11 @@ describe('A2 Core Modules E2E flows (Taxpayers, Activities, Properties, LegalEnt
           useClass: TaxpayerKyselyRepository,
         },
         ActivitiesBranchesService,
+        ActivityOwnershipService,
+        {
+          provide: ACTIVITY_OWNERSHIP_LOOKUP,
+          useClass: ActivityOwnershipKyselyLookup,
+        },
         {
           provide: ACTIVITIES_BRANCHES_REPOSITORY,
           useClass: ActivitiesBranchesKyselyRepository,
@@ -139,7 +151,6 @@ describe('A2 Core Modules E2E flows (Taxpayers, Activities, Properties, LegalEnt
   });
 
   it('performs taxpayer creation, search and account linking', async () => {
-    // 1. Create taxpayer
     const taxpayerRes = await request(getServer())
       .post('/api/v1/taxpayers')
       .set('Authorization', 'Bearer valid')
@@ -152,7 +163,6 @@ describe('A2 Core Modules E2E flows (Taxpayers, Activities, Properties, LegalEnt
     expect(taxpayer.displayName).toBe('مكلف شركة حضرموت التجارية');
     expect(taxpayer.id).toBeDefined();
 
-    // 2. Search taxpayer
     const searchRes = await request(getServer())
       .get('/api/v1/taxpayers/search?q=حضرموت')
       .set('Authorization', 'Bearer valid');
@@ -161,7 +171,6 @@ describe('A2 Core Modules E2E flows (Taxpayers, Activities, Properties, LegalEnt
     expect(searchBody.length).toBeGreaterThan(0);
     expect(searchBody[0]?.id).toBe(taxpayer.id);
 
-    // 3. Link profile
     const linkRes = await request(getServer())
       .post('/api/v1/taxpayers/links')
       .set('Authorization', 'Bearer valid')
@@ -176,7 +185,6 @@ describe('A2 Core Modules E2E flows (Taxpayers, Activities, Properties, LegalEnt
   });
 
   it('performs activities and branches creation', async () => {
-    // Register activity
     const actRes = await request(getServer())
       .post('/api/v1/activities')
       .set('Authorization', 'Bearer valid')
@@ -188,7 +196,6 @@ describe('A2 Core Modules E2E flows (Taxpayers, Activities, Properties, LegalEnt
     expect(actRes.status).toBe(201);
     const activity = actRes.body as { id: string };
 
-    // Register branch
     const brnRes = await request(getServer())
       .post('/api/v1/activities/branches')
       .set('Authorization', 'Bearer valid')
@@ -201,18 +208,13 @@ describe('A2 Core Modules E2E flows (Taxpayers, Activities, Properties, LegalEnt
   });
 
   it('performs property and units creation', async () => {
-    // Register property
     const propRes = await request(getServer())
       .post('/api/v1/properties')
       .set('Authorization', 'Bearer valid')
-      .send({
-        statusCode: 'active',
-        description: 'عمارة مأرب التجارية',
-      });
+      .send({ statusCode: 'active', description: 'عمارة مأرب التجارية' });
     expect(propRes.status).toBe(201);
     const property = propRes.body as { id: string };
 
-    // Register unit
     const unitRes = await request(getServer())
       .post('/api/v1/properties/units')
       .set('Authorization', 'Bearer valid')
@@ -225,7 +227,6 @@ describe('A2 Core Modules E2E flows (Taxpayers, Activities, Properties, LegalEnt
   });
 
   it('performs legal entities and tax number registration', async () => {
-    // Create legal entity
     const entRes = await request(getServer())
       .post('/api/v1/legal-entities')
       .set('Authorization', 'Bearer valid')
@@ -236,19 +237,14 @@ describe('A2 Core Modules E2E flows (Taxpayers, Activities, Properties, LegalEnt
     expect(entRes.status).toBe(201);
     const entity = entRes.body as { id: string };
 
-    // Issue tax number
     const taxRes = await request(getServer())
       .post('/api/v1/legal-entities/tax-numbers')
       .set('Authorization', 'Bearer valid')
-      .send({
-        legalEntityId: entity.id,
-        taxNumberValue: 'TN-99887766',
-      });
+      .send({ legalEntityId: entity.id, taxNumberValue: 'TN-99887766' });
     expect(taxRes.status).toBe(201);
   });
 
   it('performs services versions registration', async () => {
-    // Register service
     const serviceRes = await request(getServer())
       .post('/api/v1/services')
       .set('Authorization', 'Bearer valid')

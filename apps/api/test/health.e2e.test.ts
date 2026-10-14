@@ -7,12 +7,26 @@ import { AppModule } from '../src/app.module.js';
 
 describe('platform health endpoints', () => {
   let app: INestApplication;
+  let previousSupabaseUrl: string | undefined;
+  let previousServiceRoleKey: string | undefined;
+  let previousNodeEnv: string | undefined;
 
   function getServer(): Parameters<typeof request>[0] {
     return app.getHttpServer() as Parameters<typeof request>[0];
   }
 
   beforeEach(async () => {
+    previousSupabaseUrl = process.env.SUPABASE_URL;
+    previousServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    previousNodeEnv = process.env.NODE_ENV;
+
+    // Health tests boot the full AppModule but never call Supabase. Provide
+    // explicit non-production placeholders so authentication providers can be
+    // constructed without weakening their production fail-closed behavior.
+    process.env.NODE_ENV = 'test';
+    process.env.SUPABASE_URL = 'https://test-project.supabase.co';
+    process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
+
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -20,7 +34,19 @@ describe('platform health endpoints', () => {
     await app.init();
   });
 
-  afterEach(async () => app.close());
+  afterEach(async () => {
+    if (app) await app.close();
+
+    if (previousSupabaseUrl === undefined) delete process.env.SUPABASE_URL;
+    else process.env.SUPABASE_URL = previousSupabaseUrl;
+
+    if (previousServiceRoleKey === undefined)
+      delete process.env.SUPABASE_SERVICE_ROLE_KEY;
+    else process.env.SUPABASE_SERVICE_ROLE_KEY = previousServiceRoleKey;
+
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousNodeEnv;
+  });
 
   it('returns only non-sensitive liveness metadata', async () => {
     const response = await request(getServer()).get('/health').expect(200);

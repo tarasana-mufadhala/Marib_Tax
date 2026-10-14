@@ -8,9 +8,13 @@ describe('notification provider port', () => {
     await expect(
       provider.deliver({
         id: 'msg-1',
+        notificationMessageId: 'notif-1',
+        recipientProfileId: null,
         idempotencyKey: 'idem-1',
         channel: 'sms',
         payloadReference: 'payload-ref',
+        targetPhoneNumber: null,
+        targetDeviceTokens: [],
       }),
     ).rejects.toThrow('NOTIFICATION_DELIVERY_DISABLED');
   });

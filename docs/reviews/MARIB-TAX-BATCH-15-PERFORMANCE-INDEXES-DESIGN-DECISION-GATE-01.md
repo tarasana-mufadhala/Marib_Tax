@@ -6,29 +6,36 @@
 
 ## Reviewed scope
 
-- TABLES updated to add missing RLS and performance columns:
-  1. `requests.service_requests` (TABLE-024) - Added `assignee_id` (uuid, nullable) referencing `identity.staff_profiles(id)`.
-  2. `visits.field_visits` (TABLE-050) - Added `scheduled_at` (timestamptz, nullable) and `team_lead_id` (uuid, nullable) referencing `identity.staff_profiles(id)`.
-- INDEXES created (composite and access plan):
+- COLUMNS added (3 nullable, backward-compatible):
+  1. `requests.service_requests.assignee_id` (TABLE-024) — uuid FK → `identity.staff_profiles`
+  2. `visits.field_visits.scheduled_at` (TABLE-050) — timestamptz
+  3. `visits.field_visits.team_lead_id` (TABLE-050) — uuid FK → `identity.staff_profiles`
+- INDEXES created: 38 composite indexes across 12 schemas (`requests`, `visits`, `balaghat`, `dues`, `files`, `notify`, `imports`, `audit`, `registry`, `identity`, `masterdata`, `content`)
+- Specific user-requested indexes:
   1. `idx_requests_status_submitted_at` on `requests.service_requests (status_code, submitted_at)`
   2. `idx_requests_service_id_assignee_id` on `requests.service_requests (service_type_id, assignee_id)`
   3. `idx_field_visits_scheduled_at_team_lead` on `visits.field_visits (scheduled_at, team_lead_id)`
-  4. Additional 40+ indexes covering all schemas (registry, requests, balaghat, masterdata, visits, dues, notify, imports, content, reporting) according to candidate index access plan `MARIB-TAX-INDEX-QUERY-ACCESS-PLAN-01`.
 
 ## Accepted source boundaries
 
-- Structural changes are backwards-compatible (all added columns are nullable).
-- No new tables are introduced.
-- RLS posture is unaffected (tables already have default-deny RLS enabled; policies are deferred to Batch 16).
-- All index names and predicates match query patterns to prevent duplicate index footprints.
-- Zero positive grants or seed data rows introduced.
+- All added columns are nullable — no impact on existing rows or NestJS data flow.
+- FK constraints use `NOT VALID` to avoid table locking on large datasets.
+- Every index uses `IF NOT EXISTS` — idempotent re-run safe.
+- Composite indexes extend single-column indexes with additional predicates; no duplicates.
+- Partial indexes use WHERE clauses to minimize index footprint.
+- No RLS policy changes — policies are deferred to Batch 16.
+- No positive grants introduced — REVOKE ALL posture preserved.
+- No seed data or backfill rows.
+- No Storage mutation, buckets, policies, or object bytes.
 
 ## Verification result
 
-- Exactly 3 `ALTER TABLE ... ADD COLUMN` statements.
-- Compiles cleanly and repository foundation validation passes.
-- Migration SHA-256: `F5251B3F7AC0661EA068FBAB5395B141E2CF7EA98B026AED11150E83AFD7950C`
-- Verifier SHA-256: `371A96071F485150C508491321C8634E75BD37B6A2090A8752E6D4FACF801607`
+- Exactly 3 `ALTER TABLE ... ADD COLUMN IF NOT EXISTS` statements.
+- 2 new FK constraints (NOT VALID, RESTRICT, NOT DEFERRABLE).
+- 38 `CREATE INDEX IF NOT EXISTS` covering all schemas.
+- Read-only verifier checks column presence, all 38 index names, and duplicate absence.
+- Migration SHA-256: `7FC75EB59844EAB66175C0B034EFCB14F9CD33605AE4B4F51C00288D012D6F53`
+- Verifier SHA-256: `25CDC75049B6ECDBEE02617AF5D729E41493DA87CF148E392253052EA343A6AC`
 
 ## Production gate
 

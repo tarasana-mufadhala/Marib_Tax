@@ -13,6 +13,13 @@ import {
   type StoredTaxpayerAccountLink,
 } from './taxpayer.repository.js';
 
+const ALLOWED_STATUS_CODES = new Set([
+  'under_review',
+  'active',
+  'suspended',
+  'rejected',
+]);
+
 @Injectable()
 export class TaxpayerService {
   constructor(
@@ -35,6 +42,11 @@ export class TaxpayerService {
       );
     }
     return this.repository.search(query.trim());
+  }
+
+  async listTaxpayers(limit = 50): Promise<StoredTaxpayer[]> {
+    const safeLimit = Math.min(Math.max(limit, 1), 200);
+    return this.repository.list(safeLimit);
   }
 
   async getAccountLink(
@@ -89,6 +101,9 @@ export class TaxpayerService {
   ): Promise<StoredTaxpayer> {
     if (!input.displayName || input.displayName.trim() === '') {
       throw new BadRequestException('Display name cannot be empty.');
+    }
+    if (!ALLOWED_STATUS_CODES.has(input.statusCode)) {
+      throw new BadRequestException('Unknown taxpayer status code.');
     }
 
     const taxpayer: StoredTaxpayer = {

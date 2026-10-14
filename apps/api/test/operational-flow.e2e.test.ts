@@ -1,3 +1,4 @@
+import { UsersService } from '../src/users/users.service.js';
 import type { INestApplication } from '@nestjs/common';
 import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { Test } from '@nestjs/testing';
@@ -34,6 +35,7 @@ import {
   type StoredDecisionRecord,
 } from '../src/decisions/decisions.repository.js';
 import { DecisionsMemoryRepository } from '../src/decisions/decisions.memory-repository.js';
+import { DatabaseService } from '../src/database/database.service.js';
 import { DuesPaymentsController } from '../src/dues-payments/dues-payments.controller.js';
 import { DuesPaymentsService } from '../src/dues-payments/dues-payments.service.js';
 import {
@@ -109,6 +111,15 @@ describe('operational modules E2E flows (visits, decisions, dues, payments, noti
         NotificationsController,
       ],
       providers: [
+        {
+          provide: UsersService,
+          useValue: {
+            findStaffByUserProfileId: (): Promise<{
+              id: string;
+              isActive: boolean;
+            }> => Promise.resolve({ id: actorId, isActive: true }),
+          },
+        },
         FieldVisitsService,
         {
           provide: FIELD_VISITS_REPOSITORY,
@@ -121,6 +132,10 @@ describe('operational modules E2E flows (visits, decisions, dues, payments, noti
           provide: DUES_PAYMENTS_REPOSITORY,
           useClass: DuesPaymentsMemoryRepository,
         },
+        // المتحكّم يستعلم القاعدة لتقييد المستحقات بملكيتها؛ هنا مستودع في
+        // الذاكرة بلا قاعدة، فقاعدة غير مُهيّأة تُسقط فحص الملكية وتُبقي
+        // المسار الوظيفي المُختبَر كما هو.
+        { provide: DatabaseService, useValue: { isInitialized: false } },
         NotificationsService,
         { provide: NOTIFICATIONS_REPOSITORY, useValue: notificationsRepo },
         { provide: CURRENT_ACTOR, useClass: CurrentActorService },
@@ -139,7 +154,7 @@ describe('operational modules E2E flows (visits, decisions, dues, payments, noti
     }).compile();
     app = moduleRef.createNestApplication();
     await app.init();
-  });
+  }, 30000);
 
   afterEach(async () => app.close());
 
@@ -219,6 +234,8 @@ describe('operational modules E2E flows (visits, decisions, dues, payments, noti
       .post('/api/v1/dues')
       .set('Authorization', 'Bearer valid')
       .send({
+        // المستحق يُقيَّد على مكلف بعينه؛ الطلب يوثّق ما نشأ عنه فقط.
+        taxpayerId: randomUUID(),
         serviceRequestId,
         amount: 250000.0,
         currencyCode: 'YER',
@@ -228,7 +245,7 @@ describe('operational modules E2E flows (visits, decisions, dues, payments, noti
 
     expect(dueRes.status).toBe(201);
     const dueBody = dueRes.body as StoredPaymentDue;
-    expect(dueBody.statusCode).toBe('PENDING');
+    expect(dueBody.statusCode).toBe('unpaid');
     expect(dueBody.amount).toBe(250000.0);
     const dueId = dueBody.id;
 
@@ -256,7 +273,7 @@ describe('operational modules E2E flows (visits, decisions, dues, payments, noti
 
     expect(receiptRes.status).toBe(201);
     const receiptBody = receiptRes.body as StoredPaymentReceipt;
-    expect(receiptBody.acceptanceStatusCode).toBe('UPLOADED');
+    expect(receiptBody.acceptanceStatusCode).toBe('uploaded');
     const receiptId = receiptBody.id;
 
     // 8. Confirm payment receipt

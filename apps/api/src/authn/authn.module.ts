@@ -1,10 +1,13 @@
 import { Module } from '@nestjs/common';
 import { AuthnService } from './authn.service.js';
 import { OtpService } from './otp.service.js';
+import { SecureRegistrationService } from './secure-registration.service.js';
 import { AuthnController } from './authn.controller.js';
+import { AccountController } from './account.controller.js';
 import { UsersModule } from '../users/users.module.js';
 import { SecurityModule } from '../security/security.module.js';
 import { RolesPermissionsModule } from '../roles-permissions/roles-permissions.module.js';
+import { DatabaseModule } from '../database/database.module.js';
 import {
   ACCESS_TOKEN_VERIFIER,
   ACTOR_PROFILE_REPOSITORY,
@@ -17,11 +20,17 @@ import { ACTOR_CONTEXT_RESOLVER } from '../authz/authorization.contracts.js';
 import { CurrentActorService } from './current-actor.service.js';
 
 @Module({
-  imports: [UsersModule, SecurityModule, RolesPermissionsModule],
-  controllers: [AuthnController],
+  imports: [
+    UsersModule,
+    SecurityModule,
+    RolesPermissionsModule,
+    DatabaseModule,
+  ],
+  controllers: [AuthnController, AccountController],
   providers: [
     AuthnService,
     OtpService,
+    SecureRegistrationService,
     {
       provide: ACCESS_TOKEN_VERIFIER,
       useClass: HybridAccessTokenVerifier,
@@ -42,6 +51,7 @@ import { CurrentActorService } from './current-actor.service.js';
   exports: [
     AuthnService,
     OtpService,
+    SecureRegistrationService,
     ACCESS_TOKEN_VERIFIER,
     ACTOR_PROFILE_REPOSITORY,
     ACTOR_CONTEXT_RESOLVER,

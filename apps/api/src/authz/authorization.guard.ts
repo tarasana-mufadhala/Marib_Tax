@@ -19,6 +19,7 @@ import {
   type AuthorizationPolicyEvaluator,
 } from './authorization.contracts.js';
 import {
+  AUTHENTICATED_ONLY_METADATA,
   PERMISSION_METADATA,
   PREDICATES_METADATA,
   PUBLIC_ENDPOINT_METADATA,
@@ -45,6 +46,26 @@ export class AuthorizationGuard implements CanActivate {
       ) === true
     )
       return true;
+
+    // جلسة صالحة بلا صلاحية بعينها — لقراءة المستخدم هويته هو وحدها.
+    const authenticatedOnly =
+      this.reflector.getAllAndOverride<boolean>(
+        AUTHENTICATED_ONLY_METADATA,
+        targets,
+      ) === true;
+
+    if (authenticatedOnly) {
+      const sessionActor = await this.actors.resolve(context);
+      if (sessionActor === null) return this.deny('MISSING_ACTOR_CONTEXT');
+      if (!sessionActor.roleActive || !sessionActor.assignmentActive) {
+        return this.deny(
+          'INACTIVE_AUTHORIZATION',
+          undefined,
+          sessionActor.actorId,
+        );
+      }
+      return true;
+    }
 
     const permission = this.reflector.getAllAndOverride<string>(
       PERMISSION_METADATA,

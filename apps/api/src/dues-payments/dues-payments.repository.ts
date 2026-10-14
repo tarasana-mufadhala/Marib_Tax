@@ -1,11 +1,34 @@
+/** حالات المستحق. مفردة واحدة بحروف صغيرة في القاعدة والكود معاً. */
+export const DUE_STATUSES = {
+  unpaid: 'unpaid',
+  partiallyPaid: 'partially_paid',
+  paid: 'paid',
+  cancelled: 'cancelled',
+} as const;
+
+/** حالات الإيصال. الإيصال دعوى حتى يعتمدها موظف الصندوق. */
+export const RECEIPT_STATUSES = {
+  uploaded: 'uploaded',
+  verified: 'verified',
+  rejected: 'rejected',
+} as const;
+
+/** الحالات التي ما زال المبلغ فيها قابلاً للتعديل. */
+export const CORRECTABLE_DUE_STATUSES: readonly string[] = [
+  DUE_STATUSES.unpaid,
+  DUE_STATUSES.partiallyPaid,
+];
+
 export interface StoredPaymentDue {
   id: string;
   publicRef: string | null;
+  /** المكلف المدين. إلزامي: مستحق بلا مكلف دَينٌ على لا أحد. */
+  taxpayerId: string;
   serviceRequestId: string | null;
   balaghId: string | null;
   amount: number;
   currencyCode: string;
-  statusCode: string; // pending, paid, cancelled
+  statusCode: string; // انظر DUE_STATUSES
   assessedAt: Date | null;
   createdAt: Date;
   createdByProfileId: string | null;
@@ -59,6 +82,16 @@ export interface StoredPaymentConfirmation {
   notes: string | null;
 }
 
+export interface StoredFinancialCorrection {
+  id: string;
+  paymentDueId: string;
+  correctionType: string;
+  amount: number;
+  currencyCode: string;
+  notes: string | null;
+  createdAt: Date;
+}
+
 export const DUES_PAYMENTS_REPOSITORY = Symbol('DUES_PAYMENTS_REPOSITORY');
 
 export interface DuesPaymentsRepository {
@@ -93,4 +126,8 @@ export interface DuesPaymentsRepository {
   createConfirmation(
     conf: StoredPaymentConfirmation,
   ): Promise<StoredPaymentConfirmation>;
+
+  createFinancialCorrection(
+    correction: StoredFinancialCorrection,
+  ): Promise<StoredFinancialCorrection>;
 }

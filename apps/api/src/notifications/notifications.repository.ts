@@ -56,9 +56,23 @@ export interface StoredNotificationOutboxMessage {
   nextAttemptAt: Date | null;
 }
 
+export interface StoredDeviceToken {
+  id: string;
+  userProfileId: string;
+  deviceToken: string;
+  deviceType: string; // ios, android, web
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date | null;
+}
+
 export const NOTIFICATIONS_REPOSITORY = Symbol('NOTIFICATIONS_REPOSITORY');
 
 export interface NotificationsRepository {
+  registerDeviceToken(token: StoredDeviceToken): Promise<StoredDeviceToken>;
+  listDeviceTokensForUser(userProfileId: string): Promise<StoredDeviceToken[]>;
+  unregisterDeviceToken(deviceToken: string): Promise<void>;
+
   findMessageById(id: string): Promise<StoredNotificationMessage | null>;
   createMessage(
     message: StoredNotificationMessage,

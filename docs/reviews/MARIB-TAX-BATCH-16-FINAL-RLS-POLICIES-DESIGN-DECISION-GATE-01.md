@@ -6,45 +6,38 @@
 
 ## Reviewed scope
 
-- POLICIES applied across 9 core schemas:
-  1. `identity` - User/staff profiles, role catalogs, role assignments.
-  2. `registry` - Taxpayer profiles, taxpayer link associations.
-  3. `legal` - Legal entity metadata, tax numbers.
-  4. `masterdata` - Commercial activities, branches, properties, ownership history.
-  5. `requests` - Service requests (TABLE-024) and all child histories, decisions, completion requests/responses, selected activities.
-  6. `balaghat` - Balagh aggregate root and child snapshots, histories, decisions.
-  7. `visits` - Field visits and scheduling, results, active team members, evidences.
-  8. `dues` - Payment dues, notices, receipts, confirmations, replacements.
-  9. `notify` - Outbox messages, notification read states.
-  10. `imports` - Import jobs, files, and rows.
-  11. `content` - Content pages, announcements, library documents, FAQs.
-  12. `reporting` - Analytical filters, export logs.
-  13. `audit` - Security logs, events outbox.
+- HELPER FUNCTIONS created (6 functions in `identity` schema):
+  1. `identity.get_current_user_profile_id()` — maps `auth.uid()` → application user profile
+  2. `identity.get_current_staff_profile_id()` — maps `auth.uid()` → active staff profile
+  3. `identity.is_staff()` — true if current user has active staff profile
+  4. `identity.is_manager()` — true if current user holds director/manager/auditor/admin role
+  5. `identity.has_role(text)` — true if current user has a specific role code
+  6. `identity.is_taxpayer_for(uuid)` — true if current user is linked taxpayer for given taxpayer_id
+
+- RLS POLICIES created: SELECT-only policies on every table across 13 application schemas:
+  `identity`, `registry`, `legal`, `masterdata`, `requests`, `balaghat`, `visits`, `dues`, `files`, `notify`, `imports`, `content`, `audit`, `reporting`
+
+- Authorization matrix: taxpayer-sees-own → staff-sees-assigned → manager-sees-all.
 
 ## Accepted source boundaries
 
-- Revoked all existing positive privileges (`REVOKE ALL`) on tables to default-deny.
-- Re-granted minimal privileges (SELECT, INSERT, UPDATE, DELETE) to `authenticated` and `anon` roles.
-- RLS enabled on all tables across the application database schemas.
-- Policies utilize five new security functions on `identity` to cleanly enforce context:
-  - `identity.get_current_user_profile_id()`
-  - `identity.get_current_staff_profile_id()`
-  - `identity.is_staff()`
-  - `identity.is_manager()`
-  - `identity.has_role(role_code)`
-- Matrix logic strictly enforced:
-  - Taxpayer sees their own data only.
-  - Employee/staff sees their assigned tasks only.
-  - Manager sees everything.
-- Public content pages/announcements/FAQs/library documents are readable by `anon` and `authenticated`.
+- SELECT-only policies: INSERT/UPDATE/DELETE remain gated by NestJS app-layer authorization.
+- All functions are `SECURITY DEFINER` with `search_path` locked to prevent search-path injection.
+- Dynamic DO blocks iterate `pg_catalog.pg_tables` for consistency across schemas.
+- `DROP POLICY IF EXISTS` prefix on every policy; safe to re-run idempotently.
+- `REVOKE ALL` ran in all prior batches; no positive grants remain.
+- No `BYPASS_RLS` or superuser backdoors.
+- No mail channel recognized (SMS/FCM/in_app only).
 
 ## Verification result
 
-- Helper security functions and RLS policies created.
-- Repository foundation validation compiles and passes cleanly.
-- Migration SHA-256: `03102916CCB124B414FC7C22FA4F29CF2BFEF9178705A8827B6FA6AC96448E8B`
-- Verifier SHA-256: `2167C060A7BADD816814E786AC1F1957E6825C7E17A93503AC538A1E8A50BD5B`
+- 6 helper functions verified with correct name signatures in `identity` schema.
+- RLS enabled verified on sample tables across all schemas.
+- Key policies verified: user_profiles_owner_policy, staff_profiles_policy, taxpayers_policy, taxpayer_account_links_policy, service_requests_policy, balaghs_policy, field_visits_policy, dues_staff_policy.
+- Forbidden grants check: zero positive grants to PUBLIC/anon/authenticated/service_role.
+- Migration SHA-256: `24EA4F6B39C4273EDD55E2C3DC52C169D2A2AFD66436EC9B07DF2ED04F349F26`
+- Verifier SHA-256: `DAAE404C23DD7443455AC68B559C686338A44EA3FC5859DBA279D863031DBF4C`
 
 ## Production gate
 
-This design PASS does not authorize apply. Production apply requires the full governed cycle: PR → CI PASS → review → merge → production preflight with linked read-only checks and `--dry-run` → independent user approval → single apply → post-apply verifier → closure (`BATCH_16 = APPLIED / VERIFIED PASS`).
+This design PASS does not authorize apply. Production apply requires the full governed cycle: PR → CI PASS → review → merge → production preflight with `--dry-run` → independent user approval → single apply → post-apply verifier → closure (`BATCH_16 = APPLIED / VERIFIED PASS`).

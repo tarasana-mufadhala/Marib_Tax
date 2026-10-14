@@ -33,6 +33,7 @@ export const TAXPAYER_REPOSITORY = Symbol('TAXPAYER_REPOSITORY');
 export interface TaxpayerRepository {
   findById(id: string): Promise<StoredTaxpayer | null>;
   search(query: string): Promise<StoredTaxpayer[]>;
+  list(limit: number): Promise<StoredTaxpayer[]>;
   findActiveLinkByProfileId(
     userProfileId: string,
   ): Promise<StoredTaxpayerAccountLink | null>;

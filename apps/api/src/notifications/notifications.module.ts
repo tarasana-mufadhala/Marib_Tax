@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { NotificationsService } from './notifications.service.js';
 import { NotificationsController } from './notifications.controller.js';
 import { NOTIFICATIONS_REPOSITORY } from './notifications.repository.js';
-import { NotificationsMemoryRepository } from './notifications.memory-repository.js';
+import { NotificationsKyselyRepository } from './notifications.kysely-repository.js';
 import { AuthnModule } from '../authn/authn.module.js';
 
 @Module({
@@ -12,7 +12,7 @@ import { AuthnModule } from '../authn/authn.module.js';
     NotificationsService,
     {
       provide: NOTIFICATIONS_REPOSITORY,
-      useClass: NotificationsMemoryRepository,
+      useClass: NotificationsKyselyRepository,
     },
   ],
   exports: [NotificationsService, NOTIFICATIONS_REPOSITORY],

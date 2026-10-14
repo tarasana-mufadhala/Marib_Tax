@@ -1,9 +1,19 @@
 packages:
-  - 'apps/web'
-  - 'apps/api'
-  - 'apps/worker'
-  - 'packages/*'
+  - "apps/*"
+  - "packages/*"
 
+# قيمتا حزمتَي astryx كانتا نصّاً حرفياً («set this to true or false») تركته
+# أداة ولم يُحسم، فكان `pnpm install --frozen-lockfile` يخرج بـ1 على أي نسخة
+# نظيفة مع pnpm 11 (ERR_PNPM_IGNORED_BUILDS) — ويُفشل البناء على Vercel.
+#
+# `false` لكليهما: سكربت postinstall فيهما لا يبني شيئاً، بل يطبع سطر تذكير
+# بتشغيل `astryx init`، و`dist` يصل مبنيّاً مع الحزمة. منعه لا يفقد شيئاً.
 allowBuilds:
-  sharp: true
-  unrs-resolver: true
+  '@astryxdesign/cli': false
+  '@astryxdesign/core': false
+  sharp: false
+  unrs-resolver: false
+
+onlyBuiltDependencies:
+  - sharp
+  - unrs-resolver
