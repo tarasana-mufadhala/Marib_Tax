@@ -1,0 +1,27 @@
+name: Local admin smoke
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  anonymous-routes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - run: corepack enable
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium
+      - name: Typecheck smoke sources
+        run: pnpm exec tsc --noEmit --skipLibCheck --target ES2022 --module NodeNext --moduleResolution NodeNext tests/local-admin/anonymous.spec.ts tests/local-admin/playwright.config.ts
+      - name: Check smoke formatting
+        run: pnpm exec prettier --check tests/local-admin
+      - name: Run anonymous browser smoke tests without operational credentials
+        run: pnpm exec playwright test --config tests/local-admin/playwright.config.ts
