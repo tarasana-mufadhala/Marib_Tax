@@ -1,5 +1,12 @@
 # Marib Tax Autopilot Log
 
+## 2026-11-07 smoke CI acceptance and merge
+
+- PR #87 head 76eb6d9267499a08e4c47eaad7d70e17297074d3 passed Foundation CI, Flutter unchanged gate, and dedicated anonymous-routes browser CI (2m48s).
+- Confirmed mergeability and clean diff whitespace; merged as 098b2c8faca26571f70534d28afeacc4e1dfbc53. No production operation.
+- Continued immediately to canonical checkpoint publication on codex/autopilot-smoke-merge-checkpoint in C:/projects/Marib_Tax-local-admin-e2e-guard. Original autopilot worktree's known local notes preserved.
+- Next independent source task: cookie-validity technical review with negative synthetic-cookie coverage. Historical production inventory remains unverified and cannot authorize replay.
+
 ## 2026-07-22 — PROD-DB-10 fresh production preflight
 
 - Fresh independent preflight-only approval executed for Batch 10; no migration apply and no real `db push`.

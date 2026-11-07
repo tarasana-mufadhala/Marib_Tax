@@ -1,5 +1,15 @@
 # Marib Tax Project Execution State
 
+## 2026-11-07 source checkpoint (supersedes historical source inventory)
+
+- Main baseline: `098b2c8faca26571f70534d28afeacc4e1dfbc53`, PR #87 merged.
+- Current admin local smoke suite: four Chromium checks PASS locally; targeted TypeScript/format PASS; Foundation CI and dedicated anonymous-routes CI PASS on `76eb6d9267499a08e4c47eaad7d70e17297074d3` before merge.
+- Workflow: `.github/workflows/local-admin-smoke.yml`; no operational credentials or login submission. These tests do not certify cookie validity or API authorization.
+- Historical source inventory below is stale: later batch sources and security remediation are already merged via #78/#83. Do not replay old work or infer database application from merges.
+- Production state is NOT freshly verified. Conflicting historical apply/staging reports require reconciliation; no prior approval is reusable.
+- Queue: smoke implementation/integration COMPLETE; this checkpoint publication REVIEW; cookie-validity technical review READY; production operations CLOSED without fresh exact approval.
+- Next action: inspect current admin session validation boundary and add negative synthetic-cookie coverage in a separate reviewed source change. Do not access production or import old #79 contracts wholesale.
+
 **Inventory time:** 2026-07-22 (Asia/Riyadh) — PROD-DB-10 production preflight complete
 
 **Official repository:** `tarasana-mufadhala/Marib_Tax`
@@ -14,12 +24,12 @@
 
 ## Database
 
-| Batch  | Source               | Production                              |
-| ------ | -------------------- | --------------------------------------- |
-| 01A–09 | COMPLETE             | APPLIED / VERIFIED PASS                 |
-| 10     | MERGED / NOT APPLIED | REQUIRES_USER_APPROVAL (preflight PASS) |
-| 11     | AUTHORED / NOT MERGED / NOT APPLIED | NOT_STARTED                |
-| 12+    | NOT_STARTED          | NOT_STARTED                             |
+| Batch  | Source                              | Production                              |
+| ------ | ----------------------------------- | --------------------------------------- |
+| 01A–09 | COMPLETE                            | APPLIED / VERIFIED PASS                 |
+| 10     | MERGED / NOT APPLIED                | REQUIRES_USER_APPROVAL (preflight PASS) |
+| 11     | AUTHORED / NOT MERGED / NOT APPLIED | NOT_STARTED                             |
+| 12+    | NOT_STARTED                         | NOT_STARTED                             |
 
 ## Batch 11 source checkpoint (2026-07-29)
 

@@ -1,5 +1,9 @@
 # Marib Tax Decisions Needed
 
+## 2026-11-07 freshness notice
+
+Production entries below are historical, not freshly verified database facts. No production operation is authorized by PR #87 or its smoke PASS. Cookie-validity review is reversible technical source work and requires no new business approval; no authentication-ready claim is made.
+
 Only decisions that require an authorized human are listed here. Source work must remain conservative and fail closed until each applicable decision is recorded in the canonical governance documents.
 
 ## Immediate production approval

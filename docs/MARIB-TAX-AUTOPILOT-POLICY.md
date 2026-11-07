@@ -1,5 +1,9 @@
 # Marib Tax Autopilot Policy
 
+## Current smoke evidence scope
+
+Local/CI anonymous-route smoke PASS is not valid-session authentication or API authorization evidence. Source merges never establish production migration state. Reconcile stale inventories before replaying work; historical apply commands and approval packets are not fresh authorization.
+
 ## Operating rule
 
 Discover current source state before every cycle, preserve work with known or unknown ownership, isolate local blockers, and continue the highest dependency-correct safe task. Never repeat merged work or an applied migration.
